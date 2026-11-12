@@ -682,3 +682,21 @@ NeoForge 26.1.2.126, Java 25).
   renamed from `isOverlay` to `remote`). Read the old and new bodies, not just the names.
   A blind replace-all with `sendSystemMessage` would have moved every action-bar message
   into the chat.
+
+## Phase 3, E2: Access changes + our first access transformer
+
+- `Level.isClientSide` field is private in 26 → `isClientSide()` (already existed in 1.21).
+- `Inventory.items` is private → `getNonEquipmentItems()`, which returns the SAME list
+  (`return this.items`), so `get/set` behave as before.
+- `AbstractContainerScreen.imageWidth/imageHeight` became `protected final` (set once via the new
+  constructor). Our confirm screen resizes itself while open. **Decision A:** an access
+  transformer, `src/main/resources/META-INF/accesstransformer.cfg`, with AE2 26's exact lines:
+  `protected-f net.minecraft.client.gui.screens.inventory.AbstractContainerScreen imageWidth` (+ imageHeight).
+- **Term:** an access transformer (AT) is a text file a mod ships; NeoForge applies it at load time
+  to change the visibility/finality of Minecraft members (`protected-f` = protected, not final).
+  MDG picks up the default path automatically and rebuilt the Minecraft artifact
+  (`2 actionable tasks: 2 executed` → `createMinecraftArtifacts` re-ran, 44 s).
+- **Result:** 24 → **13**.
+- **Lessons:** When a field disappears, look for a getter that returns the same object. When
+  a field becomes final and you really need to write it, check whether the big mod already
+  solved it (here AE2's AT). An AT is a global change for every mod, so keep entries to the minimum.

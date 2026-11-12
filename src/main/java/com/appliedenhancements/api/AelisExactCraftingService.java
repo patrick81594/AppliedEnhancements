@@ -28,7 +28,7 @@ public final class AelisExactCraftingService {
         java.util.Objects.requireNonNull(request, "request");
         java.util.Objects.requireNonNull(level, "level");
         var exactRequest = new AelisExactRequest(request.amount());
-        if (level.isClientSide || level.getServer() == null || !level.getServer().isSameThread())
+        if (level.isClientSide() || level.getServer() == null || !level.getServer().isSameThread())
             throw new IllegalStateException("Exact planning must begin on the server thread");
         if (requester == null || requester.getGridNode() == null)
             throw new IllegalArgumentException("A connected crafting requester is required");

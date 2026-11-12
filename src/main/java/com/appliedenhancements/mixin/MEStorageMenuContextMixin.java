@@ -91,7 +91,7 @@ public abstract class MEStorageMenuContextMixin
             ServerPlayer player, AEItemKey key) {
         long capacity = 0;
         int maxStackSize = key.getMaxStackSize();
-        for (ItemStack stack : player.getInventory().items) {
+        for (ItemStack stack : player.getInventory().getNonEquipmentItems()) {
             if (stack.isEmpty()) {
                 capacity += maxStackSize;
             } else if (key.matches(stack)) {
@@ -108,7 +108,7 @@ public abstract class MEStorageMenuContextMixin
             ServerPlayer player, AEItemKey key, int amount) {
         int remaining = amount;
         int maxStackSize = key.getMaxStackSize();
-        for (ItemStack stack : player.getInventory().items) {
+        for (ItemStack stack : player.getInventory().getNonEquipmentItems()) {
             if (remaining <= 0) {
                 return 0;
             }
@@ -120,11 +120,11 @@ public abstract class MEStorageMenuContextMixin
             }
         }
         for (int slot = 0;
-                slot < player.getInventory().items.size() && remaining > 0;
+                slot < player.getInventory().getNonEquipmentItems().size() && remaining > 0;
                 slot++) {
-            if (player.getInventory().items.get(slot).isEmpty()) {
+            if (player.getInventory().getNonEquipmentItems().get(slot).isEmpty()) {
                 int moved = Math.min(remaining, maxStackSize);
-                player.getInventory().items.set(slot, key.toStack(moved));
+                player.getInventory().getNonEquipmentItems().set(slot, key.toStack(moved));
                 remaining -= moved;
             }
         }

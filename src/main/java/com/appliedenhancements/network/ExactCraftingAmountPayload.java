@@ -27,7 +27,7 @@ public record ExactCraftingAmountPayload(int containerId, String amount, boolean
             var menu = context.player().containerMenu;
             if (menu.containerId != payload.containerId || !(menu instanceof ExactCraftingMenuBridge bridge)) return;
             var amount = new BigInteger(payload.amount);
-            if (context.player().level().isClientSide) bridge.appliedenhancements$setInitialExactAmount(amount);
+            if (context.player().level().isClientSide()) bridge.appliedenhancements$setInitialExactAmount(amount);
             else bridge.appliedenhancements$confirmExact(amount, payload.missing, payload.autoStart);
         });
     }
