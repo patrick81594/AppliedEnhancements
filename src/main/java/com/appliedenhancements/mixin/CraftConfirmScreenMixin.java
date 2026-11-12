@@ -10,7 +10,7 @@ import com.appliedenhancements.network.ServerConfigSyncState;
 import com.github.appliedenhancements.integration.ae2.AelisCalculationPath;
 import com.github.appliedenhancements.integration.ae2.AelisCalculationPathMenuBridge;
 import net.minecraft.ChatFormatting;
-import net.minecraft.Util;
+import net.minecraft.util.Util;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import org.spongepowered.asm.mixin.Mixin;

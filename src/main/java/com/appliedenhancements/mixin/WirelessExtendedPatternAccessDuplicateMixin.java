@@ -41,7 +41,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
-import net.minecraft.world.inventory.ClickType;
+import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import org.spongepowered.asm.mixin.Final;
@@ -296,7 +296,7 @@ public abstract class WirelessExtendedPatternAccessDuplicateMixin
             Slot slot,
             int slotIndex,
             int mouseButton,
-            ClickType clickType,
+            ContainerInput clickType,
             CallbackInfo callback) {
         if (!appliedenhancements$isSupportedScreen() || !appliedenhancements$isFilterActive()) {
             return;

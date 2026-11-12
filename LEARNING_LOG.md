@@ -537,3 +537,19 @@ NeoForge 26.1.2.126, Java 25).
   game sources; confirm the methods you call, not just the class name. Check
   for name collisions before a global rename. Our public API changes type
   too (note for the release notes).
+
+## Phase 3, Steps 4–5: ClickType → ContainerInput, Util moved
+
+- **Research:** `net.minecraft.Util` → `net.minecraft.util.Util` (AE2 19 vs 26 imports;
+  `getMillis()` still at Util.java:137). `ClickType` no longer exists; the same
+  package has `enum ContainerInput` with the identical constants (PICKUP,
+  QUICK_MOVE, SWAP, CLONE, THROW, QUICK_CRAFT, PICKUP_ALL), and `slotClicked(…)` /
+  `clicked(…)` take it now. AE2's `AEBaseMenu` shows the same 1:1 swap.
+- **Fix:** `sed -E 's/\bClickType\b/ContainerInput/g'` (3 files, incl. 2 Mixin handlers
+  whose parameter types must match `slotClicked`) + the Util import (2 files).
+- **Result:** 84 → **76** errors (both groups gone). Left: GuiGraphics, AE2 Icon, AEKeyRendering.
+- **Side finding:** AE2 26 moved its client classes into a separate `client` source
+  set (`src/client/java`), same packages. Look there for Mixin targets in Phase 4.
+- **Lessons:** Three kinds of change so far: rename (ResourceLocation, ClickType),
+  move (Util), and probably redesign (GuiGraphics?). A Mixin handler's
+  parameters follow the TARGET method, so they change with the game's API.

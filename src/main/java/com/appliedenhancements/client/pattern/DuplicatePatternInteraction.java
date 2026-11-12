@@ -10,7 +10,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.inventory.ClickType;
+import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.neoforged.neoforge.network.PacketDistributor;
@@ -26,7 +26,7 @@ public final class DuplicatePatternInteraction {
             Map<PatternSlotRef, PatternSlotRef> displayToSource,
             Slot slot,
             int mouseButton,
-            ClickType clickType) {
+            ContainerInput clickType) {
         if (slot instanceof PatternSlot patternSlot) {
             PatternSlotRef source = displayToSource.get(new PatternSlotRef(
                     patternSlot.getMachineInv().getServerId(),
@@ -54,7 +54,7 @@ public final class DuplicatePatternInteraction {
             return true;
         }
 
-        if (clickType == ClickType.QUICK_MOVE
+        if (clickType == ContainerInput.QUICK_MOVE
                 && slot != null
                 && slot.container == player.getInventory()) {
             var visibleContainers = new LinkedHashSet<Long>();
