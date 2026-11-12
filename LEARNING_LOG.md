@@ -299,3 +299,20 @@ NeoForge 26.1.2.126, Java 25).
   (`package.nls.json`), not from memory. Order reset steps by how much
   they lose. Mark anything not yet tested as "not tested" in the doc
   itself.
+
+## Phase 1, Step 7a/7b: Baseline versions from the pack
+
+- **What:** read the Minecraft / NeoForge / mod versions from the Prism
+  instance (read-only) into `docs/PORT_BASELINE.md`. Pack 1.9.0, AE2
+  26.1.13-beta.
+- **Where:** HOST, PowerShell: `mmc-pack.json`, `instance.cfg`, and each
+  jar opened as a zip with `[IO.Compression.ZipFile]::OpenRead` to read
+  `META-INF/neoforge.mods.toml`.
+- **Lessons:**
+  - Target the pack's versions, not "latest".
+  - The jar file name is a hint; `neoforge.mods.toml` is the source of
+    truth (modId, version, dependency ranges).
+  - `${file.jarVersion}` in a jar's mods.toml = the version was filled
+    in at build time elsewhere; use `MANIFEST.MF` or the file name.
+  - Script bug: guard against null before calling methods (`"$x".Trim()`).
+  - Maven version ordering can satisfy ranges that look wrong.
