@@ -1,6 +1,6 @@
 package com.appliedenhancements.client.plan;
 
-import appeng.api.client.AEKeyRendering;
+import appeng.client.api.AEKeyRendering;
 import appeng.api.stacks.AEKey;
 import appeng.api.stacks.AmountFormat;
 import appeng.api.stacks.GenericStack;
@@ -347,7 +347,7 @@ public final class AelisCraftConfirmScreen extends CraftConfirmScreen {
         for (var entry : entries.entrySet()) {
             var key = entry.getKey();
             var amount = entry.getValue();
-            result.add(new AelisPlanRows.Row<>(key, AEKeyRendering.getDisplayName(key).getString(),
+            result.add(new AelisPlanRows.Row<>(key, key.getDisplayName().getString(),
                     key.toString(), AelisPlanRows.exact(stored, key, amount[0]),
                     AelisPlanRows.exact(craft, key, amount[1]), AelisPlanRows.exact(missing, key, amount[2]),
                     AelisPlanRows.exact(cyclic, key, 0)));

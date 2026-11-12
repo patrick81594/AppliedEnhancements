@@ -553,3 +553,21 @@ NeoForge 26.1.2.126, Java 25).
 - **Lessons:** Three kinds of change so far: rename (ResourceLocation, ClickType),
   move (Util), and probably redesign (GuiGraphics?). A Mixin handler's
   parameters follow the TARGET method, so they change with the game's API.
+
+## Phase 3, Steps 6–7: AE2 client moves (Icon, Blitter, AEKeyRendering)
+
+- **Research:** `appeng.client.gui.Icon` → `appeng.util.Icon` (data only, no more
+  `getBlitter()`; draw with `Blitter.icon(icon)`, as in AE2 26 `IconButton`).
+  `appeng.api.client.AEKeyRendering` → `appeng.client.api.AEKeyRendering`;
+  `getDisplayName(key)` removed → `key.getDisplayName()`.
+- **zOffset decision:** Patrick: "B if most likely to retain functionality". Research:
+  in 1.21.1, `Blitter.zOffset` set the vertex z (3D GUI with a depth test). MC 26's GUI
+  is 2D (`pose()` = `Matrix3x2fStack`); layering = draw order, plus `nextStratum()`
+  for a whole new layer. AE2 26 dropped zOffset for the SAME toolbar background.
+  `nextStratum()` would put the buttons above everything (a behaviour CHANGE), so
+  dropping zOffset is the closest match → done, with a comment. **In-game check:**
+  the 4 pattern buttons must be visible and not hidden.
+- **Result:** 76 → **68** errors. Only `GuiGraphics` is left (20 files).
+- **Lessons:** "Keep the behaviour" means understanding what the old code
+  DID (vertex z) and what the new system offers, not just finding a method
+  with a similar name.

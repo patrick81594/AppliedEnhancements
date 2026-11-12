@@ -1,7 +1,8 @@
 package com.appliedenhancements.client.pattern;
 
 import appeng.api.implementations.blockentities.PatternContainerGroup;
-import appeng.client.gui.Icon;
+import appeng.client.gui.style.Blitter;
+import appeng.util.Icon;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.locale.Language;
@@ -44,7 +45,9 @@ public final class PatternHeaderActionButton {
         Icon background = hovered
                 ? Icon.TOOLBAR_BUTTON_BACKGROUND_HOVER
                 : Icon.TOOLBAR_BUTTON_BACKGROUND;
-        background.getBlitter().dest(x, y, SIZE, SIZE).zOffset(22).blit(graphics);
+        // MC 26 GUI is 2D (no z): draw order decides layering, so the old
+        // zOffset(22) has no equivalent (AE2 26 dropped it the same way in IconButton).
+        Blitter.icon(background).dest(x, y, SIZE, SIZE).blit(graphics);
 
         var font = Minecraft.getInstance().font;
         Component label = Component.translatable(action.translationKey);

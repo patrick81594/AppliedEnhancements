@@ -1,7 +1,8 @@
 package com.appliedenhancements.client.pattern;
 
-import appeng.client.gui.Icon;
+import appeng.client.gui.style.Blitter;
 import appeng.client.gui.widgets.IconButton;
+import appeng.util.Icon;
 import java.util.List;
 import java.util.function.Consumer;
 import net.minecraft.client.Minecraft;
@@ -50,9 +51,9 @@ public final class DuplicatePatternToggleButton extends IconButton {
                 : isFocused()
                         ? Icon.TOOLBAR_BUTTON_BACKGROUND_FOCUS
                         : Icon.TOOLBAR_BUTTON_BACKGROUND;
-        background.getBlitter()
+        // MC 26 GUI is 2D (no z): draw order decides layering (old zOffset(2) dropped, as in AE2 26).
+        Blitter.icon(background)
                 .dest(getX(), getY() + yOffset, BUTTON_WIDTH, BUTTON_HEIGHT)
-                .zOffset(2)
                 .blit(graphics);
         var font = Minecraft.getInstance().font;
         Component label = Component.translatable(
