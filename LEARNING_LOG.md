@@ -280,3 +280,22 @@ NeoForge 26.1.2.126, Java 25).
 - **Lessons:** If a VS Code command is missing, read its `when` clause.
   Verify a container from outside with `docker inspect` / `docker exec`,
   and test bind mounts with a round-trip file.
+
+## Phase 1, Step 5g: Commit + push the dev container
+
+- **Command (WSL):** `git add .devcontainer/ LEARNING_LOG.md`,
+  `git diff --cached --stat`, commit 022a5fd, `GIT_TERMINAL_PROMPT=0 git push`.
+- **Result:** `3a86b3b..022a5fd` pushed from the automated shell. GCM
+  reused the token from the interactive login.
+- **Lessons:** Check what's staged (`git diff --cached --stat`) before
+  every commit. `GIT_TERMINAL_PROMPT=0` makes Git fail right away instead
+  of hanging on a prompt, which is ideal for scripts.
+
+## Phase 1, Step 6: DEV_SETUP.md
+
+- **What:** a guide for start / stop / rebuild / reset (4 levels), what
+  runs where, and the runClient-in-container options (explained only).
+- **Lessons:** Take command names in docs from the installed extension
+  (`package.nls.json`), not from memory. Order reset steps by how much
+  they lose. Mark anything not yet tested as "not tested" in the doc
+  itself.
