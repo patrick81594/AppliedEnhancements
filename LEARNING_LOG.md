@@ -453,3 +453,19 @@ NeoForge 26.1.2.126, Java 25).
   Adding `junit-platform-launcher` in advance avoided Gradle 9's "launcher
   not found" test error. gradle-wrapper.jar is executable code in the repo
   (a supply-chain risk); Gradle publishes checksums to verify it.
+
+## Phase 2, Step 4.1: Java toolchain 21 → 25 (still 1.21.1)
+
+- **Change:** `java.toolchain.languageVersion = JavaLanguageVersion.of(25)`.
+- **Where:** from now on in the JDK 25 dev image (`ae-port-dev:test`) with the
+  volume `ae-port-gradle-cache`, VS Code closed:
+  `docker run --rm -v <repo>:/workspaces/AppliedEnhancements -v ae-port-gradle-cache:/home/ubuntu/.gradle -w /workspaces/AppliedEnhancements ae-port-dev:test ./gradlew clean build`
+- **Result:** BUILD SUCCESSFUL in 2m17s (NFRT recompiled MC 1.21.1 with
+  JDK 25 in ~66s). 544 tests / 99 suites / 0 failures; jar entries identical
+  (530); class file major version 65 → **69**. The jar is 6 bytes smaller
+  (javac 25 emits slightly different bytecode).
+- **New warning:** `sun.misc.Unsafe::objectFieldOffset … will be removed`,
+  from netty 4.1.97 in the test JVM: a library warning on Java 24+, not our code.
+- **Lessons:** Isolate the Java jump from the game jump. A class file's
+  major version is bytes 6–7 of the file (`od -An -j6 -N2`): 65 = Java 21,
+  69 = Java 25. Anything with `$` from PowerShell → WSL goes into a script file.
