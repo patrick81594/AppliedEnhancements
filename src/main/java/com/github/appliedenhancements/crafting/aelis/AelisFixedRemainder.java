@@ -18,11 +18,15 @@ final class AelisFixedRemainder {
                 return null;
             }
             ItemStack selectedStack = selectedItem.toStack();
+            // MC/NeoForge 26: the stack-aware remainder is item.getCraftingRemainder(stack), an
+            // ItemStackTemplate or null (was stack.has/getCraftingRemainingItem() in 1.21).
+            var remainder = selectedStack.isEmpty() ? null
+                    : selectedStack.getItem().getCraftingRemainder(selectedStack);
             if (selectedStack.isEmpty() || selectedStack.isDamageableItem()
-                    || !selectedStack.hasCraftingRemainingItem()) {
+                    || remainder == null) {
                 return null;
             }
-            ItemStack expectedStack = selectedStack.getCraftingRemainingItem();
+            ItemStack expectedStack = remainder.create();
             if (expectedStack == null || expectedStack.getCount() != 1) {
                 return null;
             }

@@ -154,7 +154,7 @@ public final class MolecularReusableInputAdapters {
         }
         ItemStack stack = itemKey.toStack();
         return hasFiniteMutableDurability(stack)
-                && stack.hasCraftingRemainingItem()
+                && stack.getItem().getCraftingRemainder(stack) != null // MC 26: was hasCraftingRemainingItem()
                 && !hasUnbreaking(stack, level);
     }
 
