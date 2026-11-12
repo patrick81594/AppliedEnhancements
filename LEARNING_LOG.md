@@ -378,3 +378,58 @@ NeoForge 26.1.2.126, Java 25).
   (`<testsuite tests= failures= errors= skipped=>`). A green baseline means
   later failures are ours. Warnings now = a to-do list for later
   (deprecated JEI API, Gradle 9 incompatibilities).
+
+---
+
+## Phase 2, Step 1: Read a working 26.1.2 build (AE2 v26.1.13-beta)
+
+- **What:** read-only comparison of AE2's build files with ours.
+- **Findings:**
+
+  | | AE2 26.1.13 (works on 26.1.2) | Ours (1.21.1) |
+  |---|---|---|
+  | Gradle | 9.2.1 | 8.14.2 |
+  | Plugin | ModDevGradle `net.neoforged.moddev` 2.0.141 | NeoGradle `net.neoforged.gradle.userdev` 7.0.170 |
+  | Mappings | none configured | Parchment 1.21.1 / 2024.11.17 |
+  | Java toolchain | 25 | 21 |
+  | NeoForge | 26.1.2.21-beta | 21.1.220 |
+  | JEI | `jei-26.1.2-neoforge-api:29.5.0.26` | `jei-1.21.1-neoforge:19.27.0.336` |
+
+- **Lessons:** The best reference for a build upgrade is a big, working
+  mod on the SAME target version. Separate what's generic (plugin, Gradle,
+  Java, NeoForge) from what's project-specific (AE2's client sourceSet,
+  buildSrc, spotless, JMH). Look in `buildSrc/` too, because settings can
+  hide there (AE2 sets the Java toolchain in a buildSrc plugin).
+
+## Phase 2, Step 2: NeoGradle → ModDevGradle (still 1.21.1)
+
+- **Sources:** `NeoForgeMDKs/MDK-1.21.1-ModDevGradle` (official template) +
+  the `neoforged/ModDevGradle` README + MDG source (`ModDevRunWorkflow`).
+- **Changes:**
+  - `gradle.properties`: `neogradle.subsystems.parchment.*` → `neoForge.parchment.*`
+  - `build.gradle`: plugin `net.neoforged.moddev` 2.0.148;
+    `neoForge { version = neo_version; runs {…}; mods {…}; addModdingDependenciesTo sourceSets.test }`;
+    runs get a type (`client()`, `server()`, `type = "gameTestServer"`, `data()`),
+    `argument(s)` → `programArgument(s)`, `modSource` → `mods { sourceSet }`;
+    the `net.neoforged:neoforge` dependency is removed;
+    `testRuntimeOnly 'org.junit.platform:junit-platform-launcher'`.
+- **Build (JDK 21 container):**
+  `jdk21-build.sh ~/dev/ae-port/AppliedEnhancements <log> clean build --no-daemon`
+- **Try 1:** main compiled (MDG 2.0.148 works on Gradle 8.14.2), but
+  `compileTestJava` failed: "package net.minecraft… does not exist". MDG
+  adds Minecraft/NeoForge only to `main`; NeoGradle also added them to `test`.
+- **Try 2 (`unitTest { enable() }`, FML in tests):** 518 tests / 31 failures:
+  working dir `build/minecraft-junit` (tests that read source files), Mixin
+  classes not loadable, config not loaded. → a different KIND of test.
+- **Decision 3b:** plain JUnit now (`addModdingDependenciesTo sourceSets.test`),
+  a separate FML test task in Phase 5. MDG's `unitTest` is hard-wired to
+  the `test` task (verified in the MDG source), so that needs hand-made wiring.
+- **Try 3: BUILD SUCCESSFUL. 544 tests / 99 suites / 0 failures = baseline.**
+  The jar has the same size (1,027,617 bytes), the same 530 entries and an
+  identical `neoforge.mods.toml`. The "Deprecated Gradle features … Gradle 9"
+  warning is GONE: it came from NeoGradle.
+- **Lessons:** Change ONE thing (the plugin) and prove it by comparing with the
+  baseline: test counts per class AND jar contents. A plugin switch can move
+  classpaths and working dirs without touching code. Read the plugin source
+  before planning around a feature. Use `clean build` when comparing
+  results, so stale files don't skew them.
