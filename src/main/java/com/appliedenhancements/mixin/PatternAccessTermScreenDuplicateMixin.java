@@ -350,14 +350,19 @@ public abstract class PatternAccessTermScreenDuplicateMixin
         for (int y = appliedenhancements$ORIGINAL_HEADER_HEIGHT - 1;
                 y < appliedenhancements$EXPANDED_HEADER_HEIGHT;
                 y++) {
+            // MC 26: blit(pipeline, texture, x, y, u, v, width, height, texWidth, texHeight).
+            // The old 7-argument blit(texture, x, y, u, v, w, h) assumed a 256x256 texture.
             graphics.blit(
+                    net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED,
                     appliedenhancements$PATTERN_TERMINAL_TEXTURE,
                     offsetX,
                     offsetY + y,
-                    0,
+                    0.0F,
                     appliedenhancements$HEADER_INTERIOR_SAMPLE_Y,
                     195,
-                    1);
+                    1,
+                    256,
+                    256);
         }
     }
 

@@ -63,7 +63,8 @@ class LocalizationCompletenessTest {
     private static final Set<String> INTENTIONALLY_LANGUAGE_NEUTRAL = Set.of(
             "gui.appliedenhancements.calculation_result.path.aelis",
             "gui.appliedenhancements.calculation_progress.engine.aelis",
-            "key.categories.appliedenhancements");
+            // MC 26 key categories: label = "key.category.<namespace>.<path>"
+            "key.category.appliedenhancements.category");
 
     @Test
     void englishAndChineseContainTheSameNonEmptyKeysAndFormatArguments() throws Exception {

@@ -3,6 +3,7 @@ package com.appliedenhancements.client.menu;
 import com.appliedenhancements.AppliedEnhancements;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.KeyMapping;
+import net.minecraft.client.input.KeyEvent;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -16,6 +17,11 @@ import org.lwjgl.glfw.GLFW;
         modid = AppliedEnhancements.MODID,
         value = Dist.CLIENT)
 public final class ItemContextMenuKeyMapping {
+    // MC 26: key categories are objects with an id; the Controls screen shows the
+    // translation "key.category.appliedenhancements.category" (same shape as AE2 26).
+    public static final KeyMapping.Category CATEGORY =
+            new KeyMapping.Category(AppliedEnhancements.id("category"));
+
     // Retain the former shared ID for Quick Move so existing right-click/custom
     // bindings survive, while item actions receive their new Alt+right default.
     public static final KeyMapping OPEN_PATTERN_MENU = new KeyMapping(
@@ -24,7 +30,7 @@ public final class ItemContextMenuKeyMapping {
             KeyModifier.NONE,
             InputConstants.Type.MOUSE,
             GLFW.GLFW_MOUSE_BUTTON_RIGHT,
-            "key.categories.appliedenhancements");
+            CATEGORY);
 
     public static final KeyMapping OPEN_MENU = new KeyMapping(
             "key.appliedenhancements.open_item_actions_menu",
@@ -32,13 +38,14 @@ public final class ItemContextMenuKeyMapping {
             KeyModifier.ALT,
             InputConstants.Type.MOUSE,
             GLFW.GLFW_MOUSE_BUTTON_RIGHT,
-            "key.categories.appliedenhancements");
+            CATEGORY);
 
     private ItemContextMenuKeyMapping() {
     }
 
     @SubscribeEvent
     public static void register(RegisterKeyMappingsEvent event) {
+        event.registerCategory(CATEGORY);
         event.register(OPEN_PATTERN_MENU);
         event.register(OPEN_MENU);
     }
@@ -49,7 +56,8 @@ public final class ItemContextMenuKeyMapping {
 
     public static boolean matchesKey(
             int keyCode, int scanCode) {
-        return OPEN_MENU.isActiveAndMatches(InputConstants.getKey(keyCode, scanCode));
+        // MC 26: getKey takes a KeyEvent; modifiers don't matter for identifying the key.
+        return OPEN_MENU.isActiveAndMatches(InputConstants.getKey(new KeyEvent(keyCode, scanCode, 0)));
     }
 
     public static boolean matchesPatternMouse(int button) {
@@ -57,6 +65,6 @@ public final class ItemContextMenuKeyMapping {
     }
 
     public static boolean matchesPatternKey(int keyCode, int scanCode) {
-        return OPEN_PATTERN_MENU.isActiveAndMatches(InputConstants.getKey(keyCode, scanCode));
+        return OPEN_PATTERN_MENU.isActiveAndMatches(InputConstants.getKey(new KeyEvent(keyCode, scanCode, 0)));
     }
 }

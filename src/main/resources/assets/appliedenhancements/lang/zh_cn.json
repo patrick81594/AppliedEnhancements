@@ -70,7 +70,7 @@
   "gui.appliedenhancements.jei_item_menu.give_one": "获取 1 个",
   "gui.appliedenhancements.jei_item_menu.give_stack": "获取一组",
   "message.appliedenhancements.jei_item_menu.copied_name": "已复制名称：%s",
-  "key.categories.appliedenhancements": "Applied Enhancements",
+  "key.category.appliedenhancements.category": "Applied Enhancements",
   "key.appliedenhancements.open_item_context_menu": "打开样板移动菜单",
   "key.appliedenhancements.open_item_actions_menu": "打开物品操作菜单",
   "gui.appliedenhancements.jei_item_menu.extract_one_from_me": "从 ME 取出 1 个",

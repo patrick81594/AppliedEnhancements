@@ -39,6 +39,7 @@ import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.renderer.Rect2i;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.Identifier;
@@ -451,7 +452,8 @@ public final class AelisCraftConfirmScreen extends CraftConfirmScreen {
         }
         g.enableScissor(leftPos + 14, topPos + graphCanvasTop(), leftPos + canvasRight, topPos + canvasBottom);
         g.pose().pushMatrix();
-        g.pose().translate(graphViewport.x(), graphCanvasTop() + graphViewport.y());
+        // MC 26 2D pose (Matrix3x2f) takes floats.
+        g.pose().translate((float) graphViewport.x(), (float) (graphCanvasTop() + graphViewport.y()));
         g.pose().scale((float) graphViewport.zoom(), (float) graphViewport.zoom());
         var orderedBoxes = graphInteraction.boxes(graphDrawing);
         var boxes = new HashMap<Integer, AelisGraphLayout.Box>();
@@ -966,7 +968,9 @@ public final class AelisCraftConfirmScreen extends CraftConfirmScreen {
 
     private static void drawMark(GuiGraphicsExtractor g, int x, int y) {
         // Sample the whole mark, keeping the AE / LIS spacing and frame padding at every GUI scale.
-        g.blit(MARK, x, y, 24, 24, 0.0F, 0.0F, 48, 48, 48, 48);
+        // MC 26: blit(pipeline, texture, x, y, u, v, width, height, srcWidth, srcHeight, texWidth, texHeight)
+        // (u/v now come before width/height; was blit(MARK, x, y, 24, 24, 0, 0, 48, 48, 48, 48)).
+        g.blit(RenderPipelines.GUI_TEXTURED, MARK, x, y, 0.0F, 0.0F, 24, 24, 48, 48, 48, 48);
     }
 
     /** Keep the active filter visible using AE2's own highlight; rendering stays entirely native. */

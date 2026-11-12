@@ -70,7 +70,7 @@
   "gui.appliedenhancements.jei_item_menu.give_one": "Give One",
   "gui.appliedenhancements.jei_item_menu.give_stack": "Give Stack",
   "message.appliedenhancements.jei_item_menu.copied_name": "Copied name: %s",
-  "key.categories.appliedenhancements": "Applied Enhancements",
+  "key.category.appliedenhancements.category": "Applied Enhancements",
   "key.appliedenhancements.open_item_context_menu": "Open Pattern Quick Move Menu",
   "key.appliedenhancements.open_item_actions_menu": "Open Item Actions Menu",
   "gui.appliedenhancements.jei_item_menu.extract_one_from_me": "Extract One from ME",

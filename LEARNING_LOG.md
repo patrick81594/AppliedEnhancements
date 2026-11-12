@@ -700,3 +700,20 @@ NeoForge 26.1.2.126, Java 25).
 - **Lessons:** When a field disappears, look for a getter that returns the same object. When
   a field becomes final and you really need to write it, check whether the big mod already
   solved it (here AE2's AT). An AT is a global change for every mod, so keep entries to the minimum.
+
+## Phase 3, E3–E5: remainders, serverLevel, keybinds, blit (one commit each)
+
+- **E6 was not a cause of its own:** the 3 "incompatible types" were E5 (key category String→Category,
+  blit Identifier→RenderPipeline). Read javac's `required/found` lines before grouping.
+- **E3:** `stack.has/getCraftingRemainingItem()` (NeoForge 1.21) → stack-aware
+  `stack.getItem().getCraftingRemainder(stack)`: `@Nullable ItemStackTemplate`, `.create()` → ItemStack.
+  13 → 10.
+- **E4:** `ServerPlayer.serverLevel()` → `level()` (returns ServerLevel in 26). 10 → 8.
+- **E5:** `KeyMapping.Category(AppliedEnhancements.id("category"))` + `event.registerCategory(...)`;
+  lang key renamed to `key.category.appliedenhancements.category` in en_us, zh_cn AND the
+  LocalizationCompletenessTest list (adapted, not deleted). Binding names unchanged → saved binds
+  survive. `InputConstants.getKey(new KeyEvent(key, scan, 0))`. `blit(RenderPipelines.GUI_TEXTURED, tex,
+  x, y, u, v, w, h, …)`: u/v moved BEFORE w/h; the old 7-arg blit implied a 256×256 texture → explicit.
+  `translate` needs float casts. 8 → **1** (only JEI left).
+- **Lessons:** When an argument order changes, write old and new side by side and map each
+  value to its slot. Grep tests and resources too when renaming a key.
