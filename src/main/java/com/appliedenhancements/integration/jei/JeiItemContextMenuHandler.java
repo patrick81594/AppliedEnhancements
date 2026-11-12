@@ -196,7 +196,8 @@ final class JeiItemContextMenuHandler
 
     private static void give(ItemStack stack, GiveAmount amount) {
         var command = new CommandUtil(
-                Internal.getJeiClientConfigs().getClientConfig(),
+                // JEI 29 renamed the internal getJeiClientConfigs() to getClientConfigs().
+                Internal.getClientConfigs().getClientConfig(),
                 Internal.getServerConnection());
         command.giveStack(stack, amount);
     }

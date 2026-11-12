@@ -717,3 +717,17 @@ NeoForge 26.1.2.126, Java 25).
   `translate` needs float casts. 8 → **1** (only JEI left).
 - **Lessons:** When an argument order changes, write old and new side by side and map each
   value to its slot. Grep tests and resources too when renaming a key.
+
+## Phase 3, group F: JEI internals → compileJava GREEN
+
+- **Research:** `javap` on both JEI jars from the Gradle cache: `mezz.jei.common.Internal.getJeiClientConfigs()`
+  → `getClientConfigs()`; `CommandUtil(IClientConfig, IConnectionToServer)` and `giveStack(stack, amount)`
+  unchanged. Internal/CommandUtil are JEI internals (not `mezz.jei.api`) → risk on JEI updates.
+- **Result:** `compileJava` **BUILD SUCCESSFUL** (first time on 26.1.2).
+- **53 warnings, all `[removal]`** (deprecated-for-removal APIs that still work today):
+  23× AbstractContainerScreen (WirelessExtendedPatternAccessDuplicateMixin), 21× `net.neoforged.neoforge.items`
+  + 6× IItemHandler (ExternalStorageFacadeItemHandlerMixin, ItemHandlerStrategyMixin: NeoForge's old item
+  capability), 3× JEI ingredient API. Not errors → recorded for later, not fixed now.
+- **Phase 3 path:** 108 → 84 → 76 → 68 → (next layer) 106 → 100 → 81 → 38 → 31 → 24 → 13 → 10 → 8 → 1 → **0**,
+  in 17 commits, one cause per commit.
+- **Lesson:** "It compiles" ≠ "it works". Next: test compile, the 544 tests, then Mixins at runtime (Phase 4).
