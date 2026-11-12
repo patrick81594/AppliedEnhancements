@@ -506,3 +506,18 @@ NeoForge 26.1.2.126, Java 25).
 - **Lessons:** Prove "configures + resolves" separately from "compiles".
   The NFRT step list shows how Minecraft is prepared. A compile error
   count of exactly 100 is javac's cap, not the real total.
+
+---
+
+## Phase 3, Step 1: The full error list
+
+- **Change (permanent, decision):** `options.compilerArgs.addAll(['-Xmaxerrs', '10000'])`
+  in `tasks.withType(JavaCompile)`.
+- **Result:** 108 errors, ALL "cannot find symbol", in 27 files (mostly
+  client/GUI): GuiGraphics 68, ResourceLocation 24, AE2 `Icon` 7,
+  ClickType 6, Util 2, AE2 `AEKeyRendering` 1.
+- **Lessons:** javac works in phases. First it resolves names (imports,
+  types); only when those succeed does it check method calls, overrides and
+  types in detail. So this list is the FIRST LAYER. Fixing it will likely
+  reveal more errors (changed method signatures etc.). Don't read the
+  first count as the size of the job.
