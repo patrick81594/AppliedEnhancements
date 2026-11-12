@@ -1,0 +1,28 @@
+// Dev container for the Applied Enhancements 26.1.2 port.
+// Open the repo folder from WSL in VS Code, then "Dev Containers: Reopen in Container".
+// The repo itself is bind-mounted automatically at /workspaces/AppliedEnhancements.
+{
+  "name": "AE port (JDK 25)",
+  "build": { "dockerfile": "Dockerfile" },
+
+  // Existing image user, UID/GID 1000 = WSL user harveyp (Phase 1, Step 5b).
+  "remoteUser": "ubuntu",
+
+  "mounts": [
+    // Named volume: Gradle's download cache survives container rebuilds.
+    "source=ae-port-gradle-cache,target=/home/ubuntu/.gradle,type=volume",
+    // Bind mount: built jars land on WSL, outside the repo, ready for the TEST instance.
+    "source=${localEnv:HOME}/dev/ae-port/out,target=/workspaces/out,type=bind",
+    // Bind mount, read-only: AE2 reference source matching the pack's version.
+    "source=${localEnv:HOME}/dev/ae-port/ae2-src,target=/workspaces/ae2-src,type=bind,readonly"
+  ],
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "vscjava.vscode-java-pack",
+        "vscjava.vscode-gradle"
+      ]
+    }
+  }
+}

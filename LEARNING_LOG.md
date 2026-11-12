@@ -153,3 +153,130 @@ NeoForge 26.1.2.126, Java 25).
   through a shell. WSL can run Windows `.exe` files directly ("interop").
   When quoting crosses two shells, put the commands in a script file and
   run `bash script.sh`.
+
+## Phase 1, Step 4c: First push
+
+- **Command (WSL, in YOUR OWN terminal):** `git push -u origin 26.1.2-neoforge`
+- **What went wrong first:** from a non-interactive (automated) shell,
+  GCM said "Cannot prompt because user interactivity has been disabled",
+  then Git hung waiting for a username.
+- **Lesson:** Any first-time login needs an interactive terminal.
+  Automation can only reuse credentials that are already stored. `-u`
+  links the local branch to `origin/<branch>`, so a plain `git push` /
+  `git pull` works after that.
+
+## Phase 1, Step 5a: Verify the JDK 25 image tag
+
+- **Command (HOST, PowerShell):**
+  ```
+  docker manifest inspect eclipse-temurin:25-jdk-noble
+  docker run --rm eclipse-temurin:25-jdk-noble java -version
+  ```
+- **Result:** the tag exists (amd64, arm64, ...). Temurin 25.0.5+8 LTS on
+  Ubuntu 24.04.5 "noble". Digest
+  `sha256:80f67fb3d6f76e2d817d98a4cc2a9cf05f054d4e6adc5e2144bde671d722e63f`.
+  Runs as root by default; the image already has a user `ubuntu`
+  (/home/ubuntu).
+- **Terms:** *tag* = a movable label in a registry. *Digest* = the
+  unchangeable content hash of one exact image. *Variant* = the same JDK
+  on a different base OS (`-noble`, `-alpine`, ...). *Layers* = the
+  stacked filesystem pieces an image is built from (shared between
+  images, hence "Already exists").
+- **Lesson:** Check a tag with `manifest inspect` (no download) before
+  you build on it. Pin the OS variant so the base doesn't change
+  underneath you.
+
+## Phase 1, Step 5b: Container user (UID/GID)
+
+- **Command:** `wsl -d Ubuntu -- id` (HOST) and
+  `docker run --rm eclipse-temurin:25-jdk-noble id ubuntu`.
+- **Result:** WSL `harveyp` = 1000:1000, image `ubuntu` = 1000:1000. The
+  image has no git and no sudo.
+- **Decision:** use the existing `ubuntu` user as the container user
+  (option A), and install sudo with no password.
+- **Lesson:** File ownership is stored as numbers (UID/GID); names are
+  only labels each system looks up. Matching UIDs = no root-owned files
+  in the bind-mounted repo.
+
+## Phase 1, Step 5c: Dockerfile
+
+- **What:** `.devcontainer/Dockerfile`: `FROM eclipse-temurin:25-jdk-noble`,
+  installs git + sudo (NOPASSWD rule in `/etc/sudoers.d/ubuntu`, mode
+  0440), pre-creates `/home/ubuntu/.gradle` owned by ubuntu, `USER ubuntu`.
+- **Lessons:**
+  - One `RUN` with `&&` = one layer. Clean up (`rm -rf /var/lib/apt/lists/*`)
+    in the SAME layer, or the files stay in the image anyway.
+  - `--no-install-recommends` keeps the image small.
+  - An empty named volume copies the image's content AND ownership at
+    that path on first mount. If the folder doesn't exist in the image,
+    it becomes root-owned, and a non-root Gradle fails.
+
+## Phase 1, Step 5d: devcontainer.json + mount folders
+
+- **What:** `.devcontainer/devcontainer.json`: build from the Dockerfile,
+  `remoteUser: ubuntu`, mounts:
+  - named volume `ae-port-gradle-cache` → `/home/ubuntu/.gradle`
+  - bind `~/dev/ae-port/out` → `/workspaces/out`
+  - bind read-only `~/dev/ae-port/ae2-src` → `/workspaces/ae2-src`
+  - VS Code extensions: Java Pack and Gradle.
+- **Command (WSL):** `mkdir -p ~/dev/ae-port/out ~/dev/ae-port/ae2-src`
+- **Lessons:** Volume = managed by Docker (caches). Bind = a real host
+  folder (files you look at). `--mount type=bind` fails if the source
+  folder is missing, so create it first. The opened repo folder is mounted
+  automatically, so it doesn't need an entry. devcontainer.json may have
+  comments (JSONC).
+
+## Phase 1, Step 5e: Build and smoke-test the image
+
+- **Command (WSL):** `docker build -t ae-port-dev:test .devcontainer`, then
+  `docker run --rm -v <repo>:/workspaces/... -v ae-port-gradle-cache:/home/ubuntu/.gradle ...`
+- **Result:** uid 1000 (ubuntu), Java 25.0.5, git 2.43.0, `sudo -n` OK,
+  `~/.gradle` volume owned by ubuntu, no root-owned files in the repo.
+  `sh ./gradlew --version` → Gradle 8.14.2, Launcher JVM 25.0.5.
+- **Problem found:** `./gradlew: Permission denied`. The repo stores
+  gradlew as mode `100644` (not executable), and upstream has the same.
+  The project's CI works around it with `bash gradlew`.
+- **Lessons:**
+  - Test the Dockerfile with plain `docker build`/`run` before going
+    through the IDE, to find out which layer is broken.
+  - `git ls-files -s <file>` shows the stored mode (100644 = file,
+    100755 = executable). `sh script` runs a script without the exec bit.
+  - Docker build layers are cached: an unchanged step shows `CACHED`.
+  - `gradlew --version` working on Java 25 does NOT prove that Gradle 8.14
+    can *build* on Java 25 (its notes only claim Java 24 support).
+
+## Phase 1, Step 5e-fix: Make gradlew executable
+
+- **Command (WSL):**
+  ```
+  git update-index --chmod=+x gradlew
+  chmod +x gradlew
+  git commit -m "build: make gradlew executable"
+  ```
+- **Result:** commit be72c57, `mode change 100644 => 100755`, 0 lines
+  changed. `./gradlew --version` works in the container.
+- **Lessons:** `update-index --chmod` changes the mode Git stores (works
+  even from Windows). Also `chmod` on disk, or `git status` reports a
+  mismatch when `core.fileMode=true`. One change per commit.
+  The "restricted method java.lang.System::load" WARNINGs = Java 24+
+  native-access rules (JEP 472) hitting an older Gradle. A first sign
+  that Gradle 8.14 is older than Java 25.
+
+## Phase 1, Step 5f: Open in VS Code: Reopen in Container
+
+- **How (HOST):** Ubuntu terminal → `cd ~/dev/ae-port/AppliedEnhancements && code .`
+  → bottom-left "WSL: Ubuntu" → menu → "Reopen in Container".
+- **Snag:** the command was missing. Its `when` clause (in the extension's
+  package.json) needs `workspaceFolderCount != 0`: a FOLDER must be
+  open, not just a WSL window.
+- **Verified from the host:** `docker ps --filter label=devcontainer.local_folder`,
+  `docker inspect` (mounts), `docker exec -u ubuntu ...`:
+  - repo bind (rw), `out` bind (rw; a test file arrives in WSL as
+    harveyp), `ae2-src` bind READ-ONLY ("Read-only file system"),
+    gradle volume (owned by ubuntu, the wrapper reused without a new download).
+  - `${localEnv:HOME}` expanded correctly.
+  - Image name ends in `-uid`: Dev Containers adds a small UID-sync layer
+    (updateRemoteUserUID). No change here because the UIDs already match.
+- **Lessons:** If a VS Code command is missing, read its `when` clause.
+  Verify a container from outside with `docker inspect` / `docker exec`,
+  and test bind mounts with a round-trip file.
