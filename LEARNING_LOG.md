@@ -433,3 +433,23 @@ NeoForge 26.1.2.126, Java 25).
   classpaths and working dirs without touching code. Read the plugin source
   before planning around a feature. Use `clean build` when comparing
   results, so stale files don't skew them.
+
+## Phase 2, Step 3: Gradle wrapper 8.14.2 → 9.2.1 (still 1.21.1)
+
+- **Command (JDK 21 container):**
+  ```
+  bash gradlew wrapper --gradle-version 9.2.1   # run 1: old Gradle writes the new version
+  bash gradlew wrapper                          # run 2: Gradle 9.2.1 writes its own scripts + jar
+  bash gradlew clean build --warning-mode all
+  ```
+- **Changed:** gradle-wrapper.properties (byte-identical to the official MDK's,
+  same git blob 23449a2), gradle-wrapper.jar, gradlew, gradlew.bat. gradlew
+  stays 100755.
+- **Result:** BUILD SUCCESSFUL in 27s. 544 tests / 99 suites / 0 failures,
+  jar entries identical to the baseline. `--warning-mode all` shows no Gradle
+  deprecations (only our own JEI javac warning).
+- **Lessons:** Run the wrapper task twice. `--warning-mode all` lists each
+  deprecation, which is the checklist before a major Gradle upgrade.
+  Adding `junit-platform-launcher` in advance avoided Gradle 9's "launcher
+  not found" test error. gradle-wrapper.jar is executable code in the repo
+  (a supply-chain risk); Gradle publishes checksums to verify it.
