@@ -430,7 +430,8 @@ public abstract class CraftConfirmMenuMixin implements CraftingCalculationProgre
             return;
         }
 
-        if (player.serverLevel().getGameTime() == appliedenhancements$lastProgressSyncTick) {
+        // MC 26: ServerPlayer.serverLevel() is gone; level() returns the ServerLevel now.
+        if (player.level().getGameTime() == appliedenhancements$lastProgressSyncTick) {
             return;
         }
         appliedenhancements$sendCalculationProgress(player, menu);
@@ -603,7 +604,7 @@ public abstract class CraftConfirmMenuMixin implements CraftingCalculationProgre
         if (snapshot.path() != AelisCalculationPath.AELIS) {
             return;
         }
-        appliedenhancements$lastProgressSyncTick = player.serverLevel().getGameTime();
+        appliedenhancements$lastProgressSyncTick = player.level().getGameTime();
         PacketDistributor.sendToPlayer(
                 player,
                 new CraftingCalculationProgressPayload(menu.containerId, snapshot));
