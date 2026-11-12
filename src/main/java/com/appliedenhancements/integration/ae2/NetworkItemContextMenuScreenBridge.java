@@ -1,6 +1,6 @@
 package com.appliedenhancements.integration.ae2;
 
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 
 /** Client screen bridge used by the generic container input hooks. */
 public interface NetworkItemContextMenuScreenBridge {
@@ -22,5 +22,5 @@ public interface NetworkItemContextMenuScreenBridge {
             char codePoint, int modifiers);
 
     void appliedenhancements$renderNetworkItemMenu(
-            GuiGraphics graphics, int mouseX, int mouseY, float partialTick);
+            GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick);
 }

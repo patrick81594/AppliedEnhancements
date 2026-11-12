@@ -7,7 +7,7 @@ import com.appliedenhancements.client.pattern.PatternQuickMoveController;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.world.inventory.Slot;
 
 /**
@@ -77,19 +77,19 @@ public final class PatternQuickMoveSession {
                 mouseX, mouseY, guiLeft, guiTop, menuSlots, displayToSource, slotOffsetY);
     }
 
-    public void renderSelectionBox(GuiGraphics graphics) {
+    public void renderSelectionBox(GuiGraphicsExtractor graphics) {
         delegate.renderSelectionBox(graphics);
     }
 
     public void renderSelectedSlots(
-            GuiGraphics graphics,
+            GuiGraphicsExtractor graphics,
             Collection<Slot> menuSlots,
             Map<PatternSlotRef, PatternSlotRef> displayToSource) {
         delegate.renderSelectedSlots(graphics, menuSlots, displayToSource);
     }
 
     public void renderSelectedSlots(
-            GuiGraphics graphics,
+            GuiGraphicsExtractor graphics,
             Collection<Slot> menuSlots,
             Map<PatternSlotRef, PatternSlotRef> displayToSource,
             int slotOffsetY) {

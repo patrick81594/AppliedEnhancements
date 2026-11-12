@@ -11,7 +11,7 @@ import com.github.appliedenhancements.integration.ae2.AelisCalculationPath;
 import com.github.appliedenhancements.integration.ae2.AelisCalculationPathMenuBridge;
 import net.minecraft.ChatFormatting;
 import net.minecraft.util.Util;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -73,7 +73,7 @@ public abstract class CraftConfirmScreenMixin {
 
     @Inject(method = "drawFG", at = @At("TAIL"))
     private void appliedenhancements$drawCalculationProgress(
-            GuiGraphics graphics,
+            GuiGraphicsExtractor graphics,
             int offsetX,
             int offsetY,
             int mouseX,

@@ -7,7 +7,7 @@ import com.appliedenhancements.client.menu.ClientNetworkItemContext;
 import com.appliedenhancements.client.menu.NetworkItemContextMenu;
 import com.appliedenhancements.client.menu.ItemContextMenuKeyMapping;
 import com.appliedenhancements.integration.ae2.NetworkItemContextMenuScreenBridge;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.world.inventory.Slot;
 import appeng.client.gui.widgets.AETextField;
 import org.spongepowered.asm.mixin.Mixin;
@@ -119,7 +119,7 @@ public abstract class MEStorageScreenContextMenuMixin
 
     @Override
     public void appliedenhancements$renderNetworkItemMenu(
-            GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+            GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         appliedenhancements$networkItemMenu.render(
                 graphics, mouseX, mouseY, partialTick);
     }

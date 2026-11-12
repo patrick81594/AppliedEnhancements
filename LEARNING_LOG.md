@@ -571,3 +571,28 @@ NeoForge 26.1.2.126, Java 25).
 - **Lessons:** "Keep the behaviour" means understanding what the old code
   DID (vertex z) and what the new system offers, not just finding a method
   with a similar name.
+
+## Phase 3, Steps 8–9a: GuiGraphics → GuiGraphicsExtractor (the GUI redesign)
+
+- **Research:** MC 26 widgets/screens no longer draw; they "extract a render state".
+  Translation (verified in the MC 26 sources, the 1.21.1 NeoForm sources in the baseline
+  worktree, AE2 19 vs 26): type → `GuiGraphicsExtractor`; `drawString`→`text`;
+  `renderItem`→`item`; `renderTooltip(font, c, x, y)`→`setTooltipForNextFrame(c, x, y)`;
+  `renderComponentTooltip`→`setComponentTooltipForNextFrame`; `fill`/`blit`/scissor stay;
+  `pose()` = JOML `Matrix3x2fStack`: `pushPose/popPose`→`pushMatrix/popMatrix`,
+  `translate(x,y,z)`→`translate(x,y)`, `scale(x,y,1)`→`scale(x,y)`.
+  Hooks: buttons override `extractContents` (AbstractButton.extractWidgetRenderState is
+  final), screens `extractRenderState`.
+- **z decision (Patrick: option 1):** small z (4, 24: label above its own background) →
+  dropped (draw order). Large z (700/500 context menus, 240 badge above items) →
+  `graphics.nextStratum()` (the MC 26 tool for "above everything drawn before"; AE2 uses
+  it for stack sizes over items). All are on the in-game checklist.
+- **Fix:** sed for the 1:1 renames (20 files), plus manual edits for z and tooltips.
+  My first sed failed on a wrong capture group (`\4` → `\3`); sed validates all
+  expressions before touching files, so nothing was half-applied.
+- **Result:** GuiGraphics errors gone. Total 68 → **106**: javac reached the NEXT LAYER
+  (NBT getters returning Optional, networking `sendToServer`, input events, private
+  fields, `@Override` mismatches, …).
+- **Lessons:** Count going UP after a fix can be progress: it means javac now gets
+  past name resolution into those files. `grep -P '\r'` also matches binary files
+  (PNG), so read the file name before panicking.

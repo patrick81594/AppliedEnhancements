@@ -1,6 +1,6 @@
 package com.appliedenhancements.client.menu;
 
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 
 /**
@@ -61,7 +61,7 @@ public final class OptionalJeiItemContextMenu {
 
         default void render(
                 Screen screen,
-                GuiGraphics graphics,
+                GuiGraphicsExtractor graphics,
                 int mouseX,
                 int mouseY,
                 float partialTick) {

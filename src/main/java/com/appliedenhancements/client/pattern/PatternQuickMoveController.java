@@ -9,7 +9,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.world.inventory.Slot;
 
 /** Per-screen selection and cut buffer. The object is discarded when the screen closes. */
@@ -139,7 +139,7 @@ public final class PatternQuickMoveController {
         return true;
     }
 
-    public void renderSelectionBox(GuiGraphics graphics) {
+    public void renderSelectionBox(GuiGraphicsExtractor graphics) {
         if (!selecting) {
             return;
         }
@@ -155,14 +155,14 @@ public final class PatternQuickMoveController {
     }
 
     public void renderSelectedSlots(
-            GuiGraphics graphics,
+            GuiGraphicsExtractor graphics,
             Collection<Slot> menuSlots,
             Map<PatternSlotRef, PatternSlotRef> displayToSource) {
         renderSelectedSlots(graphics, menuSlots, displayToSource, 0);
     }
 
     public void renderSelectedSlots(
-            GuiGraphics graphics,
+            GuiGraphicsExtractor graphics,
             Collection<Slot> menuSlots,
             Map<PatternSlotRef, PatternSlotRef> displayToSource,
             int slotOffsetY) {

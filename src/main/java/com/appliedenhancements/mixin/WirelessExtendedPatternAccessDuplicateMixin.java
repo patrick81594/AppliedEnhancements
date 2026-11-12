@@ -37,7 +37,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
@@ -262,7 +262,7 @@ public abstract class WirelessExtendedPatternAccessDuplicateMixin
 
     @Inject(method = "drawBG", at = @At("RETURN"))
     private void appliedenhancements$drawDuplicateBackground(
-            GuiGraphics graphics,
+            GuiGraphicsExtractor graphics,
             int offsetX,
             int offsetY,
             int mouseX,
@@ -316,7 +316,7 @@ public abstract class WirelessExtendedPatternAccessDuplicateMixin
 
     @Inject(method = "drawFG", at = @At("RETURN"))
     private void appliedenhancements$drawQuickMoveState(
-            GuiGraphics graphics,
+            GuiGraphicsExtractor graphics,
             int offsetX,
             int offsetY,
             int mouseX,
@@ -516,7 +516,7 @@ public abstract class WirelessExtendedPatternAccessDuplicateMixin
 
     @Override
     public void appliedenhancements$renderQuickMoveOverlay(
-            GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+            GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         appliedenhancements$ensureQuickMoveState();
         if (!appliedenhancements$isSupportedScreen() || !appliedenhancements$quickMove.enabled()) {
             return;
@@ -528,8 +528,7 @@ public abstract class WirelessExtendedPatternAccessDuplicateMixin
         }
         for (Hit hit : appliedenhancements$headerHits) {
             if (hit.contains(mouseX, mouseY)) {
-                graphics.renderTooltip(
-                        Minecraft.getInstance().font,
+                graphics.setTooltipForNextFrame(
                         Component.translatable(hit.action() == Action.CUT
                                 ? "gui.appliedenhancements.pattern_quick_move.cut_all"
                                 : "gui.appliedenhancements.pattern_quick_move.paste_all"),
@@ -552,7 +551,7 @@ public abstract class WirelessExtendedPatternAccessDuplicateMixin
                         "gui.appliedenhancements.pattern_quick_move.paste");
             }
             if (action != null) {
-                graphics.renderTooltip(Minecraft.getInstance().font, action, mouseX, mouseY);
+                graphics.setTooltipForNextFrame(action, mouseX, mouseY);
             }
         }
     }

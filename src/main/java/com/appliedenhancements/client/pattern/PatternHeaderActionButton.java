@@ -4,7 +4,7 @@ import appeng.api.implementations.blockentities.PatternContainerGroup;
 import appeng.client.gui.style.Blitter;
 import appeng.util.Icon;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.locale.Language;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.FormattedText;
@@ -36,7 +36,7 @@ public final class PatternHeaderActionButton {
     }
 
     public static void render(
-            GuiGraphics graphics,
+            GuiGraphicsExtractor graphics,
             int x,
             int y,
             Action action,
@@ -53,10 +53,11 @@ public final class PatternHeaderActionButton {
         Component label = Component.translatable(action.translationKey);
         int textX = x + (SIZE - font.width(label)) / 2;
         int textY = y + 1;
-        graphics.pose().pushPose();
-        graphics.pose().translate(0, 0, 24);
+        // The old translate(0, 0, 24) only lifted the label above its background;
+        // in the 2D GUI the label is already on top because it is drawn after it.
+        graphics.pose().pushMatrix();
         try {
-            graphics.drawString(
+            graphics.text(
                     font,
                     label,
                     textX,
@@ -64,7 +65,7 @@ public final class PatternHeaderActionButton {
                     active ? 0xFFE0E0E0 : 0xFF777777,
                     false);
         } finally {
-            graphics.pose().popPose();
+            graphics.pose().popMatrix();
         }
     }
 

@@ -7,7 +7,7 @@ import com.github.appliedenhancements.integration.ae2.AelisCalculationPathMenuBr
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import java.util.List;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Pseudo;
@@ -37,8 +37,8 @@ public abstract class Ae2CraftingTreeWidgetMixin {
     }
 
     @WrapOperation(method = "draw", at = @At(value = "INVOKE",
-            target = "Lappeng/client/gui/AEBaseScreen;drawTooltipWithHeader(Lnet/minecraft/client/gui/GuiGraphics;IILjava/util/List;)V"))
-    private void appliedenhancements$exactTooltip(AEBaseScreen<?> screen, GuiGraphics graphics, int x, int y,
+            target = "Lappeng/client/gui/AEBaseScreen;drawTooltipWithHeader(Lnet/minecraft/client/gui/GuiGraphicsExtractor;IILjava/util/List;)V"))
+    private void appliedenhancements$exactTooltip(AEBaseScreen<?> screen, GuiGraphicsExtractor graphics, int x, int y,
             List<Component> lines, Operation<Void> original) {
         original.call(screen, graphics, x, y,
                 ExactCraftingTree.tooltip(this, x + screen.getGuiLeft(), y + screen.getGuiTop(), lines));

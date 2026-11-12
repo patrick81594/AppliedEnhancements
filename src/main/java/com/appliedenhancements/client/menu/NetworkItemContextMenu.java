@@ -13,7 +13,7 @@ import java.util.Locale;
 import java.util.OptionalLong;
 import java.util.function.LongConsumer;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.network.chat.Component;
 import org.lwjgl.glfw.GLFW;
@@ -169,12 +169,14 @@ public final class NetworkItemContextMenu {
     }
 
     public void render(
-            GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+            GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         if (!isOpen()) {
             return;
         }
-        graphics.pose().pushPose();
-        graphics.pose().translate(0, 0, 700);
+        // Was translate(0, 0, 700) = "above everything" in the 1.21 3D GUI. The 2D GUI of
+        // MC 26 has no z; a new stratum puts the menu above everything drawn before it.
+        graphics.nextStratum();
+        graphics.pose().pushMatrix();
         try {
             if (amountField != null) {
                 renderAmountInput(graphics, mouseX, mouseY, partialTick);
@@ -182,7 +184,7 @@ public final class NetworkItemContextMenu {
                 renderEntries(graphics, mouseX, mouseY);
             }
         } finally {
-            graphics.pose().popPose();
+            graphics.pose().popMatrix();
         }
     }
 
@@ -240,7 +242,7 @@ public final class NetworkItemContextMenu {
     }
 
     private void renderEntries(
-            GuiGraphics graphics, int mouseX, int mouseY) {
+            GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
         int height = entries.size() * ROW_HEIGHT + 4;
         renderPanel(graphics, x, y, width, height);
         var font = Minecraft.getInstance().font;
@@ -251,16 +253,16 @@ public final class NetworkItemContextMenu {
                         rowY + ROW_HEIGHT, 0x8055AAFF);
             }
             int textY = rowY + Math.max(1, (ROW_HEIGHT - font.lineHeight) / 2);
-            graphics.drawString(font, entries.get(row).label(),
+            graphics.text(font, entries.get(row).label(),
                     x + 7, textY, 0xFF303342, false);
         }
     }
 
     private void renderAmountInput(
-            GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+            GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         renderPanel(graphics, x, y, width, AMOUNT_HEIGHT);
         var font = Minecraft.getInstance().font;
-        graphics.drawString(font, Component.translatable(
+        graphics.text(font, Component.translatable(
                         "gui.appliedenhancements.network_item_menu.amount_prompt"),
                 x + 6, y + 7, 0xFF303342, false);
 
@@ -299,7 +301,7 @@ public final class NetworkItemContextMenu {
     }
 
     private static void renderPanel(
-            GuiGraphics graphics, int x, int y, int width, int height) {
+            GuiGraphicsExtractor graphics, int x, int y, int width, int height) {
         graphics.fill(x, y, x + width, y + height, 0xFFAEB2C4);
         graphics.fill(x, y, x + width, y + 1, 0xFFF4F6FF);
         graphics.fill(x, y + height - 1, x + width, y + height, 0xFF4D5060);
@@ -308,7 +310,7 @@ public final class NetworkItemContextMenu {
     }
 
     private static void renderSmallButton(
-            GuiGraphics graphics,
+            GuiGraphicsExtractor graphics,
             int x,
             int y,
             int width,
@@ -322,7 +324,7 @@ public final class NetworkItemContextMenu {
         graphics.fill(x, y, x + width, y + 1, 0xFFDDE4F8);
         var font = Minecraft.getInstance().font;
         int textX = x + (width - font.width(label)) / 2;
-        graphics.drawString(font, label, textX, y + 4,
+        graphics.text(font, label, textX, y + 4,
                 active ? 0xFFFFFFFF : 0xFFB0B0B0, false);
     }
 

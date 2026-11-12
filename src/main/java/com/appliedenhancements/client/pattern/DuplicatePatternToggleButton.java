@@ -6,7 +6,7 @@ import appeng.util.Icon;
 import java.util.List;
 import java.util.function.Consumer;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.Rect2i;
 import net.minecraft.network.chat.Component;
 
@@ -41,7 +41,7 @@ public final class DuplicatePatternToggleButton extends IconButton {
     }
 
     @Override
-    public void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+    public void renderWidget(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         if (!visible) {
             return;
         }
@@ -63,11 +63,11 @@ public final class DuplicatePatternToggleButton extends IconButton {
         int textX = Math.round(
                 (getX() + BUTTON_WIDTH / 2.0F) / textScale - labelWidth / 2.0F);
         int textY = Math.round((getY() + 2 + yOffset) / textScale);
-        graphics.pose().pushPose();
-        graphics.pose().translate(0, 0, 4);
-        graphics.pose().scale(textScale, textScale, 1.0F);
+        // Old translate(0, 0, 4) dropped: the label is drawn after the background (2D GUI).
+        graphics.pose().pushMatrix();
+        graphics.pose().scale(textScale, textScale);
         try {
-            graphics.drawString(
+            graphics.text(
                     font,
                     label,
                     textX,
@@ -75,7 +75,7 @@ public final class DuplicatePatternToggleButton extends IconButton {
                     selected ? 0xFF55FFFF : 0xFFE0E0E0,
                     false);
         } finally {
-            graphics.pose().popPose();
+            graphics.pose().popMatrix();
         }
     }
 

@@ -1,6 +1,6 @@
 package com.appliedenhancements.integration.ae2;
 
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 
 public interface PatternQuickMoveScreenBridge {
     boolean appliedenhancements$openQuickMoveContextMenu(
@@ -14,5 +14,5 @@ public interface PatternQuickMoveScreenBridge {
     boolean appliedenhancements$quickMoveMouseReleased(double mouseX, double mouseY, int button);
 
     void appliedenhancements$renderQuickMoveOverlay(
-            GuiGraphics graphics, int mouseX, int mouseY, float partialTick);
+            GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick);
 }

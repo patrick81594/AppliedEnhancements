@@ -39,7 +39,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.inventory.ContainerInput;
@@ -337,7 +337,7 @@ public abstract class PatternAccessTermScreenDuplicateMixin
 
     @Inject(method = "drawBG", at = @At("RETURN"))
     private void appliedenhancements$drawSecondToolbarRow(
-            GuiGraphics graphics,
+            GuiGraphicsExtractor graphics,
             int offsetX,
             int offsetY,
             int mouseX,
@@ -363,7 +363,7 @@ public abstract class PatternAccessTermScreenDuplicateMixin
 
     @Inject(method = "drawBG", at = @At("RETURN"))
     private void appliedenhancements$drawDuplicateBackground(
-            GuiGraphics graphics,
+            GuiGraphicsExtractor graphics,
             int offsetX,
             int offsetY,
             int mouseX,
@@ -417,7 +417,7 @@ public abstract class PatternAccessTermScreenDuplicateMixin
 
     @Inject(method = "drawFG", at = @At("RETURN"))
     private void appliedenhancements$drawQuickMoveState(
-            GuiGraphics graphics,
+            GuiGraphicsExtractor graphics,
             int offsetX,
             int offsetY,
             int mouseX,
@@ -622,7 +622,7 @@ public abstract class PatternAccessTermScreenDuplicateMixin
 
     @Override
     public void appliedenhancements$renderQuickMoveOverlay(
-            GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+            GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         appliedenhancements$ensureQuickMoveState();
         if (!appliedenhancements$isSupportedScreen() || !appliedenhancements$quickMove.enabled()) {
             return;
@@ -634,8 +634,7 @@ public abstract class PatternAccessTermScreenDuplicateMixin
         }
         for (Hit hit : appliedenhancements$headerHits) {
             if (hit.contains(mouseX, mouseY)) {
-                graphics.renderTooltip(
-                        Minecraft.getInstance().font,
+                graphics.setTooltipForNextFrame(
                         Component.translatable(hit.action() == Action.CUT
                                 ? "gui.appliedenhancements.pattern_quick_move.cut_all"
                                 : "gui.appliedenhancements.pattern_quick_move.paste_all"),
@@ -658,7 +657,7 @@ public abstract class PatternAccessTermScreenDuplicateMixin
                         "gui.appliedenhancements.pattern_quick_move.paste");
             }
             if (action != null) {
-                graphics.renderTooltip(Minecraft.getInstance().font, action, mouseX, mouseY);
+                graphics.setTooltipForNextFrame(action, mouseX, mouseY);
             }
         }
     }

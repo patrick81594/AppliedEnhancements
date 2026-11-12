@@ -2,7 +2,7 @@ package com.appliedenhancements.mixin;
 
 import com.appliedenhancements.integration.ae2.PatternQuickMoveScreenBridge;
 import com.appliedenhancements.integration.ae2.NetworkItemContextMenuScreenBridge;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -61,7 +61,7 @@ public abstract class AbstractContainerScreenQuickMoveMixin {
 
     @Inject(method = "render", at = @At("RETURN"))
     private void appliedenhancements$renderQuickMoveOverlay(
-            GuiGraphics graphics,
+            GuiGraphicsExtractor graphics,
             int mouseX,
             int mouseY,
             float partialTick,

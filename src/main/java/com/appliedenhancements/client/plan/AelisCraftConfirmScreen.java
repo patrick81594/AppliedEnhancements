@@ -32,7 +32,7 @@ import java.util.Map;
 import java.util.Set;
 import net.minecraft.ChatFormatting;
 import net.minecraft.util.Util;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.Tooltip;
@@ -422,7 +422,7 @@ public final class AelisCraftConfirmScreen extends CraftConfirmScreen {
                 && my >= topPos + graphControlsTop() && my < topPos + graphControlsTop() + 16;
     }
 
-    private void drawTree(GuiGraphics g) {
+    private void drawTree(GuiGraphicsExtractor g) {
         int canvasRight = layout.tableRight() - 2;
         int canvasBottom = graphCanvasBottom();
         if (graphFullscreen && graphArea.inlineHint()) {
@@ -430,7 +430,7 @@ public final class AelisCraftConfirmScreen extends CraftConfirmScreen {
         }
         if (graphArea.inlineHint()) {
             for (int i = 0; i < graphHintLines.size(); i++) {
-                g.drawString(font, graphHintLines.get(i), 18, graphHintTop() + i * (font.lineHeight + 1),
+                g.text(font, graphHintLines.get(i), 18, graphHintTop() + i * (font.lineHeight + 1),
                         graph != null && !graph.complete() ? RED : MUTED, false);
             }
         } else {
@@ -442,15 +442,15 @@ public final class AelisCraftConfirmScreen extends CraftConfirmScreen {
             int y = graphCanvasTop() + 4;
             for (var line : font.split(tr("tree.loading"), canvasRight - 38)) {
                 if (y + font.lineHeight > canvasBottom) break;
-                g.drawString(font, line, 20, y, MUTED, false);
+                g.text(font, line, 20, y, MUTED, false);
                 y += font.lineHeight + 1;
             }
             return;
         }
         g.enableScissor(leftPos + 14, topPos + graphCanvasTop(), leftPos + canvasRight, topPos + canvasBottom);
-        g.pose().pushPose();
-        g.pose().translate(graphViewport.x(), graphCanvasTop() + graphViewport.y(), 0);
-        g.pose().scale((float) graphViewport.zoom(), (float) graphViewport.zoom(), 1);
+        g.pose().pushMatrix();
+        g.pose().translate(graphViewport.x(), graphCanvasTop() + graphViewport.y());
+        g.pose().scale((float) graphViewport.zoom(), (float) graphViewport.zoom());
         var orderedBoxes = graphInteraction.boxes(graphDrawing);
         var boxes = new HashMap<Integer, AelisGraphLayout.Box>();
         for (var box : orderedBoxes) boxes.put(box.node(), box);
@@ -463,7 +463,7 @@ public final class AelisCraftConfirmScreen extends CraftConfirmScreen {
                     (int) bounds.y() + 2, GRAPH_CYCLE);
             clipped(g, tr("tree.cycle", group.nodes().size()), (int) bounds.x() + 5,
                     (int) bounds.y() + 5, (int) bounds.width() - 23, GRAPH_CYCLE);
-            g.drawString(font, group.collapsed() ? "+" : "−",
+            g.text(font, group.collapsed() ? "+" : "−",
                     (int) (bounds.x() + bounds.width() - 12), (int) bounds.y() + 5, GRAPH_CYCLE, false);
         }
         for (var edge : graph.edges()) {
@@ -492,7 +492,7 @@ public final class AelisCraftConfirmScreen extends CraftConfirmScreen {
             AEKeyRendering.drawInGui(minecraft, g, x + 5, y + (height - 16) / 2, row.key());
             var lines = graphNodeLines.getOrDefault(box.node(), List.of());
             for (int i = 0; i < lines.size(); i++) {
-                g.drawString(font, lines.get(i), x + 25, y + 4 + i * (font.lineHeight + 2), INK, false);
+                g.text(font, lines.get(i), x + 25, y + 4 + i * (font.lineHeight + 2), INK, false);
             }
             if (graphDrawing.matches().contains(box.node())) {
                 int match = 0xFF63A6CE;
@@ -502,11 +502,11 @@ public final class AelisCraftConfirmScreen extends CraftConfirmScreen {
                 g.fill(x, y + height - 1, x + width, y + height, match);
             }
         }
-        g.pose().popPose();
+        g.pose().popMatrix();
         g.disableScissor();
     }
 
-    private void drawZoomControls(GuiGraphics g, int right) {
+    private void drawZoomControls(GuiGraphicsExtractor g, int right) {
         int x = right - GRAPH_ZOOM_WIDTH;
         int y = graphControlsTop();
         buttonFace(g, x, y, 23, 16);
@@ -518,14 +518,14 @@ public final class AelisCraftConfirmScreen extends CraftConfirmScreen {
         text(g, Component.literal("+"), x + 77, y + 4, INK);
     }
 
-    private static void buttonFace(GuiGraphics g, int x, int y, int width, int height) {
+    private static void buttonFace(GuiGraphicsExtractor g, int x, int y, int width, int height) {
         g.fill(x, y, x + width, y + height, 0xFF555366);
         g.fill(x + 1, y + 1, x + width - 1, y + height - 1, 0xFFD0CEDB);
         g.fill(x + 1, y + 1, x + width - 1, y + 2, 0xFFF1EEF7);
         g.fill(x + 1, y + 1, x + 2, y + height - 1, 0xFFF1EEF7);
     }
 
-    private static void line(GuiGraphics g, double x1, double y1, double x2, double y2,
+    private static void line(GuiGraphicsExtractor g, double x1, double y1, double x2, double y2,
             int color, boolean dashed) {
         double middle = (y1 + y2) / 2.0;
         segment(g, x1, y1, x1, middle, color, dashed);
@@ -533,7 +533,7 @@ public final class AelisCraftConfirmScreen extends CraftConfirmScreen {
         segment(g, x2, middle, x2, y2, color, dashed);
     }
 
-    private static void segment(GuiGraphics g, double x1, double y1, double x2, double y2,
+    private static void segment(GuiGraphicsExtractor g, double x1, double y1, double x2, double y2,
             int color, boolean dashed) {
         if (Math.round(y1) == Math.round(y2)) {
             int start = (int) Math.round(Math.min(x1, x2));
@@ -590,13 +590,13 @@ public final class AelisCraftConfirmScreen extends CraftConfirmScreen {
     }
 
     @Override
-    public void drawBG(GuiGraphics g, int ox, int oy, int mx, int my, float partialTicks) {
-        g.pose().pushPose();
-        g.pose().translate(ox, oy, 0);
+    public void drawBG(GuiGraphicsExtractor g, int ox, int oy, int mx, int my, float partialTicks) {
+        g.pose().pushMatrix();
+        g.pose().translate(ox, oy);
         if (graphFullscreen) {
             bevel(g, 0, 0, imageWidth, imageHeight, 0xFFC3C2D1, false);
             g.fill(14, graphControlsTop() - 3, layout.tableRight() - 2, graphPanelBottom(), 0xFFB0AFBF);
-            g.pose().popPose();
+            g.pose().popMatrix();
             return;
         }
         g.fill(2, 3, imageWidth + 2, imageHeight + 3, 0x70000000);
@@ -610,11 +610,11 @@ public final class AelisCraftConfirmScreen extends CraftConfirmScreen {
         if (view == View.TREE) {
             g.fill(14, graphControlsTop() - 3, layout.tableRight() - 2, graphPanelBottom(), 0xFFB0AFBF);
         }
-        g.pose().popPose();
+        g.pose().popMatrix();
     }
 
     @Override
-    public void drawFG(GuiGraphics g, int ox, int oy, int mx, int my) {
+    public void drawFG(GuiGraphicsExtractor g, int ox, int oy, int mx, int my) {
         if (graphFullscreen) {
             drawTree(g);
             return;
@@ -675,7 +675,7 @@ public final class AelisCraftConfirmScreen extends CraftConfirmScreen {
         }
     }
 
-    private void drawCalculating(GuiGraphics g) {
+    private void drawCalculating(GuiGraphicsExtractor g) {
         Component label = tr("waiting");
         int barWidth = layout.tableRight() - 40;
         int filled = -1;
@@ -704,7 +704,7 @@ public final class AelisCraftConfirmScreen extends CraftConfirmScreen {
         }
     }
 
-    private void drawScroll(GuiGraphics g) {
+    private void drawScroll(GuiGraphicsExtractor g) {
         int x = layout.tableRight() - 8;
         int h = layout.rowsBottom() - AelisPlanLayout.ROW_TOP;
         g.fill(x, AelisPlanLayout.ROW_TOP, x + 4, layout.rowsBottom(), 0xFF858297);
@@ -715,14 +715,14 @@ public final class AelisCraftConfirmScreen extends CraftConfirmScreen {
     }
 
     @Override
-    public void render(GuiGraphics g, int mx, int my, float partialTicks) {
+    public void render(GuiGraphicsExtractor g, int mx, int my, float partialTicks) {
         super.render(g, mx, my, partialTicks);
         if (minecraft.screen != this) return;
         if (view == View.TREE && inGraphHelp(mx, my)) {
             var tips = new ArrayList<Component>();
             tips.add(tr("tree.hint"));
             if (graph != null && !graph.complete()) tips.add(tr("tree.truncated"));
-            g.renderComponentTooltip(font, tips, mx, my);
+            g.setComponentTooltipForNextFrame(font, tips, mx, my);
             return;
         }
         var row = view == View.TREE ? treeRowUnderMouse(mx, my) : rowUnderMouse(mx, my);
@@ -734,7 +734,7 @@ public final class AelisCraftConfirmScreen extends CraftConfirmScreen {
             tooltip.add(tr("tooltip." + value.getKey(), CraftingPlanAmountFormatter.format(
                     row.key(), value.getValue(), AmountFormat.FULL)).withStyle(ChatFormatting.GRAY));
         }
-        g.renderComponentTooltip(font, tooltip, mx, my);
+        g.setComponentTooltipForNextFrame(font, tooltip, mx, my);
     }
 
     private AelisPlanRows.Row<AEKey> rowUnderMouse(double mx, double my) {
@@ -917,30 +917,30 @@ public final class AelisCraftConfirmScreen extends CraftConfirmScreen {
         return super.keyPressed(key, scanCode, modifiers);
     }
 
-    private void amount(GuiGraphics g, AEKey key, BigInteger amount, int end, int y, int color) {
+    private void amount(GuiGraphicsExtractor g, AEKey key, BigInteger amount, int end, int y, int color) {
         var label = Component.literal(CraftingPlanAmountFormatter.format(key, amount, AmountFormat.SLOT));
         int w = Math.min(44, font.width(label));
         clipped(g, label, end - w, y, w, color);
     }
 
-    private void clipped(GuiGraphics g, Component value, int x, int y, int maxWidth, int color) {
+    private void clipped(GuiGraphicsExtractor g, Component value, int x, int y, int maxWidth, int color) {
         if (maxWidth <= 0) return;
         String text = value.getString();
         if (font.width(text) > maxWidth) text = font.plainSubstrByWidth(text, Math.max(0, maxWidth - font.width("…"))) + "…";
-        g.drawString(font, text, x, y, color, false);
+        g.text(font, text, x, y, color, false);
     }
 
-    private void text(GuiGraphics g, Component value, int x, int y, int color) {
-        g.drawString(font, value, x, y, color, false);
+    private void text(GuiGraphicsExtractor g, Component value, int x, int y, int color) {
+        g.text(font, value, x, y, color, false);
     }
 
-    private void right(GuiGraphics g, Component value, int end, int y, int color) {
+    private void right(GuiGraphicsExtractor g, Component value, int end, int y, int color) {
         text(g, value, end - font.width(value), y, color);
     }
 
     private static MutableComponent tr(String key, Object... values) { return Component.translatable(PREFIX + key, values); }
 
-    private static void bevel(GuiGraphics g, int x, int y, int w, int h, int color, boolean inset) {
+    private static void bevel(GuiGraphicsExtractor g, int x, int y, int w, int h, int color, boolean inset) {
         g.fill(x, y, x + w, y + h, 0xFF555366);
         g.fill(x + 1, y + 1, x + w - 1, y + h - 1, color);
         int light = inset ? 0xFF8C899F : 0xFFF1EEF7;
@@ -951,7 +951,7 @@ public final class AelisCraftConfirmScreen extends CraftConfirmScreen {
         g.fill(x + w - 2, y + 2, x + w - 1, y + h - 1, dark);
     }
 
-    private static void drawMark(GuiGraphics g, int x, int y) {
+    private static void drawMark(GuiGraphicsExtractor g, int x, int y) {
         // Sample the whole mark, keeping the AE / LIS spacing and frame padding at every GUI scale.
         g.blit(MARK, x, y, 24, 24, 0.0F, 0.0F, 48, 48, 48, 48);
     }

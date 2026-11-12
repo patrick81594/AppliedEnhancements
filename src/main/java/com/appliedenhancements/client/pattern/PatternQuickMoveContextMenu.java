@@ -3,7 +3,7 @@ package com.appliedenhancements.client.pattern;
 import com.appliedenhancements.client.menu.ClientContextMenuState;
 import java.util.List;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
 
 /** Small AE-colored secondary menu used for cut/paste actions. */
@@ -48,13 +48,15 @@ public final class PatternQuickMoveContextMenu {
         return true;
     }
 
-    public void render(GuiGraphics graphics, int mouseX, int mouseY) {
+    public void render(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
         if (!isOpen()) {
             return;
         }
         int height = entries.size() * ROW_HEIGHT + 4;
-        graphics.pose().pushPose();
-        graphics.pose().translate(0, 0, 500);
+        // Was translate(0, 0, 500) = "above everything" in the 1.21 3D GUI. The 2D GUI of
+        // MC 26 has no z; a new stratum puts the menu above everything drawn before it.
+        graphics.nextStratum();
+        graphics.pose().pushMatrix();
         try {
             graphics.fill(x, y, x + WIDTH, y + height, 0xFFAEB2C4);
             graphics.fill(x, y, x + WIDTH, y + 1, 0xFFF4F6FF);
@@ -70,11 +72,11 @@ public final class PatternQuickMoveContextMenu {
                     graphics.fill(x + 1, rowY, x + WIDTH - 1, rowY + ROW_HEIGHT, 0x8055AAFF);
                 }
                 int textY = rowY + Math.max(1, (ROW_HEIGHT - font.lineHeight) / 2);
-                graphics.drawString(font, entries.get(row).label, x + 7, textY,
+                graphics.text(font, entries.get(row).label, x + 7, textY,
                         0xFF303342, false);
             }
         } finally {
-            graphics.pose().popPose();
+            graphics.pose().popMatrix();
         }
     }
 
