@@ -20,6 +20,8 @@ version = mod_version
 group = mod_group_id
 
 repositories {
+    // AE2 26.x is published to Maven Central (no longer to modmaven).
+    mavenCentral()
     mavenLocal()
     maven {
         name = 'Modmaven (K4U-NL)'
@@ -144,14 +146,14 @@ dependencies {
     // JEI is optional at runtime. The full compile artifact is used by the
     // isolated client integration so cheat actions follow JEI's own mode,
     // permission synchronization and give behavior.
-    compileOnly "mezz.jei:jei-1.21.1-neoforge:${jei_version}"
+    compileOnly "mezz.jei:jei-${minecraft_version}-neoforge:${jei_version}"
     if (!project.hasProperty('withoutJei')) {
-        localRuntime "mezz.jei:jei-1.21.1-neoforge:${jei_version}"
+        localRuntime "mezz.jei:jei-${minecraft_version}-neoforge:${jei_version}"
     }
 
-    // MixinExtras for advanced mixin features
-    implementation 'io.github.llamalad7:mixinextras-neoforge:0.5.0'
-    annotationProcessor 'io.github.llamalad7:mixinextras-common:0.5.0'
+    // MixinExtras: the runtime (mixinextras-neoforge 0.5.5) ships with NeoForge
+    // 26.1.2.126, so only the annotation processor is declared here, at the same version.
+    annotationProcessor 'io.github.llamalad7:mixinextras-common:0.5.5'
 
     testImplementation platform('org.junit:junit-bom:5.11.4')
     testImplementation 'org.junit.jupiter:junit-jupiter'

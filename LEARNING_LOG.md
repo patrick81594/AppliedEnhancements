@@ -469,3 +469,40 @@ NeoForge 26.1.2.126, Java 25).
 - **Lessons:** Isolate the Java jump from the game jump. A class file's
   major version is bytes 6–7 of the file (`od -An -j6 -N2`): 65 = Java 21,
   69 = Java 25. Anything with `$` from PowerShell → WSL goes into a script file.
+
+## Phase 2, Step 4.2: Verify every 26.1.2 coordinate BEFORE editing
+
+- **How (read-only):** each repo's `maven-metadata.xml` (`curl`), NeoForge's
+  Gradle module metadata (`neoforge-<v>.module`, JSON → its dependencies),
+  and the `*.mixins.json` / `neoforge.mods.toml` inside the pack's jars.
+- **Findings:** NeoForge 26.1.2.126 ✔. AE2 26.1.13-beta is NOT on modmaven
+  anymore → Maven Central. JEI artifact names contain the MC version
+  (`jei-26.1.2-neoforge`); ours was hard-coded to 1.21.1. NeoForge itself
+  ships MixinExtras (0.5.0 on 21.1, 0.5.5 on 26.1), so our own dependency was
+  redundant. Pack mods use Mixin `compatibilityLevel` JAVA_25. FML loader 4 → 11.
+- **Lesson:** Check coordinates and what the platform already bundles
+  before editing. Parse JSON with a real parser (my `paste - - -` hack
+  garbled the field order).
+
+## Phase 2, Step 4.3: The version jump (Phase 2 goal reached)
+
+- **Changes:** gradle.properties: MC 26.1.2, NeoForge 26.1.2.126, Parchment
+  removed, AE2 26.1.13-beta, ExtendedAE/AE2WTLib/JEI ranges from the pack, no
+  upper bounds (decision). build.gradle: `mavenCentral()`,
+  `jei-${minecraft_version}-neoforge`, only the MixinExtras annotation processor
+  (0.5.5). mixins.json: `compatibilityLevel: JAVA_25`.
+- **Check 1:** `./gradlew dependencies --configuration compileClasspath` →
+  BUILD SUCCESSFUL. Everything resolves: neoforge 26.1.2.126, neoform 26.1.2-1,
+  appliedenergistics2 26.1.13-beta, jei-26.1.2-neoforge 29.53.0.115,
+  sponge-mixin 0.17.4, mixinextras 0.5.5, FML 11.0.15.
+  **= Phase 2 goal: Gradle configures cleanly.**
+- **Proof of "unobfuscated":** the NFRT steps for 1.21.1 include
+  `downloadClientMappings mergeMappings … rename`; for 26.1.2 they don't
+  (`downloadClient downloadServer preProcessJar decompile patch …`). No
+  mappings step at all.
+- **Check 2 (first look):** `compileJava` → 100 errors (javac's default cap),
+  all "cannot find symbol": GuiGraphics, ResourceLocation, Icon, ClickType,
+  Util, AEKeyRendering. Mostly client/GUI code. That's the input for Phase 3.
+- **Lessons:** Prove "configures + resolves" separately from "compiles".
+  The NFRT step list shows how Minecraft is prepared. A compile error
+  count of exactly 100 is javac's cap, not the real total.
