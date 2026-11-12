@@ -316,3 +316,65 @@ NeoForge 26.1.2.126, Java 25).
     in at build time elsewhere; use `MANIFEST.MF` or the file name.
   - Script bug: guard against null before calling methods (`"$x".Trim()`).
   - Maven version ordering can satisfy ranges that look wrong.
+
+## Phase 1, Step 7c: AE2 reference source (two versions)
+
+- **Layout (decision B):** `~/dev/ae-port/ae2-src/<tag>/`, one folder per
+  AE2 version, to diff Mixin targets old vs new. Mounted read-only in
+  the container at `/workspaces/ae2-src`.
+- **Command (WSL):**
+  ```
+  git ls-remote --tags https://github.com/AppliedEnergistics/Applied-Energistics-2 v26.1.13-beta v19.2.18
+  git clone --depth 1 --branch v26.1.13-beta <url> v26.1.13-beta            # c7c1812
+  git clone --depth 1 --branch neoforge/v19.2.18 <url> v19.2.18              # db17504
+  ```
+- **Snag:** 1.21.1-era AE2 tags are `neoforge/v19.x.y`; 26.x tags are
+  `v26.x.y`. `ls-remote` matches the END of a name (so `v19.2.18` "found"
+  `neoforge/v19.2.18`), but `clone --branch` needs the full name.
+- **Lessons:** `--depth 1` = shallow clone, a single snapshot (~35 MB
+  each). Cloning a tag = detached HEAD, which is fine for read-only
+  reference code. Read the full ref names in the `ls-remote` output.
+  PowerShell 5.1 shows Git's stderr progress as red "NativeCommandError";
+  it's not a real error.
+
+## Phase 1, Step 7d (prep): JDK 21 image + baseline worktree
+
+- **Decisions:** baseline in a throwaway `eclipse-temurin:21-jdk-noble`
+  container (option A, same Java as the original CI), code in a git
+  worktree.
+- **Command (WSL):**
+  ```
+  docker manifest inspect eclipse-temurin:21-jdk-noble
+  docker run --rm eclipse-temurin:21-jdk-noble java -version    # 21.0.13+9 LTS
+  git -C ~/dev/ae-port/AppliedEnhancements worktree add ~/dev/ae-port/baseline-1.21.1 1.21.1-neoforge
+  git -C ~/dev/ae-port/AppliedEnhancements worktree list
+  ```
+- **Lessons:** a worktree = a second working folder on another branch,
+  sharing one `.git`. It's removed later with `git worktree remove <path>`.
+  A layer shared with the JDK 25 image showed "Already exists". The
+  original branch still has gradlew as 644, so use `bash gradlew` there
+  (like its CI).
+
+## Phase 1, Step 7d: Baseline build of the ORIGINAL 1.21.1 branch
+
+- **Command (WSL → throwaway JDK 21 container):**
+  ```
+  docker run --rm --user 1000:1000 -e HOME=/home/ubuntu -w /work \
+    -v ~/dev/ae-port/baseline-1.21.1:/work \
+    -v ae-port-gradle-cache-jdk21:/home/ubuntu/.gradle \
+    eclipse-temurin:21-jdk-noble bash gradlew build --no-daemon --console=plain
+  ```
+- **Try 1 failed:** "Timeout waiting to lock journal cache … Owner PID".
+  VS Code's Java extension had started a Gradle daemon in the dev
+  container on the SAME cache volume. Gradle can't hand a lock across
+  containers. → **Never share one Gradle home between containers that
+  run at the same time.** (Decision: a separate volume.)
+- **Try 2 failed:** "Could not create parent directory for lock file". The
+  new volume was root-owned (the image has no `/home/ubuntu/.gradle`).
+  Fix: `docker run --rm -v <vol>:/cache <img> chown 1000:1000 /cache`.
+- **Try 3: BUILD SUCCESSFUL in 3m 53s. 544 tests, 0 failures/errors/skips.**
+- **Lessons:** Read the innermost `>` line of a Gradle error: that's the
+  real cause. Count tests from `build/test-results/test/*.xml`
+  (`<testsuite tests= failures= errors= skipped=>`). A green baseline means
+  later failures are ours. Warnings now = a to-do list for later
+  (deprecated JEI API, Gradle 9 incompatibilities).

@@ -61,6 +61,27 @@ ae2ct and Useless are `@Pseudo`/optional, so they don't run in this pack.
 - NeoForge compares versions the Maven way: `26.1-1.0.4` satisfies
   `[1.0.5,)` because 26 > 1. Check ranges against real version strings.
 
+## Original 1.21.1 build (reference result)
+
+Proven on 2026-11-12: the untouched `1.21.1-neoforge` branch (275d8aa)
+builds and ALL tests pass. Any later failure is caused by the port, not
+inherited.
+
+- **Environment:** throwaway `eclipse-temurin:21-jdk-noble` container
+  (Temurin 21.0.13+9), `--user 1000:1000`, its own Gradle cache volume
+  `ae-port-gradle-cache-jdk21`, git worktree `~/dev/ae-port/baseline-1.21.1`.
+- **Command:** `bash gradlew build --no-daemon --console=plain`
+- **Result:** BUILD SUCCESSFUL in 3m 53s (34 tasks). **544 tests in 99
+  suites: 0 failures, 0 errors, 0 skipped.** Jar: `appliedenhancements-1.1.6.jar`
+  (1,027,617 bytes).
+- **Warnings (pre-existing, not ours to fix now):**
+  - `JeiPlanBookmarks.java:53`: `IIngredientManager.createTypedIngredient(V)`
+    is deprecated for removal in JEI 19. Likely gone in JEI 29.
+  - "Deprecated Gradle features were used … incompatible with Gradle 9.0":
+    matters when we upgrade Gradle in Phase 2.
+  - About 100 deprecation lines in the log come from NeoForm recompiling
+    Minecraft/NeoForge sources (`build/neoForm/...`), not from our code.
+
 ## How to refresh (when the pack updates)
 
 All read-only, on the HOST (PowerShell):
