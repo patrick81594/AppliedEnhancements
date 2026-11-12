@@ -38,6 +38,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.network.PacketDistributor;
+import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
@@ -76,7 +77,7 @@ public abstract class CraftConfirmMenuMixin implements CraftingCalculationProgre
         appliedenhancements$planGraph = null;
         appliedenhancements$graphRequest = appliedenhancements$graphRequest == Integer.MAX_VALUE
                 ? 1 : appliedenhancements$graphRequest + 1;
-        PacketDistributor.sendToServer(new com.appliedenhancements.network.AelisPlanGraphRequest(
+        ClientPacketDistributor.sendToServer(new com.appliedenhancements.network.AelisPlanGraphRequest(
                 menu.containerId, appliedenhancements$graphRequest));
     }
 
@@ -467,7 +468,7 @@ public abstract class CraftConfirmMenuMixin implements CraftingCalculationProgre
     public void appliedenhancements$startForced() {
         var menu = (CraftConfirmMenu) (Object) this;
         if (menu.isClientSide()) {
-            PacketDistributor.sendToServer(new com.appliedenhancements.network.ForceCraftingStartPayload(menu.containerId));
+            ClientPacketDistributor.sendToServer(new com.appliedenhancements.network.ForceCraftingStartPayload(menu.containerId));
             return;
         }
         if (menu.getPlayer().containerMenu != menu || !menu.stillValid(menu.getPlayer())

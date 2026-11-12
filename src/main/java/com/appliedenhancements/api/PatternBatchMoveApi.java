@@ -10,7 +10,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.inventory.AbstractContainerMenu;
-import net.neoforged.neoforge.network.PacketDistributor;
+import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 
 /** Public client request and server dispatch API for atomic batch pattern moves. */
 public final class PatternBatchMoveApi {
@@ -36,7 +36,7 @@ public final class PatternBatchMoveApi {
                 copySources(sources),
                 copyTargets(targetContainerIds),
                 preferredTargetSlot);
-        PacketDistributor.sendToServer(new PatternBatchMovePayload(request));
+        ClientPacketDistributor.sendToServer(new PatternBatchMovePayload(request));
     }
 
     /**

@@ -653,3 +653,18 @@ NeoForge 26.1.2.126, Java 25).
 - **Lessons:** For save code, check the FORMAT before the API. Reproduce old defaults
   exactly (`…Or`, `…OrEmpty`) instead of sprinkling `.orElseThrow()`. Show the full diff
   before compiling storage changes.
+
+## Phase 3, group D: Networking (client → server)
+
+- **Research:** NeoForge 26 moved `sendToServer` from `net.neoforged.neoforge.network.PacketDistributor`
+  (now server→client only) to `net.neoforged.neoforge.client.network.ClientPacketDistributor`
+  (javap on the universal jar; AE2: 33× old → 33× new).
+- **Fix:** 7 calls in 5 files; `CraftConfirmMenuMixin` keeps the old import for `sendToPlayer`.
+- **Dedicated server:** AE2 26 calls `ClientPacketDistributor` from 11 common (`main`) files,
+  incl. menus like `AEBaseMenu`/`MEStorageMenu`, so the pattern is the same as ours. Still
+  checked with `runServer` in Phase 4/5.
+- **Result:** 38 → **31**.
+- **Lessons:** Verify every "AE2 does X too" claim before stating it: I had named a file
+  (`SetStockAmountMenu`) without checking. A pattern like `PacketDistributor\.` also matches
+  inside `ClientPacketDistributor.` (use `\b`). `wsl -- grep 'a|b'` goes through a shell, so
+  `|` gets eaten; use a script file.

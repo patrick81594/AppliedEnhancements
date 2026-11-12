@@ -7,7 +7,7 @@ import com.appliedenhancements.network.*;
 import com.llamalad7.mixinextras.injector.wrapmethod.WrapMethod;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import net.minecraft.client.gui.components.Button;
-import net.neoforged.neoforge.network.PacketDistributor;
+import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 import org.spongepowered.asm.mixin.*;
 
 @Mixin(value = CraftAmountScreen.class, remap = false)
@@ -42,7 +42,7 @@ public abstract class CraftAmountScreenMixin {
             original.call();
             return;
         }
-        PacketDistributor.sendToServer(new ExactCraftingAmountPayload(
+        ClientPacketDistributor.sendToServer(new ExactCraftingAmountPayload(
                 ((CraftAmountScreen) (Object) this).getMenu().containerId, amount.get().toString(),
                 amountToCraft.startsWithEquals(),
                 // MC 26 removed the static Screen.hasShiftDown(); Minecraft has it now.

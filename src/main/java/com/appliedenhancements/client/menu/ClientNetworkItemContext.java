@@ -8,7 +8,7 @@ import com.appliedenhancements.api.NetworkItemContextMenuApi;
 import com.appliedenhancements.network.NetworkItemExtractPayload;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
-import net.neoforged.neoforge.network.PacketDistributor;
+import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 import java.util.function.Consumer;
 
 /** Built-in client action context for one synchronized ME terminal entry. */
@@ -64,7 +64,7 @@ public final class ClientNetworkItemContext
         if (amount <= 0) {
             return;
         }
-        PacketDistributor.sendToServer(new NetworkItemExtractPayload(
+        ClientPacketDistributor.sendToServer(new NetworkItemExtractPayload(
                 menu.containerId, entry.getSerial(), amount));
     }
 

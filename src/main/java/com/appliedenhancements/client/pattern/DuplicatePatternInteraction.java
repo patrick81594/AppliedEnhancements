@@ -13,7 +13,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.neoforged.neoforge.network.PacketDistributor;
+import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 
 /** Redirects clicks on compact filtered rows back to their original server slots. */
 public final class DuplicatePatternInteraction {
@@ -48,7 +48,7 @@ public final class DuplicatePatternInteraction {
                 default -> null;
             };
             if (action != null) {
-                PacketDistributor.sendToServer(new InventoryActionPacket(
+                ClientPacketDistributor.sendToServer(new InventoryActionPacket(
                         action, source.slot(), source.containerId()));
             }
             return true;
@@ -86,7 +86,7 @@ public final class DuplicatePatternInteraction {
             Object packet = constructor.newInstance(
                     menuId, clickedSlot, visibleContainers);
             if (packet instanceof CustomPacketPayload payload) {
-                PacketDistributor.sendToServer(payload);
+                ClientPacketDistributor.sendToServer(payload);
                 return true;
             }
         } catch (ReflectiveOperationException | LinkageError ignored) {
