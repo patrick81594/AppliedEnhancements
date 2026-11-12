@@ -49,8 +49,8 @@ public class AppliedEnhancements {
         event.enqueueWork(AelisSmartCycleBatchProvider::registerOmniAdapters);
     }
 
-    public static net.minecraft.resources.ResourceLocation id(String path) {
-        return net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(MODID, path);
+    public static net.minecraft.resources.Identifier id(String path) {
+        return net.minecraft.resources.Identifier.fromNamespaceAndPath(MODID, path);
     }
 
     private void registerPayloads(final RegisterPayloadHandlersEvent event) {

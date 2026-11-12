@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.neoforged.neoforge.network.PacketDistributor;
@@ -17,7 +17,7 @@ public final class PatternBatchMoveApi {
     public static final int MAX_SOURCES = 512;
     public static final int MAX_TARGETS = 128;
 
-    private static final ConcurrentHashMap<ResourceLocation, HandlerRegistration>
+    private static final ConcurrentHashMap<Identifier, HandlerRegistration>
             HANDLERS_BY_ID = new ConcurrentHashMap<>();
     private static final CopyOnWriteArrayList<HandlerRegistration> HANDLERS =
             new CopyOnWriteArrayList<>();
@@ -45,7 +45,7 @@ public final class PatternBatchMoveApi {
      * lowest priority and must perform all slot, permission and capacity checks.
      */
     public static void registerMenuHandler(
-            ResourceLocation id, int priority, MenuHandler handler) {
+            Identifier id, int priority, MenuHandler handler) {
         Objects.requireNonNull(id, "id");
         Objects.requireNonNull(handler, "handler");
         var registration = new HandlerRegistration(id, priority, handler);
@@ -155,7 +155,7 @@ public final class PatternBatchMoveApi {
     }
 
     public record HandlerRegistration(
-            ResourceLocation id, int priority, MenuHandler handler) {
+            Identifier id, int priority, MenuHandler handler) {
         public HandlerRegistration {
             Objects.requireNonNull(id, "id");
             Objects.requireNonNull(handler, "handler");

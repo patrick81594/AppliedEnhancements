@@ -8,12 +8,12 @@ import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 
 public final class TestAEKey extends AEKey {
-    private final ResourceLocation id;
+    private final Identifier id;
     private final AEKeyType type;
 
     public TestAEKey(String path) {
@@ -21,7 +21,7 @@ public final class TestAEKey extends AEKey {
     }
 
     public TestAEKey(String path, AEKeyType type) {
-        this.id = ResourceLocation.fromNamespaceAndPath("test", path);
+        this.id = Identifier.fromNamespaceAndPath("test", path);
         this.type = type;
     }
 
@@ -46,7 +46,7 @@ public final class TestAEKey extends AEKey {
     }
 
     @Override
-    public ResourceLocation getId() {
+    public Identifier getId() {
         return id;
     }
 

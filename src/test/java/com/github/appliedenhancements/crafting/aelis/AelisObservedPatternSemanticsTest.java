@@ -15,7 +15,7 @@ import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import org.junit.jupiter.api.Test;
@@ -174,8 +174,8 @@ class AelisObservedPatternSemanticsTest {
         }
 
         @Override
-        public ResourceLocation getId() {
-            return ResourceLocation.fromNamespaceAndPath("test", id);
+        public Identifier getId() {
+            return Identifier.fromNamespaceAndPath("test", id);
         }
 
         @Override
@@ -201,7 +201,7 @@ class AelisObservedPatternSemanticsTest {
     private static final class TestKeyType extends AEKeyType {
         private TestKeyType() {
             super(
-                    ResourceLocation.fromNamespaceAndPath("test", "key"),
+                    Identifier.fromNamespaceAndPath("test", "key"),
                     TestKey.class, Component.literal("Test Key"));
         }
 

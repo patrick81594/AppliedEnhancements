@@ -39,7 +39,7 @@ import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.renderer.Rect2i;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.world.entity.player.Inventory;
 import org.lwjgl.glfw.GLFW;
@@ -59,7 +59,7 @@ public final class AelisCraftConfirmScreen extends CraftConfirmScreen {
     private static final int GRAPH_ZOOM_TOP = 101;
     private static final int GRAPH_ZOOM_WIDTH = 91;
     private static final String PREFIX = "gui.appliedenhancements.plan.";
-    private static final ResourceLocation MARK = AppliedEnhancements.id("textures/gui/aelis_mark.png");
+    private static final Identifier MARK = AppliedEnhancements.id("textures/gui/aelis_mark.png");
     private final CraftConfirmScreen original;
     private AelisPlanLayout layout;
     private AelisPlanRows.Filter filter = AelisPlanRows.Filter.ALL;

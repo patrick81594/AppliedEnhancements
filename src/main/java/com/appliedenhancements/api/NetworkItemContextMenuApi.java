@@ -9,7 +9,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 /**
  * Client-side extension API for entries in the ME terminal item context menu.
@@ -21,7 +21,7 @@ import net.minecraft.resources.ResourceLocation;
  * server-side change.</p>
  */
 public final class NetworkItemContextMenuApi {
-    private static final ConcurrentHashMap<ResourceLocation, Registration> BY_ID =
+    private static final ConcurrentHashMap<Identifier, Registration> BY_ID =
             new ConcurrentHashMap<>();
     private static final CopyOnWriteArrayList<Registration> REGISTRATIONS =
             new CopyOnWriteArrayList<>();
@@ -31,7 +31,7 @@ public final class NetworkItemContextMenuApi {
 
     /** Registers a context-menu entry provider. Higher priorities appear first. */
     public static void register(
-            ResourceLocation id, int priority, EntryProvider provider) {
+            Identifier id, int priority, EntryProvider provider) {
         Objects.requireNonNull(id, "id");
         Objects.requireNonNull(provider, "provider");
         var registration = new Registration(id, priority, provider);
@@ -119,7 +119,7 @@ public final class NetworkItemContextMenuApi {
     }
 
     public record Registration(
-            ResourceLocation id, int priority, EntryProvider provider) {
+            Identifier id, int priority, EntryProvider provider) {
         public Registration {
             Objects.requireNonNull(id, "id");
             Objects.requireNonNull(provider, "provider");

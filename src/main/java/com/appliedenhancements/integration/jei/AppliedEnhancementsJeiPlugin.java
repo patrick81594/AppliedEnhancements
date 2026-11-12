@@ -6,18 +6,18 @@ import com.appliedenhancements.client.plan.OptionalPlanBookmarks;
 import mezz.jei.api.IModPlugin;
 import mezz.jei.api.JeiPlugin;
 import mezz.jei.api.runtime.IJeiRuntime;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 /** Optional JEI bootstrap. This class is loaded only by JEI's plugin scanner. */
 @JeiPlugin
 public final class AppliedEnhancementsJeiPlugin implements IModPlugin {
-    private static final ResourceLocation ID =
+    private static final Identifier ID =
             AppliedEnhancements.id("network_item_context_menu");
     private JeiItemContextMenuHandler handler;
     private JeiPlanBookmarks bookmarks;
 
     @Override
-    public ResourceLocation getPluginUid() {
+    public Identifier getPluginUid() {
         return ID;
     }
 

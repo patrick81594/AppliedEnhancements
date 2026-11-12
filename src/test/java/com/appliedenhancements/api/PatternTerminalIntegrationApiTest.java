@@ -4,7 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.appliedenhancements.api.PatternTerminalIntegrationApi.Family;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.junit.jupiter.api.Test;
 
 class PatternTerminalIntegrationApiTest {
@@ -22,7 +22,7 @@ class PatternTerminalIntegrationApiTest {
 
     @Test
     void thirdPartyScreenCanRegisterWithoutLoadingItsOptionalClass() {
-        var id = ResourceLocation.fromNamespaceAndPath(
+        var id = Identifier.fromNamespaceAndPath(
                 "examplemod", "test_pattern_terminal");
         PatternTerminalIntegrationApi.register(
                 id, Family.AE2_PATTERN_ACCESS, "examplemod.client.TestPatternScreen");

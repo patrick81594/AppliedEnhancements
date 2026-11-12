@@ -4,7 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.List;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.junit.jupiter.api.Test;
 
 class NetworkItemContextMenuApiTest {
@@ -24,7 +24,7 @@ class NetworkItemContextMenuApiTest {
 
     @Test
     void duplicateProviderIdsAreRejected() {
-        var id = ResourceLocation.fromNamespaceAndPath(
+        var id = Identifier.fromNamespaceAndPath(
                 "contextmenutest", "duplicate");
         NetworkItemContextMenuApi.register(id, 0, context -> List.of());
 
@@ -36,7 +36,7 @@ class NetworkItemContextMenuApiTest {
 
     private static void register(String path, int priority) {
         NetworkItemContextMenuApi.register(
-                ResourceLocation.fromNamespaceAndPath("contextmenuorder", path),
+                Identifier.fromNamespaceAndPath("contextmenuorder", path),
                 priority,
                 context -> List.of());
     }

@@ -16,13 +16,13 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 
 /** Public duplicate-output/invalid pattern detection and resolver registry. */
 public final class PatternDuplicateApi {
-    private static final ConcurrentHashMap<ResourceLocation, ResolverRegistration>
+    private static final ConcurrentHashMap<Identifier, ResolverRegistration>
             RESOLVERS_BY_ID = new ConcurrentHashMap<>();
     private static final CopyOnWriteArrayList<ResolverRegistration> RESOLVERS =
             new CopyOnWriteArrayList<>();
@@ -38,7 +38,7 @@ public final class PatternDuplicateApi {
      * registered only once.</p>
      */
     public static void registerOutputResolver(
-            ResourceLocation id, int priority, PatternOutputResolver resolver) {
+            Identifier id, int priority, PatternOutputResolver resolver) {
         Objects.requireNonNull(id, "id");
         Objects.requireNonNull(resolver, "resolver");
         var registration = new ResolverRegistration(id, priority, resolver);
@@ -205,7 +205,7 @@ public final class PatternDuplicateApi {
     }
 
     public record ResolverRegistration(
-            ResourceLocation id, int priority, PatternOutputResolver resolver) {
+            Identifier id, int priority, PatternOutputResolver resolver) {
         public ResolverRegistration {
             Objects.requireNonNull(id, "id");
             Objects.requireNonNull(resolver, "resolver");

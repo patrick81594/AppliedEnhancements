@@ -521,3 +521,19 @@ NeoForge 26.1.2.126, Java 25).
   types in detail. So this list is the FIRST LAYER. Fixing it will likely
   reveal more errors (changed method signatures etc.). Don't read the
   first count as the size of the job.
+
+## Phase 3, Steps 2–3: ResourceLocation → Identifier
+
+- **Research (read-only):** "Rosetta stone" = AE2's own port. AE2 19.2.18 imports
+  `net.minecraft.resources.ResourceLocation` 188×, AE2 26.1.13 0×, but
+  `net.minecraft.resources.Identifier` 156×. Confirmed in the MC 26.1.2 sources
+  that MDG/NFRT produce (`build/moddev/artifacts/minecraft-patched-<neo>-sources.jar`):
+  only `Identifier.java` exists, with the same `fromNamespaceAndPath(…)`.
+- **Fix:** `sed -i -E 's/\bResourceLocation\b/Identifier/g' $(grep -rlw ResourceLocation src)`
+  → 13 files (8 main incl. 4 public API classes, 5 tests), 43 lines, 1:1.
+- **Result:** 108 → **84** errors (exactly the 24 ResourceLocation errors gone, no new ones).
+  The test files are not compiled yet (compileJava fails first).
+- **Lessons:** When a type vanishes, look for it in a big mod's port + the
+  game sources; confirm the methods you call, not just the class name. Check
+  for name collisions before a global rename. Our public API changes type
+  too (note for the release notes).

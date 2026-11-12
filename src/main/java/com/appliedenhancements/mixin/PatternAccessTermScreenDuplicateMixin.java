@@ -41,7 +41,7 @@ import java.util.Map;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.inventory.ClickType;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
@@ -77,8 +77,8 @@ public abstract class PatternAccessTermScreenDuplicateMixin
     @Unique
     private static final int appliedenhancements$HEADER_INTERIOR_SAMPLE_Y = 8;
     @Unique
-    private static final ResourceLocation appliedenhancements$PATTERN_TERMINAL_TEXTURE =
-            ResourceLocation.fromNamespaceAndPath(
+    private static final Identifier appliedenhancements$PATTERN_TERMINAL_TEXTURE =
+            Identifier.fromNamespaceAndPath(
                     "ae2", "textures/guis/patternaccessterminal.png");
 
     @Shadow

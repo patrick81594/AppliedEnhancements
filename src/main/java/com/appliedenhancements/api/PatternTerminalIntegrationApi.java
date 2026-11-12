@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 /**
  * Registry for pattern-terminal screens that use an AE2-compatible row model.
@@ -18,7 +18,7 @@ import net.minecraft.resources.ResourceLocation;
  * {@link PatternBatchMoveApi#registerMenuHandler} directly.</p>
  */
 public final class PatternTerminalIntegrationApi {
-    private static final ConcurrentHashMap<ResourceLocation, Registration>
+    private static final ConcurrentHashMap<Identifier, Registration>
             BY_ID = new ConcurrentHashMap<>();
     private static final CopyOnWriteArrayList<Registration> REGISTRATIONS =
             new CopyOnWriteArrayList<>();
@@ -39,7 +39,7 @@ public final class PatternTerminalIntegrationApi {
 
     /** Registers one exact client screen class. Call during client setup. */
     public static void register(
-            ResourceLocation id, Family family, String screenClassName) {
+            Identifier id, Family family, String screenClassName) {
         Objects.requireNonNull(id, "id");
         Objects.requireNonNull(family, "family");
         if (screenClassName == null || screenClassName.isBlank()) {
@@ -81,7 +81,7 @@ public final class PatternTerminalIntegrationApi {
     }
 
     public record Registration(
-            ResourceLocation id, Family family, String screenClassName) {
+            Identifier id, Family family, String screenClassName) {
         public Registration {
             Objects.requireNonNull(id, "id");
             Objects.requireNonNull(family, "family");
