@@ -19,6 +19,7 @@ import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import java.util.UUID;
 import net.minecraft.core.HolderLookup;
+import net.minecraft.core.UUIDUtil;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.Level;
 import org.spongepowered.asm.mixin.Mixin;
@@ -127,7 +128,8 @@ public abstract class AdvancedAeOrderCompletionMixin {
             CallbackInfo callback) {
         if (hasJob() && appliedenhancements$pendingOrderCompletion > 0 && appliedenhancements$orderId != null) {
             var saved = new CompoundTag();
-            saved.putUUID("orderId", appliedenhancements$orderId);
+            // MC 26 removed putUUID; UUIDUtil.CODEC writes the same int[4] as before.
+            saved.store("orderId", UUIDUtil.CODEC, appliedenhancements$orderId);
             saved.putLong("amount", appliedenhancements$pendingOrderCompletion);
             tag.put(APPLIEDENHANCEMENTS_ORDER_TAG, saved);
         } else {
@@ -140,9 +142,10 @@ public abstract class AdvancedAeOrderCompletionMixin {
             CallbackInfo callback) {
         appliedenhancements$prepareOrder();
         if (appliedenhancements$orderId == null || !tag.contains(APPLIEDENHANCEMENTS_ORDER_TAG)) return;
-        var saved = tag.getCompound(APPLIEDENHANCEMENTS_ORDER_TAG);
-        long amount = saved.getLong("amount");
-        if (saved.hasUUID("orderId") && saved.getUUID("orderId").equals(appliedenhancements$orderId)
+        var saved = tag.getCompoundOrEmpty(APPLIEDENHANCEMENTS_ORDER_TAG);
+        long amount = saved.getLongOr("amount", 0L);
+        // = 1.21 hasUUID(...) && getUUID(...).equals(...): read() is empty unless a valid int[4] UUID.
+        if (saved.read("orderId", UUIDUtil.CODEC).filter(appliedenhancements$orderId::equals).isPresent()
                 && amount > 0 && amount <= getWaitingFor(appliedenhancements$orderKey)) {
             appliedenhancements$pendingOrderCompletion = amount;
         } else {

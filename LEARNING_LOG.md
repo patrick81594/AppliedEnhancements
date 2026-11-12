@@ -630,3 +630,26 @@ NeoForge 26.1.2.126, Java 25).
   When an API drops data (char modifiers), check where the value went before
   deciding it's safe to pass 0. `javap -cp <jar> <class>` lists a class's methods
   without sources.
+
+## Phase 3, group A: NBT (save data)
+
+- **Key question first: does the STORAGE FORMAT change?** No. Only the Java API did:
+  - `CompoundTag` getters return `Optional`; the 1.21 defaults are kept exactly with
+    `getIntOr(k,0)`, `getLongOr(k,0L)`, `getStringOr(k,"")`, `getCompoundOrEmpty(k)`,
+    `getListOrEmpty(k)`, `ListTag.getCompoundOrEmpty(i)`.
+  - `contains(k, type)` is gone → `getString(k).isPresent()` / `getCompound(k).isPresent()`
+    (verified: these return empty for the wrong tag type).
+  - `putUUID/getUUID/hasUUID` are gone → `store/read(k, UUIDUtil.CODEC, …)`; UUIDUtil.CODEC =
+    INT_STREAM = the same int[4] that 1.21 wrote.
+  - AE2 26 `AEKey.toTagGeneric/fromTagGeneric` take ValueOutput/ValueInput, but use the same codec
+    as AE2 19 → a local helper copying AE2 19's body (`AEKey.CODEC` + registry NbtOps) keeps the
+    bytes identical.
+- **Accepted edge case:** `getList(k, TAG_COMPOUND)` used to give an empty list for a list of
+  the wrong element type; now such (corrupted) data makes `read` return null. We only ever
+  write compound lists.
+- **Phase 4 note:** AE2 26 CPU `readFromNBT(ValueInput)/writeToNBT(ValueOutput)`; our CPU
+  save Mixins only got compile fixes here and will need a ValueInput/ValueOutput bridge.
+- **Result:** 81 → **38**, NBT errors 0.
+- **Lessons:** For save code, check the FORMAT before the API. Reproduce old defaults
+  exactly (`…Or`, `…OrEmpty`) instead of sprinkling `.orElseThrow()`. Show the full diff
+  before compiling storage changes.

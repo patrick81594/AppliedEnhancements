@@ -376,7 +376,7 @@ public abstract class CraftingCpuLogicBatchMixin {
                 && data.contains(APPLIEDENHANCEMENTS_CYCLE_RUNTIME_TAG);
         appliedenhancements$cycleRuntime = hasRuntime
                 ? AelisCycleExecutionApi.readRuntime(
-                        data.getCompound(APPLIEDENHANCEMENTS_CYCLE_RUNTIME_TAG),
+                        data.getCompoundOrEmpty(APPLIEDENHANCEMENTS_CYCLE_RUNTIME_TAG),
                         registries).orElse(null)
                 : null;
         if (hasRuntime && appliedenhancements$cycleRuntime == null) {

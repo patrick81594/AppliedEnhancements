@@ -179,7 +179,7 @@ public abstract class AdvancedAeCraftingCycleMixin {
             CallbackInfo callback) {
         boolean saved = hasJob() && tag.contains(APPLIEDENHANCEMENTS_CYCLE_TAG);
         appliedenhancements$cycleRuntime = saved
-                ? AelisCycleExecutionApi.readRuntime(tag.getCompound(APPLIEDENHANCEMENTS_CYCLE_TAG), registries).orElse(null) : null;
+                ? AelisCycleExecutionApi.readRuntime(tag.getCompoundOrEmpty(APPLIEDENHANCEMENTS_CYCLE_TAG), registries).orElse(null) : null;
         if (saved && appliedenhancements$cycleRuntime == null) {
             com.appliedenhancements.runtime.AelisPlanningLog.error("Invalid AELIS quantum CPU cycle state; cancelling job safely");
             cancel();
