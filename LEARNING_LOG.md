@@ -132,3 +132,24 @@ NeoForge 26.1.2.126, Java 25).
 - **What:** Created `LEARNING_LOG.md` as the first commit on `26.1.2-neoforge`.
 - **Lesson:** Log each step right after it finishes, while the details
   are fresh.
+
+## Phase 1, Step 4a: Find Git Credential Manager (GCM)
+
+- **What:** Checked that GCM 2.6.1 exists at
+  `C:\Program Files\Git\mingw64\bin\git-credential-manager.exe`.
+- **Where:** HOST, PowerShell (`Test-Path`, `--version`).
+- **Lesson:** "Not on PATH" doesn't mean "not installed". Check the
+  expected path directly.
+
+## Phase 1, Step 4b: WSL Git → Windows GCM
+
+- **Command (WSL, via a script file to dodge quoting):**
+  ```
+  git config --global credential.helper "/mnt/c/Program\ Files/Git/mingw64/bin/git-credential-manager.exe"
+  ```
+- **Why:** Log in once in the browser. The token is stored in Windows
+  Credential Manager and never written as plain text in WSL.
+- **Lesson:** Escape the space with `\` because Git runs the helper
+  through a shell. WSL can run Windows `.exe` files directly ("interop").
+  When quoting crosses two shells, put the commands in a script file and
+  run `bash script.sh`.
