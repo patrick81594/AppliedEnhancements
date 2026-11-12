@@ -87,14 +87,17 @@ public final class NetworkItemContextMenuClientEvents {
 
     @SubscribeEvent
     public static void onCharacterTyped(ScreenEvent.CharacterTyped.Pre event) {
+        // NeoForge 26: CharacterTyped no longer has modifiers (MC's CharacterEvent only carries
+        // the code point). Our handlers only passed them on to EditBox, so 0 loses nothing.
+        char codePoint = (char) event.getCodePoint();
         if (OptionalJeiItemContextMenu.handler().charTyped(
                 event.getScreen(),
-                event.getCodePoint(),
-                event.getModifiers())) {
+                codePoint,
+                0)) {
             event.setCanceled(true);
         } else if (event.getScreen() instanceof NetworkItemContextMenuScreenBridge bridge
                 && bridge.appliedenhancements$networkItemMenuCharTyped(
-                        event.getCodePoint(), event.getModifiers())) {
+                        codePoint, 0)) {
             event.setCanceled(true);
         }
     }

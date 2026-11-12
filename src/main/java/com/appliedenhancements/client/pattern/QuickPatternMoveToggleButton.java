@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.function.Consumer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.input.InputWithModifiers;
 import net.minecraft.client.renderer.Rect2i;
 import net.minecraft.network.chat.Component;
 
@@ -29,7 +30,7 @@ public final class QuickPatternMoveToggleButton extends IconButton {
     }
 
     @Override
-    public void onPress() {
+    public void onPress(InputWithModifiers input) {
         selected = !selected;
         listener.accept(selected);
     }

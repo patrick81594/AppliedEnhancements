@@ -44,6 +44,8 @@ public abstract class CraftAmountScreenMixin {
         }
         PacketDistributor.sendToServer(new ExactCraftingAmountPayload(
                 ((CraftAmountScreen) (Object) this).getMenu().containerId, amount.get().toString(),
-                amountToCraft.startsWithEquals(), CraftAmountScreen.hasShiftDown()));
+                amountToCraft.startsWithEquals(),
+                // MC 26 removed the static Screen.hasShiftDown(); Minecraft has it now.
+                net.minecraft.client.Minecraft.getInstance().hasShiftDown()));
     }
 }

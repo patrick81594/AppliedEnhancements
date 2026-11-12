@@ -36,6 +36,8 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.Tooltip;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.renderer.Rect2i;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
@@ -564,7 +566,7 @@ public final class AelisCraftConfirmScreen extends CraftConfirmScreen {
     }
 
     private boolean forceStartRequested() {
-        return menu.getPlan() != null && !canStart() && hasShiftDown();
+        return menu.getPlan() != null && !canStart() && minecraft.hasShiftDown();
     }
 
     private void startSafely() {
@@ -810,7 +812,11 @@ public final class AelisCraftConfirmScreen extends CraftConfirmScreen {
     }
 
     @Override
-    public boolean mouseClicked(double mx, double my, int button) {
+    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+        // MC 26 passes an event object; unpack it so the logic below stays unchanged.
+        double mx = event.x();
+        double my = event.y();
+        int button = event.button();
         if (view == View.TREE && button == 0) {
             int zoomX = leftPos + graphZoomRight() - GRAPH_ZOOM_WIDTH;
             int zoomY = topPos + graphControlsTop();
@@ -858,11 +864,14 @@ public final class AelisCraftConfirmScreen extends CraftConfirmScreen {
             scrollToMouse(my);
             return true;
         }
-        return super.mouseClicked(mx, my, button);
+        return super.mouseClicked(event, doubleClick);
     }
 
     @Override
-    public boolean mouseDragged(double mx, double my, int button, double dx, double dy) {
+    public boolean mouseDragged(MouseButtonEvent event, double dx, double dy) {
+        double mx = event.x();
+        double my = event.y();
+        int button = event.button();
         if (view == View.TREE && graphInteraction.dragging() && button == 0) {
             graphInteraction.dragTo(graphViewport.worldX(mx - leftPos),
                     graphViewport.worldY(my - topPos - graphCanvasTop()));
@@ -875,14 +884,15 @@ public final class AelisCraftConfirmScreen extends CraftConfirmScreen {
             return true;
         }
         if (draggingScroll && button == 0) { scrollToMouse(my); return true; }
-        return super.mouseDragged(mx, my, button, dx, dy);
+        return super.mouseDragged(event, dx, dy);
     }
 
     @Override
-    public boolean mouseReleased(double mx, double my, int button) {
+    public boolean mouseReleased(MouseButtonEvent event) {
+        int button = event.button();
         if (button == 0 && (draggingGraph || graphInteraction.dragging())) { stopGraphDrag(); return true; }
         if (button == 0 && draggingScroll) { draggingScroll = false; return true; }
-        return super.mouseReleased(mx, my, button);
+        return super.mouseReleased(event);
     }
 
     private void scrollToMouse(double my) {
@@ -894,7 +904,8 @@ public final class AelisCraftConfirmScreen extends CraftConfirmScreen {
     }
 
     @Override
-    public boolean keyPressed(int key, int scanCode, int modifiers) {
+    public boolean keyPressed(KeyEvent event) {
+        int key = event.key();
         if (graphFullscreen && key == GLFW.GLFW_KEY_ESCAPE) {
             setGraphFullscreen(false);
             return true;
@@ -904,7 +915,7 @@ public final class AelisCraftConfirmScreen extends CraftConfirmScreen {
                 setFocused(null);
                 search.setFocused(false);
             } else {
-                search.keyPressed(key, scanCode, modifiers);
+                search.keyPressed(event);
             }
             // Do not let inventory bindings (e.g. E) close the menu while typing.
             return true;
@@ -914,7 +925,7 @@ public final class AelisCraftConfirmScreen extends CraftConfirmScreen {
             if (!graphFullscreen) startSafely();
             return true;
         }
-        return super.keyPressed(key, scanCode, modifiers);
+        return super.keyPressed(event);
     }
 
     private void amount(GuiGraphicsExtractor g, AEKey key, BigInteger amount, int end, int y, int color) {

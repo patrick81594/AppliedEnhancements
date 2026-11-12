@@ -15,6 +15,10 @@ import java.util.function.LongConsumer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.input.CharacterEvent;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.input.MouseButtonInfo;
 import net.minecraft.network.chat.Component;
 import org.lwjgl.glfw.GLFW;
 
@@ -154,7 +158,8 @@ public final class NetworkItemContextMenu {
                 confirmAmount();
                 return true;
             }
-            amountField.keyPressed(keyCode, scanCode, modifiers);
+            // MC 26 EditBox takes an event object; build it from our unchanged parameters.
+            amountField.keyPressed(new KeyEvent(keyCode, scanCode, modifiers));
             return true;
         }
         return true;
@@ -164,7 +169,8 @@ public final class NetworkItemContextMenu {
         if (amountField == null) {
             return isOpen();
         }
-        amountField.charTyped(codePoint, modifiers);
+        // MC 26 CharacterEvent carries only the code point (no modifiers anymore).
+        amountField.charTyped(new CharacterEvent(codePoint));
         return true;
     }
 
@@ -234,7 +240,15 @@ public final class NetworkItemContextMenu {
             return true;
         }
         if (contains(mouseX, mouseY, x, y, width, AMOUNT_HEIGHT)) {
-            amountField.mouseClicked(mouseX, mouseY, button);
+            // MC 26 EditBox takes a MouseButtonEvent. Fill the modifiers from the live key
+            // state so Shift+click etc. behave as before (1.21 checked them globally).
+            var mc = Minecraft.getInstance();
+            int modifiers = (mc.hasShiftDown() ? GLFW.GLFW_MOD_SHIFT : 0)
+                    | (mc.hasControlDown() ? GLFW.GLFW_MOD_CONTROL : 0)
+                    | (mc.hasAltDown() ? GLFW.GLFW_MOD_ALT : 0);
+            amountField.mouseClicked(
+                    new MouseButtonEvent(mouseX, mouseY, new MouseButtonInfo(button, modifiers)),
+                    false);
             return true;
         }
         close();

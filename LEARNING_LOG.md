@@ -610,3 +610,23 @@ NeoForge 26.1.2.126, Java 25).
 - **Lesson:** `@Override` is the compiler's safety net in a port: without it, a renamed
   hook would silently stop being called. PowerShell has no `head`, so a pipe to it
   stops the whole command line, and nothing else ran.
+
+## Phase 3, group C: Input events
+
+- **Research:** `net.minecraft.client.input`: `MouseButtonEvent(x, y, MouseButtonInfo(button,
+  modifiers))`, `KeyEvent(key, scancode, modifiers)`, `CharacterEvent(codepoint)`, with NO
+  modifiers; `InputWithModifiers.hasShiftDown()`… Static `Screen.hasShiftDown()` is gone →
+  `Minecraft.hasShiftDown()`. NeoForge 26 `ScreenEvent.CharacterTyped` lost `getModifiers()`
+  (checked with `javap` on `neoforge-26.1.2.126-universal.jar`, since NeoForge classes are not in
+  MDG's MC sources jar).
+- **Decision A (adapters at the edges):** our internal methods keep `(int key, int scanCode,
+  int modifiers)` / `(char, int)`. Overrides unpack the event at the top
+  (`double mx = event.x(); …`) so the bodies stay identical; calls into MC build events
+  (`new KeyEvent(…)`, `new CharacterEvent(cp)`, `new MouseButtonEvent(x, y, new MouseButtonInfo(b, mods))`).
+  Chars: modifiers → 0 (MC no longer has them). Mouse into EditBox: modifiers built from
+  the live Shift/Ctrl/Alt state, so Shift+click keeps working as in 1.21.
+- **Result:** 100 → **81**, input errors 0. (One more input call surfaced mid-step, the next layer.)
+- **Lessons:** Records (`event.x()`) make translation easy: unpack once, keep the body.
+  When an API drops data (char modifiers), check where the value went before
+  deciding it's safe to pass 0. `javap -cp <jar> <class>` lists a class's methods
+  without sources.
