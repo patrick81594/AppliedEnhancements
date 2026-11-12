@@ -268,7 +268,7 @@ public final class NetworkItemContextMenu {
 
         boolean valid = parseAmount().isPresent();
         amountField.setTextColor(valid ? 0xFFE0E0E0 : 0xFFFF5555);
-        amountField.render(graphics, mouseX, mouseY, partialTick);
+        amountField.extractRenderState(graphics, mouseX, mouseY, partialTick);
         renderSmallButton(graphics, x + 6, y + 41, 60, 16,
                 Component.translatable("gui.appliedenhancements.network_item_menu.confirm"),
                 valid, contains(mouseX, mouseY, x + 6, y + 41, 60, 16));

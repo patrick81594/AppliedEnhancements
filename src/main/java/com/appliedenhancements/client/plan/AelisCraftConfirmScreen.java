@@ -715,8 +715,8 @@ public final class AelisCraftConfirmScreen extends CraftConfirmScreen {
     }
 
     @Override
-    public void render(GuiGraphicsExtractor g, int mx, int my, float partialTicks) {
-        super.render(g, mx, my, partialTicks);
+    public void extractRenderState(GuiGraphicsExtractor g, int mx, int my, float partialTicks) {
+        super.extractRenderState(g, mx, my, partialTicks);
         if (minecraft.screen != this) return;
         if (view == View.TREE && inGraphHelp(mx, my)) {
             var tips = new ArrayList<Component>();

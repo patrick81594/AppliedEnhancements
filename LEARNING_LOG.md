@@ -596,3 +596,17 @@ NeoForge 26.1.2.126, Java 25).
 - **Lessons:** Count going UP after a fix can be progress: it means javac now gets
   past name resolution into those files. `grep -P '\r'` also matches binary files
   (PNG), so read the file name before panicking.
+
+## Phase 3, Step 9b: GUI render hooks
+
+- **Changes (names only, bodies unchanged):** 3 IconButton subclasses
+  `renderWidget(…)` → `extractContents(…)` (AbstractButton.extractWidgetRenderState is
+  final and calls it; AE2 26 IconButton:62 does the same); screen `render`/`super.render`
+  → `extractRenderState`/`super.extractRenderState`; calling a widget
+  `amountField.render(…)` → `amountField.extractRenderState(…)` (AbstractWidget:59, public final).
+- **Result:** 106 → **100**. The remaining 7 "does not override" errors are all INPUT hooks
+  (onPress(), mouseClicked/Dragged/Released, keyPressed): the next group, since MC 26
+  moved to event objects (`MouseButtonEvent`, `KeyEvent`, `InputWithModifiers`).
+- **Lesson:** `@Override` is the compiler's safety net in a port: without it, a renamed
+  hook would silently stop being called. PowerShell has no `head`, so a pipe to it
+  stops the whole command line, and nothing else ran.

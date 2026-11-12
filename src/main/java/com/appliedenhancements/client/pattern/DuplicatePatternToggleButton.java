@@ -41,7 +41,7 @@ public final class DuplicatePatternToggleButton extends IconButton {
     }
 
     @Override
-    public void renderWidget(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
+    public void extractContents(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         if (!visible) {
             return;
         }
