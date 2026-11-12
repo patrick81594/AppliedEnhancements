@@ -15,13 +15,15 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.LongSupplier;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
-import net.minecraft.SharedConstants;
-import net.minecraft.server.Bootstrap;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
+// Needs a started FML/Minecraft environment (MC 26 / FML 11): runs in the `test` task (MDG unitTest).
+@Tag("fml")
+@com.appliedenhancements.test.BootstrapMinecraft
 class AelisFixedRemainderTest {
     private static AEItemKey dragonBreath;
     private static AEItemKey glassBottle;
@@ -30,9 +32,8 @@ class AelisFixedRemainderTest {
 
     @BeforeAll
     static void bootstrap() {
-        net.neoforged.fml.loading.LoadingModList.of(List.of(), List.of(), List.of(), List.of(), List.of(), Map.of());
-        SharedConstants.tryDetectVersion();
-        Bootstrap.bootStrap();
+        // FML (junit-fml) has already bootstrapped Minecraft; the 1.21 manual bootstrap
+        // (LoadingModList.of + SharedConstants.tryDetectVersion + Bootstrap.bootStrap) is no longer needed.
         dragonBreath = AEItemKey.of(Items.DRAGON_BREATH);
         glassBottle = AEItemKey.of(Items.GLASS_BOTTLE);
         bowl = AEItemKey.of(Items.BOWL);

@@ -19,11 +19,8 @@ import java.math.BigInteger;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-import net.minecraft.SharedConstants;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.nbt.Tag;
-import net.minecraft.server.Bootstrap;
 import net.minecraft.world.item.Items;
 import net.neoforged.fml.config.IConfigSpec;
 import net.neoforged.fml.config.ModConfig;
@@ -31,23 +28,15 @@ import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 
+// Needs a started FML/Minecraft environment (MC 26 / FML 11): runs in the `test` task (MDG unitTest).
+@Tag("fml")
+@com.appliedenhancements.test.BootstrapMinecraft
 class AelisExactCyclicPlanningTest {
-    @BeforeAll static void bootstrap() throws Exception {
-        net.neoforged.fml.loading.LoadingModList.of(List.of(), List.of(), List.of(), List.of(), List.of(), Map.of());
-        SharedConstants.tryDetectVersion();
-        Bootstrap.bootStrap();
-        var keys = new net.minecraft.core.MappedRegistry<appeng.api.stacks.AEKeyType>(
-                appeng.api.stacks.AEKeyType.REGISTRY_KEY, com.mojang.serialization.Lifecycle.stable());
-        appeng.api.stacks.AEKeyTypesInternal.setRegistry(keys);
-        appeng.api.stacks.AEKeyTypesInternal.register(appeng.api.stacks.AEKeyType.items());
-        keys.freeze();
-        // The standalone fixture has no AE2 item-registration event. Its codec
-        // only needs a bound missing-content sentinel distinct from these test items.
-        var sentinel = net.neoforged.neoforge.registries.DeferredHolder.class.getDeclaredField("holder");
-        sentinel.setAccessible(true);
-        sentinel.set(appeng.core.definitions.AEItems.MISSING_CONTENT.holder(),
-                BuiltInRegistries.ITEM.wrapAsHolder(Items.BARRIER));
-    }
+    // No @BeforeAll setup anymore (MC 26 / FML 11): FML (junit-fml) bootstraps Minecraft and loads the
+    // real AE2, which registers its AEKeyType registry (incl. AEKeyType.items()) and its MISSING_CONTENT
+    // item itself. The 1.21 standalone fixture faked both (LoadingModList.of + Bootstrap.bootStrap, a
+    // hand-made AEKeyTypesInternal registry, and a DeferredHolder reflection hack); with AE2 really
+    // loaded, AEKeyTypesInternal.setRegistry refuses a second registry.
 
     @AfterEach void unloadConfig() { Config.SPEC.acceptConfig(null); }
 
@@ -74,23 +63,16 @@ class AelisExactCyclicPlanningTest {
             var decoded = codec.decode(buffer);
             assertEquals(payload, decoded);
             assertEquals(0, buffer.readableBytes());
-            var menu = new com.appliedenhancements.mixin.CraftConfirmMenuMixin() {};
-            menu.appliedenhancements$setCyclicCraftAmounts(decoded.cyclicCraftAmounts());
-            menu.appliedenhancements$setBigIntegerCyclicCraftAmounts(decoded.bigIntegerCyclicCraftAmounts());
-            menu.appliedenhancements$setBigIntegerCraftAmounts(decoded.bigIntegerCraftAmounts());
-            assertEquals(cyclic, menu.appliedenhancements$getBigIntegerCyclicCraftAmounts().get(key));
-            assertEquals(crafted, menu.appliedenhancements$getBigIntegerCraftAmounts().get(key));
-            var amount = menu.appliedenhancements$getBigIntegerCyclicCraftAmounts().get(key);
+            // The CraftConfirmMenuMixin getter/setter/snapshot checks that used to follow here moved to
+            // com.appliedenhancements.mixin.CraftConfirmMenuCyclicAmountsTest (plainTest): under a running
+            // Mixin system (this FML test JVM) a Mixin class cannot be instantiated as a normal class.
+            var amount = decoded.bigIntegerCyclicCraftAmounts().get(key);
+            assertEquals(cyclic, amount);
+            assertEquals(crafted, decoded.bigIntegerCraftAmounts().get(key));
             assertEquals("44.4Z", com.appliedenhancements.client.CraftingPlanAmountFormatter.format(
                     key, amount, appeng.api.stacks.AmountFormat.SLOT));
             assertEquals("44,444,444,444,444,444,444,448", com.appliedenhancements.client.CraftingPlanAmountFormatter.format(
                     key, amount, appeng.api.stacks.AmountFormat.FULL));
-            var snapshot = menu.appliedenhancements$getBigIntegerCyclicCraftAmounts();
-            assertSame(snapshot, menu.appliedenhancements$getBigIntegerCyclicCraftAmounts());
-            menu.appliedenhancements$setCyclicCraftAmounts(Map.of(key, 7L));
-            menu.appliedenhancements$setBigIntegerCyclicCraftAmounts(Map.of());
-            assertEquals(BigInteger.valueOf(7), menu.appliedenhancements$getBigIntegerCyclicCraftAmounts().get(key));
-            assertEquals(cyclic, snapshot.get(key));
         } finally {
             buffer.release();
             setSync.invoke(BuiltInRegistries.ITEM, wasSynced);

@@ -76,7 +76,7 @@ Never touched by any reset: the repo, `out/`, `ae2-src/` (they are WSL folders).
 
 | Task | Where | Why |
 |---|---|---|
-| `./gradlew build`, `test` | Container | Pinned JDK and tools, same for every run. |
+| `./gradlew build`, `plainTest`, `test` | Container | Pinned JDK and tools, same for every run. |
 | `./gradlew runServer`, `runGameTestServer` | Container | Headless: no window needed. |
 | `./gradlew runClient` | Host (see below) | Needs a window and the GPU (OpenGL). |
 | Playing / testing in FTB Evolution 2 | Host, Prism Launcher, a **TEST copy** of the instance | Never the real instance. |
@@ -95,3 +95,25 @@ Minecraft needs a display and OpenGL. The options, if ever wanted:
   similar library needs, usually worse performance.
 - **Recommended:** run `runClient` on the host with a local JDK 25,
   or test the built jar in the TEST instance.
+
+## Tests (two tasks)
+
+Since the port to MC 26 / FML 11 there are two JUnit tasks; `./gradlew build` (via `check`) runs both.
+
+| Task | Environment | Which tests |
+|---|---|---|
+| `./gradlew plainTest` | plain JUnit, no FML started (like 1.21.1) | everything except the FML tests |
+| `./gradlew test` | ModDevGradle `unitTest`: junit-fml starts a real FML loader with AE2 + this mod (Mixins active) | only the classes listed in `fmlTestClasses` in `build.gradle` |
+
+Why two: tests that bootstrap Minecraft (real items, data components) need a started FML loader in 26,
+but several other tests instantiate or inspect Mixin classes directly, which a running Mixin system forbids.
+
+**Adding a new FML test** (needs real items/registries):
+1. Annotate the class with `@Tag("fml")` and `@com.appliedenhancements.test.BootstrapMinecraft`
+   (starts NeoForge's ephemeral test server so item components and tags are bound).
+2. Add its file pattern to `fmlTestClasses` in `build.gradle`. The tag alone is not enough: JUnit has to
+   load a class to read its tags, and some test classes cannot be loaded inside FML.
+3. Don't fake what FML now provides (no `Bootstrap.bootStrap()`, no hand-made AE2 registries).
+
+Notes: the first `test` run downloads Minecraft's assets (~438 MiB, once, into the Gradle cache);
+the FML tests run in `build/minecraft-junit` as working directory.

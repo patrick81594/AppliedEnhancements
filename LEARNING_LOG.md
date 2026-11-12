@@ -747,3 +747,22 @@ NeoForge 26.1.2.126, Java 25).
 - **Decision (Patrick): B** — build the FML test task now (instead of @Disabled until Phase 5).
 - **Lessons:** Compile classpath ≠ runtime classpath; check both before dropping a dependency. One class that fails to
   load can stop JUnit discovery for ALL classes. Compare test results per class against the baseline.
+
+## Phase 3: FML test task — all tests green (545 = 544 + 1 split)
+
+- **Build:** `neoForge.unitTest { enable(); testedMod }` turns `test` into an FML test JVM (junit-fml 11.0.15 reads
+  `fml.junit.argsfile`, MDG's `prepareNeoForgeTestFiles` writes vm/program args, working dir `build/minecraft-junit`).
+  New `plainTest` Test task = same test classes, classpath without junit-fml. `fmlTestClasses` file-name list:
+  `test` includes, `plainTest` excludes; `@Tag("fml")` as second filter/documentation. `check` depends on both.
+  `testImplementation net.neoforged:testframework` + our `@BootstrapMinecraft` (= AE2 26's EphemeralTestServerProvider pattern).
+- **Rounds:** (1) discovery crash: JUnit LOADS classes to read tags, Mixin-inspection tests can't load in FML → name
+  filter first. (2) "Components not bound yet" → ephemeral test server binds item components (AE2's approach).
+  (3) 2 tests "missing = null" — identical on 1.21.1 under FML; root cause: the test's fake State overrode
+  get/setBigIntegerMissingAmounts but not recordBigIntegerMissing, and the real Mixin's concrete method replaced
+  the interface default → completed the fake. (4) fake AE2 registry + DeferredHolder hack removed (real AE2 loaded;
+  `setRegistry` is set-once). (5) `new CraftConfirmMenuMixin() {}` is forbidden under a running Mixin system → split:
+  payload/formatter stays in FML, Mixin getter/setter checks moved unchanged to plain `CraftConfirmMenuCyclicAmountsTest`.
+- **Result:** `clean build` green: plainTest 97/516/0 + test 29/0, jar built against MC 26.1.2.
+- **Lessons:** Fakes for a missing environment break once the real environment exists; remove them. A fake for a
+  Mixin interface must override EVERY method the real Mixin adds. If a test fails identically on the old version
+  under the same conditions, it's not a port regression. Keep each assertion in the environment it needs.

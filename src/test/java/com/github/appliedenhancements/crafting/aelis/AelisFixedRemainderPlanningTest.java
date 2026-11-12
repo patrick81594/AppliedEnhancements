@@ -30,16 +30,18 @@ import java.math.BigInteger;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.stream.IntStream;
-import net.minecraft.SharedConstants;
-import net.minecraft.server.Bootstrap;
 import net.minecraft.world.item.Items;
 import net.neoforged.fml.config.IConfigSpec;
 import net.neoforged.fml.config.ModConfig;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 /** Plans real dragon-breath/glass-bottle fixed remainders through the reflection fixtures. */
+// Needs a started FML/Minecraft environment (MC 26 / FML 11): runs in the `test` task (MDG unitTest).
+@Tag("fml")
+@com.appliedenhancements.test.BootstrapMinecraft
 class AelisFixedRemainderPlanningTest {
     private static final long SHELL_BATCH = 20_480L;
     private static final long BOTTLE_RETURNS = 81_920L;
@@ -51,10 +53,8 @@ class AelisFixedRemainderPlanningTest {
 
     @BeforeAll
     static void bootstrap() throws Exception {
-        net.neoforged.fml.loading.LoadingModList.of(
-                List.of(), List.of(), List.of(), List.of(), List.of(), Map.of());
-        SharedConstants.tryDetectVersion();
-        Bootstrap.bootStrap();
+        // FML (junit-fml) has already bootstrapped Minecraft; the 1.21 manual bootstrap
+        // (LoadingModList.of + SharedConstants.tryDetectVersion + Bootstrap.bootStrap) is no longer needed.
         dragonBreath = AEItemKey.of(Items.DRAGON_BREATH);
         glassBottle = AEItemKey.of(Items.GLASS_BOTTLE);
         bowl = AEItemKey.of(Items.BOWL);
@@ -630,6 +630,14 @@ class AelisFixedRemainderPlanningTest {
         public void appliedenhancements$setBigIntegerMissingAmounts(
                 Map<AEKey, BigInteger> values) {
             missing = new HashMap<>(values);
+        }
+
+        // Under FML the real CraftingSimulationStateCyclicCraftingMixin adds a concrete
+        // recordBigIntegerMissing to CraftingSimulationState (writing its own field), which would
+        // otherwise replace the interface default this fake relies on. Same body as that default.
+        @Override
+        public void appliedenhancements$recordBigIntegerMissing(AEKey key, BigInteger amount) {
+            missing.merge(key, amount, BigInteger::add);
         }
 
         @Override
