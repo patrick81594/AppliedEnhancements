@@ -1,6 +1,7 @@
 package com.github.appliedenhancements.crafting.aelis;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -29,7 +30,7 @@ class AelisFixedRemainderTest {
 
     @BeforeAll
     static void bootstrap() {
-        net.neoforged.fml.loading.LoadingModList.of(List.of(), List.of(), List.of(), List.of(), Map.of());
+        net.neoforged.fml.loading.LoadingModList.of(List.of(), List.of(), List.of(), List.of(), List.of(), Map.of());
         SharedConstants.tryDetectVersion();
         Bootstrap.bootStrap();
         dragonBreath = AEItemKey.of(Items.DRAGON_BREATH);
@@ -40,7 +41,7 @@ class AelisFixedRemainderTest {
 
     @Test
     void acceptsDragonBreathReturningGlassBottle() {
-        assertTrue(dragonBreath.getReadOnlyStack().hasCraftingRemainingItem());
+        assertNotNull(dragonBreath.getItem().getCraftingRemainder(dragonBreath.getReadOnlyStack()));
         assertEquals(glassBottle,
                 AelisFixedRemainder.inspect(exact(dragonBreath, glassBottle),
                         dragonBreath, 1, null));

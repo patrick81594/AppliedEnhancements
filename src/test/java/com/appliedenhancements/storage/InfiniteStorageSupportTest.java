@@ -193,8 +193,8 @@ class InfiniteStorageSupportTest {
 
         @Override public AEKeyType getType() { return KEY_TYPE; }
         @Override public AEKey dropSecondary() { return this; }
-        @Override public CompoundTag toTag(HolderLookup.Provider registries) {
-            return new CompoundTag();
+        // AE2 26: toTag writes into a ValueOutput. Test key: nothing to write (as before).
+        @Override public void toTag(net.minecraft.world.level.storage.ValueOutput output) {
         }
         @Override public Object getPrimaryKey() { return this; }
         @Override public Identifier getId() {

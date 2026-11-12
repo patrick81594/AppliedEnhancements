@@ -731,3 +731,19 @@ NeoForge 26.1.2.126, Java 25).
 - **Phase 3 path:** 108 → 84 → 76 → 68 → (next layer) 106 → 100 → 81 → 38 → 31 → 24 → 13 → 10 → 8 → 1 → **0**,
   in 17 commits, one cause per commit.
 - **Lesson:** "It compiles" ≠ "it works". Next: test compile, the 544 tests, then Mixins at runtime (Phase 4).
+
+## Phase 3: Tests on 26.1.2 (runs 1–3)
+
+- **Run 1:** compileTestJava, 15 errors → adapted 7 test files, never deleted: test AEKeys
+  `toTag(HolderLookup.Provider)` → empty `toTag(ValueOutput)`; NBT getters; FML 11 `LoadingModList.of` has a
+  3rd `List<ModFile>`; `assertNotNull(item.getCraftingRemainder(stack))`.
+- **Run 2:** tests compiled, but JUnit DISCOVERY crashed (0/99 classes ran): `NoClassDefFoundError: …mixinextras…Operation`.
+  `gradlew dependencies` showed MixinExtras only on the compile classpaths (NeoForge provides it at game runtime via FML).
+  Our removed `implementation` line had covered the tests in 1.21.1 → `testRuntimeOnly 'io.github.llamalad7:mixinextras-neoforge:0.5.5'`.
+- **Run 3:** **96/99 classes, 515 tests green with identical per-class counts.** 3 AELIS classes (29 tests) fail in
+  `@BeforeAll`: `IllegalStateException: There is no current FML Loader` (NeoForge-patched `SharedConstants.<clinit>`
+  → `FMLEnvironment.isProduction()` → `FMLLoader.getCurrent()`). FML 11's loader is an instance (`FMLLoader.create(StartupArgs)`),
+  so the 1.21 trick `LoadingModList.of(...)` + `Bootstrap.bootStrap()` no longer works in plain JUnit.
+- **Decision (Patrick): B** — build the FML test task now (instead of @Disabled until Phase 5).
+- **Lessons:** Compile classpath ≠ runtime classpath; check both before dropping a dependency. One class that fails to
+  load can stop JUnit discovery for ALL classes. Compare test results per class against the baseline.

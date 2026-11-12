@@ -154,6 +154,9 @@ dependencies {
     // MixinExtras: the runtime (mixinextras-neoforge 0.5.5) ships with NeoForge
     // 26.1.2.126, so only the annotation processor is declared here, at the same version.
     annotationProcessor 'io.github.llamalad7:mixinextras-common:0.5.5'
+    // NeoForge provides MixinExtras only for compiling and inside the game (FML loads it at startup).
+    // Plain JUnit tests need it on their runtime classpath; same version as NeoForge 26.1.2.126 ships.
+    testRuntimeOnly 'io.github.llamalad7:mixinextras-neoforge:0.5.5'
 
     testImplementation platform('org.junit:junit-bom:5.11.4')
     testImplementation 'org.junit.jupiter:junit-jupiter'

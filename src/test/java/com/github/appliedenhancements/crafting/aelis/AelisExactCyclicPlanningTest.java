@@ -33,7 +33,7 @@ import org.junit.jupiter.params.provider.EnumSource;
 
 class AelisExactCyclicPlanningTest {
     @BeforeAll static void bootstrap() throws Exception {
-        net.neoforged.fml.loading.LoadingModList.of(List.of(), List.of(), List.of(), List.of(), Map.of());
+        net.neoforged.fml.loading.LoadingModList.of(List.of(), List.of(), List.of(), List.of(), List.of(), Map.of());
         SharedConstants.tryDetectVersion();
         Bootstrap.bootStrap();
         var keys = new net.minecraft.core.MappedRegistry<appeng.api.stacks.AEKeyType>(
@@ -167,8 +167,8 @@ class AelisExactCyclicPlanningTest {
         encoded.remove("exactRemainingCrafts");
         encoded.remove("exactPendingOutputs");
         encoded.putLong("remainingCrafts", Long.MAX_VALUE - 1);
-        encoded.getList("pendingOutputs", Tag.TAG_COMPOUND).getCompound(0).putLong("amount", 2);
-        var step = encoded.getList("steps", Tag.TAG_COMPOUND).getCompound(0);
+        encoded.getListOrEmpty("pendingOutputs").getCompoundOrEmpty(0).putLong("amount", 2);
+        var step = encoded.getListOrEmpty("steps").getCompoundOrEmpty(0);
         step.remove("exactCrafts");
         var legacy = AelisCycleExecutionNbt.read(encoded, registries);
         assertNotNull(legacy);

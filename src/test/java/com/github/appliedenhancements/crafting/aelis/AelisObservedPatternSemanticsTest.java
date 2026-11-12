@@ -164,8 +164,8 @@ class AelisObservedPatternSemanticsTest {
         }
 
         @Override
-        public CompoundTag toTag(HolderLookup.Provider registries) {
-            return new CompoundTag();
+        public void toTag(net.minecraft.world.level.storage.ValueOutput output) {
+            // AE2 26: toTag writes into a ValueOutput. Test key: nothing to write (as before).
         }
 
         @Override

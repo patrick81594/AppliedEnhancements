@@ -52,7 +52,7 @@ class AelisFixedRemainderPlanningTest {
     @BeforeAll
     static void bootstrap() throws Exception {
         net.neoforged.fml.loading.LoadingModList.of(
-                List.of(), List.of(), List.of(), List.of(), Map.of());
+                List.of(), List.of(), List.of(), List.of(), List.of(), Map.of());
         SharedConstants.tryDetectVersion();
         Bootstrap.bootStrap();
         dragonBreath = AEItemKey.of(Items.DRAGON_BREATH);

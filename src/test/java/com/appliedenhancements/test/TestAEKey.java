@@ -11,6 +11,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.storage.ValueOutput;
 
 public final class TestAEKey extends AEKey {
     private final Identifier id;
@@ -36,8 +37,8 @@ public final class TestAEKey extends AEKey {
     }
 
     @Override
-    public CompoundTag toTag(HolderLookup.Provider registries) {
-        return new CompoundTag();
+    public void toTag(ValueOutput output) {
+        // AE2 26: toTag writes into a ValueOutput. Test key: nothing to write (as before).
     }
 
     @Override
