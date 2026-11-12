@@ -580,9 +580,11 @@ public final class AelisCraftConfirmScreen extends CraftConfirmScreen {
         if (keys.isEmpty() || !OptionalPlanBookmarks.available()) return;
         var result = OptionalPlanBookmarks.add(keys);
         if (minecraft.player != null) {
-            minecraft.player.displayClientMessage(tr("bookmark_added", result.added()), true);
-            if (result.unsupported() > 0) minecraft.player.displayClientMessage(
-                    tr("bookmark_unsupported", result.unsupported()), false);
+            // MC 26: displayClientMessage(c, true) -> sendOverlayMessage (action bar),
+            // displayClientMessage(c, false) -> sendSystemMessage (chat).
+            minecraft.player.sendOverlayMessage(tr("bookmark_added", result.added()));
+            if (result.unsupported() > 0) minecraft.player.sendSystemMessage(
+                    tr("bookmark_unsupported", result.unsupported()));
         }
     }
 

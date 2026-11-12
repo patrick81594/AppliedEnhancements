@@ -216,8 +216,8 @@ final class JeiItemContextMenuHandler
         var minecraft = Minecraft.getInstance();
         minecraft.keyboardHandler.setClipboard(value);
         if (minecraft.player != null) {
-            minecraft.player.displayClientMessage(
-                    Component.translatable(messageKey, value), true);
+            minecraft.player.sendOverlayMessage(
+                    Component.translatable(messageKey, value));
         }
     }
 }

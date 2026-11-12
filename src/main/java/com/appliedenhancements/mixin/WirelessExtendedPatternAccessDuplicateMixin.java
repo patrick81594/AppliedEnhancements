@@ -609,7 +609,7 @@ public abstract class WirelessExtendedPatternAccessDuplicateMixin
     private void appliedenhancements$showQuickMoveMessage(String key, int count) {
         var player = Minecraft.getInstance().player;
         if (player != null) {
-            player.displayClientMessage(Component.translatable(key, count), true);
+            player.sendOverlayMessage(Component.translatable(key, count));
         }
     }
 

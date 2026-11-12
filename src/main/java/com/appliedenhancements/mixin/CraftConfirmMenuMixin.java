@@ -479,8 +479,9 @@ public abstract class CraftConfirmMenuMixin implements CraftingCalculationProgre
         try {
             forced = com.appliedenhancements.runtime.AelisForcedPlan.prepare(original);
         } catch (ArithmeticException unsupportedAmount) {
-            menu.getPlayer().displayClientMessage(Component.translatable(
-                    "gui.appliedenhancements.plan.force_amount_too_large"), false);
+            // was displayClientMessage(c, false) = chat
+            menu.getPlayer().sendSystemMessage(Component.translatable(
+                    "gui.appliedenhancements.plan.force_amount_too_large"));
             return;
         }
         this.result = forced;

@@ -668,3 +668,17 @@ NeoForge 26.1.2.126, Java 25).
   (`SetStockAmountMenu`) without checking. A pattern like `PacketDistributor\.` also matches
   inside `ClientPacketDistributor.` (use `\b`). `wsl -- grep 'a|b'` goes through a shell, so
   `|` gets eaten; use a script file.
+
+## Phase 3, E1: Player messages (chat vs action bar)
+
+- **Research:** `Player.displayClientMessage(c, actionBar)` is gone. AE2: 21× → 0, now
+  `sendOverlayMessage` 19× + `sendSystemMessage`. Compared the method BODIES (1.21.1 baseline vs 26):
+  `ChatListener.handleSystemMessage(msg, boolean)` changed the MEANING of its boolean from
+  `isOverlay` to `remote` (chat only); the action bar is the new `handleOverlay(msg)`.
+- **Mapping (verified):** `displayClientMessage(c, true)` → `sendOverlayMessage(c)`;
+  `displayClientMessage(c, false)` → `sendSystemMessage(c)`. 7 places (5 action bar, 2 chat).
+- **Result:** 31 → **24**.
+- **Lesson:** Same-looking signatures can change meaning (a boolean parameter
+  renamed from `isOverlay` to `remote`). Read the old and new bodies, not just the names.
+  A blind replace-all with `sendSystemMessage` would have moved every action-bar message
+  into the chat.
