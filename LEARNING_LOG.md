@@ -957,3 +957,17 @@ NeoForge 26.1.2.126, Java 25).
 - Why a clean build: Gradle recompiles only changed files, so incremental builds under-report warnings.
 - Lesson: track the warning count per kind across the port; [removal] = "will break in a later version" = the
   to-do list for the next port.
+## Phase 5 (started early), TEST instance step 1: copy the pack
+- What: scripts/make-test-instance.ps1 (Windows HOST, PowerShell) copies the Prism instance "FTB Evolution 2" to
+  "FTB Evolution 2 - AE-TEST" with robocopy, skipping minecraft\ftbbackups3, saves, logs, crash-reports, .mixin.out,
+  then sets `name=` in the copy's instance.cfg. Result: 11,640 files, 1.0 GB, 432 mod jars, 0 failed, 3 seconds.
+- Why: client Mixins, optional-mod Mixins (AdvancedAE, ae2wtlib, ExtendedAE) and the in-game checklist can only be
+  proven in the real pack; the real instance must never be written to.
+- Terms: a Prism INSTANCE is a folder with instance.cfg + mmc-pack.json (+ flame/ for CurseForge packs) and the game
+  directory minecraft/. ROBOCOPY exit codes 0-7 mean success (bit flags); 8+ means a failure.
+- Command (host, PowerShell): powershell -ExecutionPolicy Bypass -File <repo>\scripts\make-test-instance.ps1
+- Lessons:
+  * Measure before copying: 6.6 of 8.4 GB were world backups (ftbbackups3).
+  * Never copy a world while the game is running; start the TEST instance with a fresh creative world.
+  * Safe copy = no /MOV, no /MIR, refuse to overwrite an existing target; verify the source afterwards (name,
+    modification time, mod count unchanged).
