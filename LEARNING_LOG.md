@@ -861,3 +861,16 @@ NeoForge 26.1.2.126, Java 25).
     runClient → only a TEST instance with that mod proves it.
   * Gradle compiles incrementally: this build shows 1 lookup() warning (only the changed file was recompiled);
     a clean build shows 2 (W2 + W3). Don't count warnings from incremental builds.
+## Phase 4, Step W4: AdvancedAeOrderCompletionMixin save/load → ValueInput/ValueOutput
+- What: same target class as W3 (AdvCraftingCPULogic). Handlers now take (ValueOutput)/(ValueInput);
+  tag.put → output.store(KEY, CompoundTag.CODEC, saved), tag.remove → output.discard(KEY) (= output.remove(name),
+  TagValueOutput.java:150), tag.contains + getCompoundOrEmpty → input.read(KEY, CompoundTag.CODEC), return if empty.
+  No registries needed here → no lookup(), no new warning.
+- Also checked (closes the gap from W3): all 5 @At(INVOKE) targets of W3 + W4 exist in AdvancedAE's bytecode with our
+  exact descriptors (grep the `javap -c` output for the owner.name:descriptor comments).
+- Term: ORDINAL = which occurrence of a repeated call an @At picks (0-based). W4 uses ordinal = 0 on
+  ListCraftingInventory.insert in executeCrafting. Verified by ORDER, not by name: extractPatternInputs → pushPattern →
+  waitingFor.insert (outputs) → waitingFor.insert (container items), identical in AE2 19, AE2 26 and AdvancedAE.
+- Command (JDK 25 container): jdk25-build.sh <repo> phase4-w4-build compileJava plainTest → 97/516/0, no warnings.
+- Lesson: an ordinal is a silent trap: if upstream reorders the calls, the Mixin still applies but hooks the wrong
+  one. Re-check the order on every AE2/AdvancedAE update. Runtime proof only in a TEST instance with AdvancedAE.

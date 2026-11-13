@@ -18,10 +18,11 @@ import com.llamalad7.mixinextras.injector.wrapmethod.WrapMethod;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import java.util.UUID;
-import net.minecraft.core.HolderLookup;
 import net.minecraft.core.UUIDUtil;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Pseudo;
 import org.spongepowered.asm.mixin.Shadow;
@@ -124,25 +125,28 @@ public abstract class AdvancedAeOrderCompletionMixin {
     }
 
     @Inject(method = "writeToNBT", at = @At("RETURN"))
-    private void appliedenhancements$saveOrderCompletion(CompoundTag tag, HolderLookup.Provider registries,
-            CallbackInfo callback) {
+    private void appliedenhancements$saveOrderCompletion(ValueOutput output, CallbackInfo callback) {
         if (hasJob() && appliedenhancements$pendingOrderCompletion > 0 && appliedenhancements$orderId != null) {
             var saved = new CompoundTag();
             // MC 26 removed putUUID; UUIDUtil.CODEC writes the same int[4] as before.
             saved.store("orderId", UUIDUtil.CODEC, appliedenhancements$orderId);
             saved.putLong("amount", appliedenhancements$pendingOrderCompletion);
-            tag.put(APPLIEDENHANCEMENTS_ORDER_TAG, saved);
+            // CompoundTag.CODEC is a passthrough: same compound under the same key as
+            // 1.21's tag.put(...), so saves stay compatible.
+            output.store(APPLIEDENHANCEMENTS_ORDER_TAG, CompoundTag.CODEC, saved);
         } else {
-            tag.remove(APPLIEDENHANCEMENTS_ORDER_TAG);
+            // = 1.21 tag.remove(...)
+            output.discard(APPLIEDENHANCEMENTS_ORDER_TAG);
         }
     }
 
     @Inject(method = "readFromNBT", at = @At("RETURN"))
-    private void appliedenhancements$loadOrderCompletion(CompoundTag tag, HolderLookup.Provider registries,
-            CallbackInfo callback) {
+    private void appliedenhancements$loadOrderCompletion(ValueInput input, CallbackInfo callback) {
         appliedenhancements$prepareOrder();
-        if (appliedenhancements$orderId == null || !tag.contains(APPLIEDENHANCEMENTS_ORDER_TAG)) return;
-        var saved = tag.getCompoundOrEmpty(APPLIEDENHANCEMENTS_ORDER_TAG);
+        if (appliedenhancements$orderId == null) return;
+        var stored = input.read(APPLIEDENHANCEMENTS_ORDER_TAG, CompoundTag.CODEC);
+        if (stored.isEmpty()) return;
+        var saved = stored.get();
         long amount = saved.getLongOr("amount", 0L);
         // = 1.21 hasUUID(...) && getUUID(...).equals(...): read() is empty unless a valid int[4] UUID.
         if (saved.read("orderId", UUIDUtil.CODEC).filter(appliedenhancements$orderId::equals).isPresent()
