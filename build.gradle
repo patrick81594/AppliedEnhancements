@@ -239,6 +239,8 @@ def fmlTestClasses = [
         'com/github/appliedenhancements/crafting/aelis/AelisExactCyclicPlanningTest*',
         'com/github/appliedenhancements/crafting/aelis/AelisFixedRemainderPlanningTest*',
         'com/github/appliedenhancements/crafting/aelis/AelisFixedRemainderTest*',
+        // Force-loads every Mixin target so each Mixin is really applied (see the class comment).
+        'com/appliedenhancements/test/MixinApplyAuditTest*',
 ]
 
 // `test`: only the FML tests; they run inside a started FML environment (see neoForge.unitTest).

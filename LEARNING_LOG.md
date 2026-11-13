@@ -874,3 +874,36 @@ NeoForge 26.1.2.126, Java 25).
 - Command (JDK 25 container): jdk25-build.sh <repo> phase4-w4-build compileJava plainTest → 97/516/0, no warnings.
 - Lesson: an ordinal is a silent trap: if upstream reorders the calls, the Mixin still applies but hooks the wrong
   one. Re-check the order on every AE2/AdvancedAE update. Runtime proof only in a TEST instance with AdvancedAE.
+## Phase 4, Step 4.4: runServer with Mixin export — what does a server start really prove?
+- What: started the dedicated dev server with `-Dmixin.debug.export=true` (passed as env JAVA_TOOL_OPTIONS, no
+  build.gradle change). Mixin then writes every class it TRANSFORMED to run/.mixin.out/class/. Server reached
+  "Done", stopped with `docker stop` (exit code 143 = 128 + SIGTERM 15, after a clean world save).
+- Result: 0 Mixin errors, but only 16 classes were transformed, and only 6 of them are OUR targets (7 of our 41
+  common Mixins): StorageCells, CraftingService, PatternAccessTermMenu (+accessor), MEStorageMenu, CraftAmountMenu,
+  CraftConfirmMenu. NOT loaded: CraftingCpuLogic (W2), AbstractContainerScreen (W1, client), AdvancedAE (absent).
+  The other 10 exported classes belong to NeoForge's / AE2's own Mixins.
+- Why: a Mixin is applied when its target class LOADS. "Server started fine" proves 7/41, not 41/41.
+- Command: runserver-check.sh <log-name> (docker run -d --name …, wait for "Done (", docker stop, report).
+- Lessons:
+  * Measure coverage instead of assuming it: mixin.debug.export shows exactly which targets were mixed.
+  * The export lists ALL mods' Mixin targets → cross-check against your own @Mixin targets.
+  * Mixin has MixinEnvironment.getCurrentEnvironment().audit(): force-loads every not-yet-loaded target and logs
+    "Could not force-load …". Only callable from code (no system property) → candidate for an FML test.
+  * The WARN "Error loading class: …" lines at startup are the absent optional mods (@Pseudo targets) = expected.
+## Phase 4, Step 4.5: MixinApplyAuditTest — force-load every Mixin target in an FML test
+- What: new FML test com.appliedenhancements.test.MixinApplyAuditTest (+ one entry in build.gradle fmlTestClasses).
+  It reads appliedenhancements.mixins.json, reads each Mixin's @Mixin targets and @Pseudo from the class file with
+  ASM, then Class.forName(target, false, loader) for every target. Absent target of an all-@Pseudo set = skipped.
+- Why not the Mixin API: Mixins.getConfigs() is emptied during startup (MixinProcessor.selectConfigs removes each
+  config it selects). Why ASM: Mixin classes must not be loaded directly. Why NOT in package …mixin: that is the
+  declared Mixin package; Mixin refuses to load ordinary classes from it.
+- First run (JDK 25 container, `./gradlew test`): side=DEDICATED_SERVER, 41 Mixins, 35 targets:
+  28 applied (incl. CraftingCpuLogic = W2), 5 skipped (ae2ct, Useless, ae2wtlib, AdvancedAE ×2), 2 FAILED:
+  * ExternalStorageFacadeItemHandlerMixin: InvalidMixinException, @Shadow method extractFromHandler(IItemHandler…) not found
+  * ItemHandlerStrategyMixin: InvalidInjectionException, @WrapOperation found no target insert(IItemHandler…)
+  = exactly W5 and W6 from the static audit. So the checker can fail, and it found only the known breaks.
+- Lessons:
+  * Under FML a failed Mixin makes the class load THROW (MixinTransformerError → MixinApplyError → the real cause).
+    Read the innermost "caused by": it names the Mixin, the member and the descriptor it looked for.
+  * The junit-fml environment runs as DEDICATED_SERVER → the 26 client Mixins (W1) are NOT covered by this test.
+  * 28/35 targets proven per build instead of 6 per server start. Still open: client side, optional mods, behaviour.
