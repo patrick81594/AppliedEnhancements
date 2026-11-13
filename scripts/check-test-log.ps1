@@ -32,9 +32,16 @@ if ($deployTime) {
     }
 }
 
-$lines = [System.IO.File]::ReadAllLines($log)
+# Open with FileShare.ReadWrite: the running game still has the log open for writing, and a plain
+# ReadAllLines would fail with a sharing violation.
+$stream = New-Object System.IO.FileStream($log, 'Open', 'Read', 'ReadWrite')
+try {
+    $reader = New-Object System.IO.StreamReader($stream)
+    $lines = $reader.ReadToEnd() -split "`r?`n"
+} finally { $stream.Dispose() }
 function Show-Matches($title, $found) {
-    $found = @($found)
+    # An empty pipeline result arrives here as $null, and @($null) would count as one element.
+    $found = @($found | Where-Object { $null -ne $_ })
     Write-Host ""
     Write-Host ("--- {0}: {1} ---" -f $title, $found.Count)
     # Write-Host, not plain output: plain output would become part of this function's return value.
