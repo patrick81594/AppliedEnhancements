@@ -989,3 +989,27 @@ NeoForge 26.1.2.126, Java 25).
   * PowerShell gotcha: plain output inside a function becomes part of its return value; use Write-Host for display.
 - Next (Patrick): start "FTB Evolution 2 - AE-TEST" in Prism, create a creative world, quit or keep it open, then
   run check-test-log.ps1.
+## Phase 5, first start of the TEST instance: loading crash (networking, not a Mixin)
+- What: Patrick started "FTB Evolution 2 - AE-TEST" with our jar. Crash while finishing mod loading:
+  `IllegalStateException: Some clientbound payloads are missing client-side handlers:
+  [appliedenhancements:exact_crafting_amount]` (crash-reports/crash-2026-11-13_16.25.10-client.txt). No Mixin
+  failure in the log up to that point.
+- Cause (javap on both NeoForge jars): PayloadRegistrar.playBidirectional(type, codec, handler) used ONE handler
+  for both sides in 21.1.220. In 26.1.2.126 the 3-argument form registers the SERVER handler only (parameter name
+  `serverHandler`), and there is a new playBidirectional(type, codec, serverHandler, clientHandler). The client
+  checks at startup (ClientNetworkRegistry) that every clientbound payload has a client handler.
+  playToClient(type, codec, handler) still registers the client handler (our 4 clientbound payloads were not named).
+  AE2 26 registers client handlers in a client-only RegisterClientPayloadHandlersEvent listener.
+- Why nothing caught it: the method still exists (javac fine), and the check is client-only (runServer and the
+  FML audit run as a dedicated server).
+- Lessons:
+  * A method that keeps its name can change its MEANING. Compare behaviour-relevant APIs (networking, saving)
+    between versions even when they compile: javap the old and the new jar, look at parameter names (`javap -l`).
+  * Read a crash report from the top: "Description" and the first exception lines name the mod and the item.
+  * Each game start shows only the FIRST failure; expect several rounds of deploy → start → read.
+  * PowerShell: `@($null).Count` is 1 → filter nulls before counting matches (bug found by testing the log check
+    against a real log before relying on it).- Fix (DECISION: AE2-style split): ExactCraftingAmountPayload.handle → handleOnServer + handleOnClient;
+  NetworkHandler keeps playBidirectional(type, codec, handleOnServer); new client-only
+  com.appliedenhancements.network.ClientPayloadHandlers (@EventBusSubscriber(value = Dist.CLIENT)) registers
+  handleOnClient in RegisterClientPayloadHandlersEvent. Clean build: BUILD SUCCESSFUL, plainTest 97/516/0,
+  FML 30/30, audit 30/5/0, jar 1,032,223 bytes. NOT yet verified in-game (needs a new start of the TEST instance).

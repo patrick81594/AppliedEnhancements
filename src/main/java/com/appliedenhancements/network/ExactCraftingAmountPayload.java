@@ -22,13 +22,25 @@ public record ExactCraftingAmountPayload(int containerId, String amount, boolean
         ByteBufCodecs.BOOL, ExactCraftingAmountPayload::missing,
         ByteBufCodecs.BOOL, ExactCraftingAmountPayload::autoStart, ExactCraftingAmountPayload::new);
     @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
-    public static void handle(ExactCraftingAmountPayload payload, IPayloadContext context) {
+    // NeoForge 26 registers the two directions of a bidirectional payload separately: the server handler with
+    // PayloadRegistrar.playBidirectional (NetworkHandler), the client handler in the client-only
+    // RegisterClientPayloadHandlersEvent (ClientPayloadHandlers). In 1.21 one handler served both sides.
+
+    /** Client → server: the player confirmed an exact amount. */
+    public static void handleOnServer(ExactCraftingAmountPayload payload, IPayloadContext context) {
         context.enqueueWork(() -> {
             var menu = context.player().containerMenu;
             if (menu.containerId != payload.containerId || !(menu instanceof ExactCraftingMenuBridge bridge)) return;
-            var amount = new BigInteger(payload.amount);
-            if (context.player().level().isClientSide()) bridge.appliedenhancements$setInitialExactAmount(amount);
-            else bridge.appliedenhancements$confirmExact(amount, payload.missing, payload.autoStart);
+            bridge.appliedenhancements$confirmExact(new BigInteger(payload.amount), payload.missing, payload.autoStart);
+        });
+    }
+
+    /** Server → client: the initial exact amount for the open craft amount menu. Uses no client-only classes. */
+    public static void handleOnClient(ExactCraftingAmountPayload payload, IPayloadContext context) {
+        context.enqueueWork(() -> {
+            var menu = context.player().containerMenu;
+            if (menu.containerId != payload.containerId || !(menu instanceof ExactCraftingMenuBridge bridge)) return;
+            bridge.appliedenhancements$setInitialExactAmount(new BigInteger(payload.amount));
         });
     }
 }
