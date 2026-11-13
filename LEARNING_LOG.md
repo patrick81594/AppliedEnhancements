@@ -846,3 +846,18 @@ NeoForge 26.1.2.126, Java 25).
 - Command (JDK 25 container): jdk25-build.sh <repo> phase4-w2-build compileJava plainTest → 97/516/0.
 - Lesson: read the WHOLE declaration when researching an API (my grep listing dropped the @Deprecated line),
   and read every warning in a green build. Still unproven at runtime: needs a CPU with an AELIS job saved + reloaded.
+## Phase 4, Step W3: AdvancedAeCraftingCycleMixin save/load → ValueInput/ValueOutput
+- What: AdvancedAE 26.1.7 AdvCraftingCPULogic.writeToNBT(ValueOutput) / readFromNBT(ValueInput), read from BYTECODE
+  (no source checkout): copy the jar out of the pack to out/jars, then in the JDK container
+  `javap -p -cp <jar> <class>` (members) and `javap -p -c …` (method bodies). Same store/read pattern as W2.
+- Why different from W2: the class has a field `cpu` (type AdvCraftingCPU), not `cluster`, and AdvancedAE is not a
+  compile dependency. A @Shadow field must be declared with its exact type, so we cannot shadow `cpu`.
+  DECISION A: registries on save = ServerLifecycleHooks.getCurrentServer().registryAccess() (null guard logs + skips).
+  Verified equal: ServerLevel's constructor passes server.registryAccess() to Level (ServerLevel.java:245).
+- Command (JDK 25 container): jdk25-build.sh <repo> phase4-w3-build compileJava plainTest → 97/516/0.
+- Lessons:
+  * javap = the JDK's class-file reader; it is the "source" for mods you only have as a jar.
+  * A @Pseudo Mixin (target may be absent) on a mod that is not on the dev classpath is NEVER applied in runServer/
+    runClient → only a TEST instance with that mod proves it.
+  * Gradle compiles incrementally: this build shows 1 lookup() warning (only the changed file was recompiled);
+    a clean build shows 2 (W2 + W3). Don't count warnings from incremental builds.

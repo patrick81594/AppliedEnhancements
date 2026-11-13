@@ -22,10 +22,13 @@ import com.appliedenhancements.runtime.AdvancedAeCycleRecovery;
 import com.llamalad7.mixinextras.injector.wrapmethod.WrapMethod;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
-import net.minecraft.core.HolderLookup;
 import appeng.me.service.CraftingService;
+import java.util.Optional;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
+import net.neoforged.neoforge.server.ServerLifecycleHooks;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Pseudo;
 import org.spongepowered.asm.mixin.Shadow;
@@ -165,21 +168,35 @@ public abstract class AdvancedAeCraftingCycleMixin {
     }
 
     @Inject(method = "writeToNBT", at = @At("RETURN"))
-    private void appliedenhancements$saveCycle(CompoundTag tag, HolderLookup.Provider registries,
-            CallbackInfo callback) {
+    private void appliedenhancements$saveCycle(ValueOutput output, CallbackInfo callback) {
         if (hasJob() && appliedenhancements$cycleRuntime != null
                 && appliedenhancements$cycleRuntime.hasActiveSeedProtection()) {
-            tag.put(APPLIEDENHANCEMENTS_CYCLE_TAG,
-                    AelisCycleExecutionApi.writeRuntime(appliedenhancements$cycleRuntime, registries));
+            // MC 26: ValueOutput carries no registries, and AdvancedAE's `cpu` field type
+            // is not on our compile classpath. Every ServerLevel is built with
+            // server.registryAccess(), so the server gives the same registries the
+            // 1.21 `registries` parameter did.
+            var server = ServerLifecycleHooks.getCurrentServer();
+            if (server == null) {
+                com.appliedenhancements.runtime.AelisPlanningLog.error(
+                        "Cannot save AELIS quantum CPU cycle state: no running server");
+                return;
+            }
+            // CompoundTag.CODEC is a passthrough: same compound under the same key as
+            // 1.21's tag.put(...), so saves stay compatible.
+            output.store(APPLIEDENHANCEMENTS_CYCLE_TAG, CompoundTag.CODEC,
+                    AelisCycleExecutionApi.writeRuntime(
+                            appliedenhancements$cycleRuntime, server.registryAccess()));
         }
     }
 
     @Inject(method = "readFromNBT", at = @At("RETURN"))
-    private void appliedenhancements$loadCycle(CompoundTag tag, HolderLookup.Provider registries,
-            CallbackInfo callback) {
-        boolean saved = hasJob() && tag.contains(APPLIEDENHANCEMENTS_CYCLE_TAG);
+    private void appliedenhancements$loadCycle(ValueInput input, CallbackInfo callback) {
+        Optional<CompoundTag> stored = hasJob()
+                ? input.read(APPLIEDENHANCEMENTS_CYCLE_TAG, CompoundTag.CODEC)
+                : Optional.empty();
+        boolean saved = stored.isPresent();
         appliedenhancements$cycleRuntime = saved
-                ? AelisCycleExecutionApi.readRuntime(tag.getCompoundOrEmpty(APPLIEDENHANCEMENTS_CYCLE_TAG), registries).orElse(null) : null;
+                ? AelisCycleExecutionApi.readRuntime(stored.get(), input.lookup()).orElse(null) : null;
         if (saved && appliedenhancements$cycleRuntime == null) {
             com.appliedenhancements.runtime.AelisPlanningLog.error("Invalid AELIS quantum CPU cycle state; cancelling job safely");
             cancel();
