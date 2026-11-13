@@ -971,3 +971,21 @@ NeoForge 26.1.2.126, Java 25).
   * Never copy a world while the game is running; start the TEST instance with a fresh creative world.
   * Safe copy = no /MOV, no /MIR, refuse to overwrite an existing target; verify the source afterwards (name,
     modification time, mod count unchanged).
+## Phase 5 (started early), TEST instance step 2: deploy script + log check
+- What: scripts/deploy-test.ps1 and scripts/check-test-log.ps1 (Windows HOST, PowerShell).
+  * deploy-test.ps1: refuses any instance whose name does not contain TEST; takes the newest
+    build/libs/appliedenhancements-*.jar; moves an already installed build to
+    minecraft\ae-port-rollback\<timestamp>\; copies the jar, compares SHA-256 of source and copy; writes
+    ae-port-rollback\last-deploy.txt. `-Rollback` removes the current jar and restores the previous one.
+  * check-test-log.ps1 (read-only): latest.log → is our mod mentioned, Mixin failures naming our mod, ERROR/FATAL
+    lines naming our mod, crash reports newer than the last deploy; warns if the log is older than the deploy.
+- First deploy: appliedenhancements-1.1.6.jar, 1,031,131 bytes, SHA-256 8BB577C6…03398A (= build/libs), TEST
+  instance now 433 jars; real instance still 432 and without our mod. Guard tested: `-Instance "FTB Evolution 2"`
+  is refused.
+- Why: the Phase 4/5 loop is build (container) → deploy (host) → start the game (Patrick) → check the log → fix.
+- Lessons:
+  * Put the safety rule in the tool (name must contain TEST) and TEST the guard once.
+  * A hash proves the game runs the build you just made; "the file is there" does not.
+  * PowerShell gotcha: plain output inside a function becomes part of its return value; use Write-Host for display.
+- Next (Patrick): start "FTB Evolution 2 - AE-TEST" in Prism, create a creative world, quit or keep it open, then
+  run check-test-log.ps1.
