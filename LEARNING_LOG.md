@@ -832,3 +832,17 @@ NeoForge 26.1.2.126, Java 25).
   → BUILD SUCCESSFUL, plainTest 97/516/0.
 - Lesson: "compiles + tests green" says NOTHING about a Mixin's handler signature. The proof is a client that
   opens a container screen (runClient / TEST instance) with no InvalidInjectionException in latest.log.
+## Phase 4, Step W2: CraftingCpuLogicBatchMixin save/load → ValueInput/ValueOutput
+- What: AE2 26 CraftingCpuLogic.writeToNBT(ValueOutput) / readFromNBT(ValueInput) (was CompoundTag + Provider).
+  Handlers now take those; save = output.store(KEY, CompoundTag.CODEC, writeRuntime(runtime, level.registryAccess())),
+  load = input.read(KEY, CompoundTag.CODEC) + input.lookup() for the registries. AelisCycleExecutionNbt untouched.
+- Why: ValueInput/ValueOutput = MC 26's save abstraction (a reader/writer object instead of the raw tag).
+  CompoundTag.CODEC is Codec.PASSTHROUGH and TagValueOutput.store ends in output.put(name, tag), so the NBT on
+  disk is the same compound under the same key as 1.21's data.put → old saves stay readable.
+- Gotcha 1: ValueOutput has NO registries. Save takes them from cluster.getLevel() (the CPU is only saved by its
+  core block entity: CraftingBlockEntity.saveAdditional → cluster.writeToNBT, guarded by isCoreBlock && cluster != null).
+- Gotcha 2: ValueInput.lookup() is @Deprecated (not for removal) → 1 javac warning. AE2 26 uses it too
+  (AEBaseBlockEntity:147), because at LOAD time the block entity may not have a level yet.
+- Command (JDK 25 container): jdk25-build.sh <repo> phase4-w2-build compileJava plainTest → 97/516/0.
+- Lesson: read the WHOLE declaration when researching an API (my grep listing dropped the @Deprecated line),
+  and read every warning in a green build. Still unproven at runtime: needs a CPU with an AELIS job saved + reloaded.

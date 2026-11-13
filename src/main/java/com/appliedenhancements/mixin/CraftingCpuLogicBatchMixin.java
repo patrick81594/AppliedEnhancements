@@ -1,6 +1,7 @@
 package com.appliedenhancements.mixin;
 
 import java.util.ArrayDeque;
+import java.util.Optional;
 
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -43,9 +44,10 @@ import appeng.crafting.inv.ICraftingInventory;
 import appeng.crafting.inv.ListCraftingInventory;
 import appeng.me.cluster.implementations.CraftingCPUCluster;
 import appeng.me.service.CraftingService;
-import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 
 /**
  * Brackets all pushes to an opted-in provider during one CPU scheduling pass.
@@ -355,29 +357,40 @@ public abstract class CraftingCpuLogicBatchMixin {
 
     @Inject(method = "writeToNBT", at = @At("RETURN"))
     private void appliedenhancements$writeCycleRuntime(
-            CompoundTag data,
-            HolderLookup.Provider registries,
+            ValueOutput output,
             CallbackInfo callback) {
         if (appliedenhancements$cycleRuntime != null
                 && appliedenhancements$cycleRuntime.hasActiveSeedProtection()) {
-            data.put(
+            // MC 26: ValueOutput carries no registries (ValueInput does, via lookup()).
+            // The CPU is only saved by its core block entity, so the cluster's level
+            // supplies the same registries the 1.21 `registries` parameter did.
+            var level = cluster.getLevel();
+            if (level == null) {
+                com.appliedenhancements.runtime.AelisPlanningLog.error(
+                        "Cannot save AELIS cycle runtime state: crafting CPU has no level");
+                return;
+            }
+            // CompoundTag.CODEC is a passthrough, so this stores the same compound
+            // under the same key as 1.21's data.put(...): saves stay compatible.
+            output.store(
                     APPLIEDENHANCEMENTS_CYCLE_RUNTIME_TAG,
+                    CompoundTag.CODEC,
                     AelisCycleExecutionApi.writeRuntime(
-                            appliedenhancements$cycleRuntime, registries));
+                            appliedenhancements$cycleRuntime, level.registryAccess()));
         }
     }
 
     @Inject(method = "readFromNBT", at = @At("RETURN"))
     private void appliedenhancements$readCycleRuntime(
-            CompoundTag data,
-            HolderLookup.Provider registries,
+            ValueInput input,
             CallbackInfo callback) {
-        boolean hasRuntime = job != null
-                && data.contains(APPLIEDENHANCEMENTS_CYCLE_RUNTIME_TAG);
+        Optional<CompoundTag> stored = job != null
+                ? input.read(APPLIEDENHANCEMENTS_CYCLE_RUNTIME_TAG, CompoundTag.CODEC)
+                : Optional.empty();
+        boolean hasRuntime = stored.isPresent();
         appliedenhancements$cycleRuntime = hasRuntime
                 ? AelisCycleExecutionApi.readRuntime(
-                        data.getCompoundOrEmpty(APPLIEDENHANCEMENTS_CYCLE_RUNTIME_TAG),
-                        registries).orElse(null)
+                        stored.get(), input.lookup()).orElse(null)
                 : null;
         if (hasRuntime && appliedenhancements$cycleRuntime == null) {
             com.appliedenhancements.runtime.AelisPlanningLog.error(
