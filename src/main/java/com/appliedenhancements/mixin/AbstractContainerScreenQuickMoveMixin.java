@@ -4,6 +4,7 @@ import com.appliedenhancements.integration.ae2.PatternQuickMoveScreenBridge;
 import com.appliedenhancements.integration.ae2.NetworkItemContextMenuScreenBridge;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.client.input.MouseButtonEvent;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -14,10 +15,13 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public abstract class AbstractContainerScreenQuickMoveMixin {
     @Inject(method = "mouseClicked", at = @At("HEAD"), cancellable = true)
     private void appliedenhancements$handleQuickMoveClick(
-            double mouseX,
-            double mouseY,
-            int button,
+            MouseButtonEvent event,
+            boolean doubleClick,
             CallbackInfoReturnable<Boolean> callback) {
+        // MC 26: input arrives as an event; unpack it so the bridges keep their 1.21 shape.
+        double mouseX = event.x();
+        double mouseY = event.y();
+        int button = event.button();
         if ((Object) this instanceof NetworkItemContextMenuScreenBridge bridge
                 && bridge.appliedenhancements$networkItemMenuMouseClicked(
                         mouseX, mouseY, button)) {
@@ -33,12 +37,13 @@ public abstract class AbstractContainerScreenQuickMoveMixin {
 
     @Inject(method = "mouseDragged", at = @At("HEAD"), cancellable = true)
     private void appliedenhancements$handleQuickMoveDrag(
-            double mouseX,
-            double mouseY,
-            int button,
+            MouseButtonEvent event,
             double dragX,
             double dragY,
             CallbackInfoReturnable<Boolean> callback) {
+        double mouseX = event.x();
+        double mouseY = event.y();
+        int button = event.button();
         if ((Object) this instanceof PatternQuickMoveScreenBridge bridge
                 && bridge.appliedenhancements$quickMoveMouseDragged(
                         mouseX, mouseY, button, dragX, dragY)) {
@@ -48,10 +53,11 @@ public abstract class AbstractContainerScreenQuickMoveMixin {
 
     @Inject(method = "mouseReleased", at = @At("HEAD"), cancellable = true)
     private void appliedenhancements$handleQuickMoveRelease(
-            double mouseX,
-            double mouseY,
-            int button,
+            MouseButtonEvent event,
             CallbackInfoReturnable<Boolean> callback) {
+        double mouseX = event.x();
+        double mouseY = event.y();
+        int button = event.button();
         if ((Object) this instanceof PatternQuickMoveScreenBridge bridge
                 && bridge.appliedenhancements$quickMoveMouseReleased(
                         mouseX, mouseY, button)) {
@@ -59,7 +65,8 @@ public abstract class AbstractContainerScreenQuickMoveMixin {
         }
     }
 
-    @Inject(method = "render", at = @At("RETURN"))
+    // MC 26: Screen.render was renamed to extractRenderState (same parameters).
+    @Inject(method = "extractRenderState", at = @At("RETURN"))
     private void appliedenhancements$renderQuickMoveOverlay(
             GuiGraphicsExtractor graphics,
             int mouseX,

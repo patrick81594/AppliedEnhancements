@@ -766,3 +766,69 @@ NeoForge 26.1.2.126, Java 25).
 - **Lessons:** Fakes for a missing environment break once the real environment exists; remove them. A fake for a
   Mixin interface must override EVERY method the real Mixin adds. If a test fails identically on the old version
   under the same conditions, it's not a port regression. Keep each assertion in the environment it needs.
+
+---
+
+## Phase 4, Steps 4.1–4.2: First server start + Mixin target audit
+
+- **4.1:** `./gradlew runServer` (dev image) → `Done (2.124s)!`. A dev server keeps running (the task never
+  "finishes"); stop it with `docker stop <container>`. No EULA prompt in the NeoForge dev run. Only 5 Mixin
+  WARNs "Error loading class" for optional mods absent from the dev classpath (@Pseudo targets, expected).
+  A clean start only proves the EARLY-loaded targets; world/client classes load later.
+- **4.2:** read-only audit script (Python, `-I`): for each of the 67 Mixins, resolve the target class (imports,
+  inner `$` classes, `targets = "…"`), look it up in AE2 26 src (main/client), the MC sources jar, or the pack's
+  mod jars (class bytes contain member names), and check `method = "…"` + `@Shadow` names. Then hand-verified.
+- **Verified work list:** W1 AbstractContainerScreenQuickMoveMixin (input handlers + render), W2–W4 CPU save
+  Mixins (AE2/AdvancedAE now ValueInput/ValueOutput), W5 ExternalStorageFacadeItemHandlerMixin and W6
+  ItemHandlerStrategyMixin (NeoForge's new transfer API: ResourceHandler<ItemResource> instead of IItemHandler).
+- **Lessons:** Mixin targets are strings, so build your own checker. A name match is not enough: same name,
+  new parameters (readFromNBT(CompoundTag…) vs (ValueInput)) still breaks the injector. Anonymous inner
+  class targets (`HandlerStrategy$1`) and descriptors in `method = "insert(Lnet/…/IItemHandler;…)J"` are
+  fragile across versions. Treat a script's "OK" as "not obviously broken" and confirm with a runtime start.
+
+## Phase 4, Step 4.2: Mixin inventory (read-only)
+- What: a table of all 67 Mixins: side (common/client), @Pseudo, target class, and whether the target
+  still exists in AE2 26.1.13 (src/main or src/client) or MC 26.1.2 (sources jar).
+  Result: 50 AE2 + 4 MC targets all exist; 13 external (@Pseudo, other mods).
+- Why: Mixin targets are not checked by javac, and a Mixin is applied only when its TARGET CLASS LOADS.
+  So a clean server start proves little: most AE2 crafting classes load only once a grid/crafting job exists.
+- Command: mixin-inventory.sh (perl reads @Mixin(...), resolves imports, looks the class up) → out/phase4-mixin-inventory.txt.
+- Lesson: "class exists" ≠ "Mixin works". The next layer is the method names/descriptors inside
+  @Inject/@WrapOperation. Already visible: ItemHandlerStrategyMixin (HandlerStrategy$1) and
+  ExternalStorageFacadeItemHandlerMixin reference NeoForge's old IItemHandler API; AE2 26 moved to the new
+  transfer API (ResourceHandler<ItemResource>, Transaction) → these two will fail to apply.
+- Gotcha: anonymous classes are named Outer$1, $2… by ORDER in the file; reordering upstream silently changes the target.
+
+## Phase 4, Step 4.3a: method-level Mixin check (read-only, partial)
+- What: mixin-methods.pl checks every `method = "…"`, `@At(target = "L…;…")`, @Accessor and @Invoker of the
+  54 AE2/MC Mixins against the AE2 26.1.13 sources, the unpacked MC 26.1.2 sources (~/dev/ae-port/mc-src/26.1.2)
+  and the NeoForge 26.1.2.126 jar (copied out of the gradle volume with a throwaway container).
+  Result: 3 BROKEN (QuickMove `render`; ExternalStorageFacadeItemHandler ×2), 2 CHECK (generic `C handler`
+  in HandlerStrategy), 131 "OK", 13 SKIP (external).
+- Why: Mixin targets are strings; javac never sees them.
+- Lessons:
+  * Terms: an INJECTION POINT (@At) is the spot inside the target method; a DESCRIPTOR is the JVM signature
+    string, e.g. (Lnet/minecraft/world/item/ItemStack;Z)V.
+  * @Inject/@WrapMethod need the method DECLARED in the target class. An @At(INVOKE) target's owner may be a
+    subclass (the method is declared in a superclass), so the check must walk up `extends`.
+  * Check your checker: the first two runs had false BROKENs (superclass methods, `KeyCounter[]`, call lines
+    matched as declarations) AND false OKs (type variables `C` matched anything; missing NeoForge classes skipped).
+  * "Name exists" ≠ "applies": 106 OK rows are name-only. Known counter-examples: CraftingCpuLogicBatchMixin
+    readFromNBT/writeToNBT (handler takes CompoundTag+Provider, AE2 26 takes ValueInput/ValueOutput) and
+    QuickMove mouseClicked/Dragged/Released (now MouseButtonEvent). An @Inject handler's parameters must equal
+    the target's parameters (+ CallbackInfo[Returnable]).
+  * net.neoforged.neoforge.items.* still exists in NeoForge 26 (deprecated for removal), so IItemHandler
+    descriptors resolve. What broke is that AE2 26 no longer CALLS that API.
+
+## Phase 4, Step W1: AbstractContainerScreenQuickMoveMixin → MC 26 input/render hooks
+- What: the 3 @Inject handlers for mouseClicked/mouseDragged/mouseReleased now take the MC 26 parameters
+  (MouseButtonEvent[, boolean doubleClick | double dx, double dy]) and unpack x()/y()/button() at the top;
+  the bridge interfaces are unchanged (= Group C decision A, adapters at the edges).
+  `method = "render"` → `"extractRenderState"` (same parameters).
+- Why: HANDLER SIGNATURE RULE: an @Inject handler must take exactly the target method's parameters, in order,
+  plus CallbackInfo/CallbackInfoReturnable. javac can't check this (the target is a string); Mixin throws
+  InvalidInjectionException when the target class loads. Client Mixin → runServer never loads it.
+- Command (in the JDK 25 container): jdk25-build.sh <repo> phase4-w1-build compileJava plainTest
+  → BUILD SUCCESSFUL, plainTest 97/516/0.
+- Lesson: "compiles + tests green" says NOTHING about a Mixin's handler signature. The proof is a client that
+  opens a container screen (runClient / TEST instance) with no InvalidInjectionException in latest.log.
