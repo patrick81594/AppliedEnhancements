@@ -907,3 +907,21 @@ NeoForge 26.1.2.126, Java 25).
     Read the innermost "caused by": it names the Mixin, the member and the descriptor it looked for.
   * The junit-fml environment runs as DEDICATED_SERVER → the 26 client Mixins (W1) are NOT covered by this test.
   * 28/35 targets proven per build instead of 6 per server start. Still open: client side, optional mods, behaviour.
+## Phase 4, Step W6: ItemHandlerStrategyMixin → NeoForge transfer API
+- What: the export-bus slot-hint hook now wraps AE2 26's `handler.insert(resource, amount, tx)` in
+  HandlerStrategy$1.insert(ResourceHandler, AEKey, long, Actionable) (was ItemHandlerHelper.insertItem(handler,
+  stack, simulate)). Same order as before (hinted slots, then the rest), using the INDEXED
+  handler.insert(slot, item, remaining, tx); it returns the inserted COUNT instead of a leftover stack.
+- Terms: TRANSFER API = NeoForge 26's replacement for IItemHandler. ResourceHandler<ItemResource> = an inventory as
+  numbered slots; ItemResource = an item type without a count; TRANSACTION = open → do inserts/extracts → commit(),
+  or close without commit = everything rolled back. It replaces the old `simulate` boolean.
+- Why the hook still pays off: ResourceHandler's "any slot" insert/extract are default methods that loop over every
+  index (seen with `javap -c` on the NeoForge jar).
+- Checked in the AE2 JAR (not only the sources): the anonymous class has a bridge insert(Object, …) too, so the full
+  descriptor in `method = "…"` is required; the wrapped call is the erased
+  ResourceHandler.insert(Resource, int, TransactionContext)I → the handler parameter must be `Resource`, not ItemResource.
+- Command (JDK 25 container): full-check.sh phase4-w6-build (= compileJava plainTest test --continue).
+  Result: plainTest 97/516/0; audit applied 28 → 29, failed 2 → 1 (only W5 left). Build still red because of W5.
+- Lesson: generics are ERASED in descriptors. For a Mixin, use the erased types of the call you wrap, then narrow
+  with instanceof inside the handler. `--continue` lets Gradle run the other tasks although one test task fails.
+- In-game checklist: export bus / interface filling a chest and a multi-slot machine (IO-bus optimisation on).
