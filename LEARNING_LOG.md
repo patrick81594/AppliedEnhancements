@@ -946,3 +946,14 @@ NeoForge 26.1.2.126, Java 25).
 - NOT proven: behaviour. In-game checklist: storage bus on a chest and on a drawer-like big inventory (insert,
   extract, extract after the chest content was changed by hand), with ENABLE_STORAGE_BUS_SLOT_INDEX and
   ENABLE_IO_BUS_OPTIMIZATION on and off; a fluid storage bus on a tank still works (the Mixin now sits on it too).
+## Phase 4, Step 4.6: full clean build after W1–W6
+- What: `clean build --warning-mode all` in the JDK 25 container → BUILD SUCCESSFUL in 28s. plainTest 97/516/0,
+  FML test 4 suites / 30 tests / 0 failures, audit applied=30 skipped=5 failed=0. Jar appliedenhancements-1.1.6.jar,
+  1,031,131 bytes, 531 entries. No Gradle deprecations.
+- javac warnings, main: 28 (was 53 at the end of Phase 3): 26 [removal] = 23 WirelessExtendedPatternAccessDuplicateMixin
+  (AbstractContainerScreen), 2 JeiItemContextMenuHandler, 1 JeiPlanBookmarks; 2 [deprecation] = ValueInput.lookup()
+  in W2 + W3. The 27 old-item-capability [removal] warnings are gone (W5/W6 ported to the transfer API).
+  Test sources: 2 [deprecation] (ASM SimpleRemapper constructors).
+- Why a clean build: Gradle recompiles only changed files, so incremental builds under-report warnings.
+- Lesson: track the warning count per kind across the port; [removal] = "will break in a later version" = the
+  to-do list for the next port.
