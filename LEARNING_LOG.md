@@ -925,3 +925,24 @@ NeoForge 26.1.2.126, Java 25).
 - Lesson: generics are ERASED in descriptors. For a Mixin, use the erased types of the call you wrap, then narrow
   with instanceof inside the handler. `--continue` lets Gradle run the other tasks although one test task fails.
 - In-game checklist: export bus / interface filling a chest and a multi-slot machine (IO-bus optimisation on).
+## Phase 4, Step W5: ExternalStorageFacadeItemHandlerMixin → NeoForge transfer API
+- What: the storage-bus slot index now targets `ExternalStorageFacade$ResourceHandlerFacade`. AE2 26 moved the
+  `handler` field and getStackInSlot/insertExternal/extractExternal/getAvailableStacks from ItemHandlerFacade into
+  that generic superclass (shared by the item AND the fluid facade). Changes:
+  * @Shadow handler: IItemHandler → ResourceHandler<?> (erased type ResourceHandler).
+  * AE2 19's static extractFromHandler is gone → own @Unique extractFromSlot: one indexed
+    handler.extract(slot, itemKey.toResource(), amount, tx) in Transaction.openRoot(), commit unless simulating
+    (the same pattern AE2 26 uses in extractExternal).
+  * Slot recording wraps ResourceHandler.getResource(I)Resource (was IItemHandler.getStackInSlot); only
+    ItemResource is recorded; the index is only built on the item facade (getKeyType() == AEKeyType.items()).
+  * DECISION (Patrick): the "recheck the slot before every extraction retry" hook was dropped. AE2 26 has no retry
+    loop, and the indexed extract is told which resource it may take.
+- Why retarget: @Inject/@WrapOperation/@WrapMethod need the method DECLARED in the target class. A subclass that
+  merely inherits it is not a valid target, so when upstream pulls methods up into a superclass, the Mixin must follow.
+- Command (JDK 25 container): full-check.sh phase4-w5-build → BUILD SUCCESSFUL, plainTest 97/516/0, FML 30/30,
+  audit: 41 Mixins, 35 targets, applied=30, skipped=5 (absent optional mods), failed=0.
+- Lesson: before porting a Mixin, ask "what was this hook FOR?". Three hooks were translated, one became unnecessary
+  because the new API gives the guarantee by design. Record such removals with the reason.
+- NOT proven: behaviour. In-game checklist: storage bus on a chest and on a drawer-like big inventory (insert,
+  extract, extract after the chest content was changed by hand), with ENABLE_STORAGE_BUS_SLOT_INDEX and
+  ENABLE_IO_BUS_OPTIMIZATION on and off; a fluid storage bus on a tank still works (the Mixin now sits on it too).

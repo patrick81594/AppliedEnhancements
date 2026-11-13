@@ -18,38 +18,60 @@ import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import appeng.api.config.Actionable;
 import appeng.api.stacks.AEItemKey;
 import appeng.api.stacks.AEKey;
+import appeng.api.stacks.AEKeyType;
 import appeng.api.stacks.GenericStack;
 import appeng.api.stacks.KeyCounter;
-import net.minecraft.world.item.ItemStack;
-import net.neoforged.neoforge.items.IItemHandler;
+import appeng.me.storage.ExternalStorageFacade;
+import net.neoforged.neoforge.transfer.ResourceHandler;
+import net.neoforged.neoforge.transfer.item.ItemResource;
+import net.neoforged.neoforge.transfer.resource.Resource;
+import net.neoforged.neoforge.transfer.transaction.Transaction;
 
 /**
  * Reuses AE2's periodic external-inventory listing as positive slot hints.
  * Every candidate is revalidated, and incomplete lookups fall back to AE2's scan.
+ *
+ * <p>AE2 26 (NeoForge transfer API): the handler field and the methods hooked here moved from
+ * {@code ItemHandlerFacade} into the generic superclass {@code ResourceHandlerFacade}, which also backs the
+ * fluid facade. Injections need the method to be declared in the target class, so this Mixin targets the
+ * superclass and only acts on the item facade (item keys / {@link ItemResource}); fluids pass through.
+ *
+ * <p>Gone with AE2 19: {@code extractFromHandler} (per-slot extraction with a retry loop) and the hook that
+ * re-checked the slot before every retry. The indexed {@code ResourceHandler.extract(slot, resource, ...)} is
+ * told which resource it may take, so it cannot extract a different item; no retry loop is left to guard.
  */
-@Mixin(targets = "appeng.me.storage.ExternalStorageFacade$ItemHandlerFacade", remap = false)
+@Mixin(targets = "appeng.me.storage.ExternalStorageFacade$ResourceHandlerFacade", remap = false)
 public abstract class ExternalStorageFacadeItemHandlerMixin {
     @Shadow
     @Final
-    private IItemHandler handler;
+    protected ResourceHandler<?> handler;
 
-    @Shadow
-    private static int extractFromHandler(
-            IItemHandler handler,
-            int slot,
-            AEItemKey itemKey,
-            int maxExtract,
-            Actionable actionable) {
-        throw new AssertionError("Mixin shadow was not transformed");
+    /** True for the item facade; this Mixin also sits on the fluid facade (shared superclass). */
+    @Unique
+    private boolean appliedenhancements$isItemFacade() {
+        return ((ExternalStorageFacade) (Object) this).getKeyType() == AEKeyType.items();
     }
 
-    @WrapOperation(method = "extractFromHandler", at = @At(value = "INVOKE",
-            target = "Lappeng/me/storage/ExternalStorageFacade$ItemHandlerFacade;wrapHandlerExtract(Lnet/neoforged/neoforge/items/IItemHandler;IIZ)I"))
-    private static int appliedenhancements$recheckEveryExtractionRetry(IItemHandler inventory,
-            int slot, int amount, boolean simulate, Operation<Integer> original,
-            @com.llamalad7.mixinextras.sugar.Local(argsOnly = true) AEItemKey requested) {
-        return requested.matches(inventory.getStackInSlot(slot))
-                ? original.call(inventory, slot, amount, simulate) : 0;
+    /**
+     * Extracts from one slot, replacing AE2 19's {@code extractFromHandler}. Like AE2 26's own
+     * {@code extractExternal}, it uses a root transaction and commits only when not simulating.
+     */
+    @Unique
+    @SuppressWarnings("unchecked")
+    private int appliedenhancements$extractFromSlot(
+            int slot, AEItemKey itemKey, int maxExtract, Actionable mode) {
+        if (maxExtract <= 0) {
+            return 0;
+        }
+        // Callers only get here for item keys, i.e. on the item facade.
+        var items = (ResourceHandler<ItemResource>) handler;
+        try (var transaction = Transaction.openRoot()) {
+            int extracted = items.extract(slot, itemKey.toResource(), maxExtract, transaction);
+            if (!mode.isSimulate()) {
+                transaction.commit();
+            }
+            return extracted;
+        }
     }
 
     @Unique
@@ -98,24 +120,27 @@ public abstract class ExternalStorageFacadeItemHandlerMixin {
 
     @Inject(method = "getAvailableStacks", at = @At("HEAD"))
     private void appliedenhancements$beginSlotIndexRebuild(KeyCounter output, CallbackInfo ci) {
-        if (Config.ENABLE_STORAGE_BUS_SLOT_INDEX.get()) {
+        if (Config.ENABLE_STORAGE_BUS_SLOT_INDEX.get() && appliedenhancements$isItemFacade()) {
             appliedenhancements$getSlotIndex().beginRebuild();
         } else if (appliedenhancements$slotIndex != null) {
             appliedenhancements$slotIndex.abortRebuild();
         }
     }
 
+    // AE2 26 reads each slot with handler.getResource(i) (was IItemHandler.getStackInSlot(i)).
+    // The descriptor uses the erased return type Resource.
     @WrapOperation(method = "getAvailableStacks", at = @At(value = "INVOKE",
-            target = "Lnet/neoforged/neoforge/items/IItemHandler;getStackInSlot(I)Lnet/minecraft/world/item/ItemStack;"))
-    private ItemStack appliedenhancements$recordListedSlot(
-            IItemHandler inventory,
+            target = "Lnet/neoforged/neoforge/transfer/ResourceHandler;getResource(I)Lnet/neoforged/neoforge/transfer/resource/Resource;"))
+    private Resource appliedenhancements$recordListedSlot(
+            ResourceHandler<?> inventory,
             int slot,
-            Operation<ItemStack> original) {
-        var stack = original.call(inventory, slot);
-        if (appliedenhancements$slotIndex != null && !stack.isEmpty()) {
-            appliedenhancements$slotIndex.record(AEItemKey.of(stack), slot);
+            Operation<Resource> original) {
+        var resource = original.call(inventory, slot);
+        if (appliedenhancements$slotIndex != null
+                && resource instanceof ItemResource item && !item.isEmpty()) {
+            appliedenhancements$slotIndex.record(AEItemKey.of(item), slot);
         }
-        return stack;
+        return resource;
     }
 
     @Inject(method = "getAvailableStacks", at = @At("RETURN"))
@@ -146,9 +171,9 @@ public abstract class ExternalStorageFacadeItemHandlerMixin {
                 && itemKey.equals(appliedenhancements$lastObservedKey)) {
             observedSlot = appliedenhancements$lastObservedSlot;
             appliedenhancements$clearObservedSlot();
-            if (observedSlot >= 0 && observedSlot < handler.getSlots()) {
-                indexedExtracted = extractFromHandler(
-                        handler, observedSlot, itemKey, amount, mode);
+            if (observedSlot >= 0 && observedSlot < handler.size()) {
+                indexedExtracted = appliedenhancements$extractFromSlot(
+                        observedSlot, itemKey, amount, mode);
             }
         }
 
@@ -209,7 +234,7 @@ public abstract class ExternalStorageFacadeItemHandlerMixin {
             Actionable mode,
             int slotToSkip) {
         int extracted = 0;
-        int slotCount = handler.getSlots();
+        int slotCount = handler.size();
 
         for (int i = 0; i < candidates.size() && extracted < amount; i++) {
             int slot = candidates.get(i);
@@ -217,8 +242,8 @@ public abstract class ExternalStorageFacadeItemHandlerMixin {
                 continue;
             }
 
-            extracted += extractFromHandler(
-                    handler, slot, itemKey, amount - extracted, mode);
+            extracted += appliedenhancements$extractFromSlot(
+                    slot, itemKey, amount - extracted, mode);
         }
 
         return extracted;
