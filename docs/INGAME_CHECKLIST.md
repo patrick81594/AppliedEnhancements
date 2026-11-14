@@ -36,10 +36,14 @@ checked in-game yet.
 
 ## 2. ME terminal: network item context menu
 
-- [ ] The context menu opens on an item in the terminal and is drawn above everything else.
+- [x] The context menu opens on an item in the terminal and is drawn above everything else.
       *Protects: GUI layering (`nextStratum`), quick-move/context-menu Mixin on container screens (W1).*
-- [ ] Typing a number, Enter and Escape work in the menu's amount field. *Protects: input event adapters.*
-- [ ] Feedback messages after a menu action appear in the ACTION BAR (above the hotbar).
+      *2026-11-14. Extract One / Extract Stack and inserting also work (payload to the server).*
+- [x] Typing a number, Enter and Escape work in the menu's amount field. *Protects: input event adapters.*
+      *2026-11-14. The field appears after clicking "Custom Amount…"; too-large numbers turn red.*
+- [x] Feedback messages after a menu action appear in the ACTION BAR (above the hotbar).
+      *2026-11-14. Only "Copy Item ID" shows a message ("Copied: …"); extract/insert show none by design.*
+- [x] "Start Craft" in the menu starts a craft for an item with a pattern. *2026-11-14.*
 - [ ] The "force amount too large" message appears in CHAT. *Protects: overlay vs. system message split.*
 - [ ] Scrolling the terminal still works while the menu is closed and while it is open.
 
