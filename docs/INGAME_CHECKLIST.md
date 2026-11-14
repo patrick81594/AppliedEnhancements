@@ -20,17 +20,19 @@ checked in-game yet.
 
 ## 0. Startup
 
-- [ ] The game reaches the title screen with the mod installed (first load of the 26 client Mixins and of
-      the Mixins for AdvancedAE, ae2wtlib and ExtendedAE).
-- [ ] A creative world loads.
-- [ ] `check-test-log.ps1` reports no Mixin failures, no errors naming `appliedenhancements`, no crash report.
+- [x] The game reaches the title screen with the mod installed (first load of the 26 client Mixins and of
+      the Mixins for AdvancedAE, ae2wtlib and ExtendedAE). *2026-11-14, jar 07C3D660…: 433 mods loaded.*
+- [x] A creative world loads. *2026-11-14: world "AE Test", joined after 357 s.*
+- [x] `check-test-log.ps1` reports no Mixin failures, no errors naming `appliedenhancements`, no crash report.
+      *2026-11-14. `logs/debug.log` showed 21 of our Mixins applied at that point.*
 
 ## 1. Controls
 
-- [ ] Options → Controls shows a category named "Applied Enhancements" with both bindings
+- [x] Options → Controls shows a category named "Applied Enhancements" with both bindings
       (right-click and Alt+right-click). *Protects: KeyMapping category change, new language key
-      `key.category.appliedenhancements.category`.*
+      `key.category.appliedenhancements.category`.* *2026-11-14: header and both bindings seen.*
 - [ ] Rebinding one of them, restarting the game, and the binding is still set.
+      *2026-11-14: "Open Item Actions Menu" rebound to `-`, saved in options.txt; restart check still open.*
 
 ## 2. ME terminal: network item context menu
 
