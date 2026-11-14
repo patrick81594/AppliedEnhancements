@@ -1013,3 +1013,20 @@ NeoForge 26.1.2.126, Java 25).
   com.appliedenhancements.network.ClientPayloadHandlers (@EventBusSubscriber(value = Dist.CLIENT)) registers
   handleOnClient in RegisterClientPayloadHandlersEvent. Clean build: BUILD SUCCESSFUL, plainTest 97/516/0,
   FML 30/30, audit 30/5/0, jar 1,032,223 bytes. NOT yet verified in-game (needs a new start of the TEST instance).
+## Phase 4: first successful client start in the TEST instance
+- What: deployed the jar with the payload-handler fix (2a2c421) and started "FTB Evolution 2 - AE-TEST" with
+  `scripts/run-test.ps1 -Deploy`. The client loaded all 433 mods, a creative world "AE Test" was created and
+  joined after 357 s. Log check: 0 Mixin failures, 0 errors naming our mod, 0 crash reports.
+- Why: unit tests and the server-side Mixin audit can't cover the 26 client Mixins or the optional-mod Mixins.
+- Command (host, PowerShell): run-test.ps1 -Deploy; output in ~/dev/ae-port/out/phase4-run-test-1.log.
+- Lessons:
+  * The crash fix worked: NeoForge 26 needs a CLIENT handler for every clientbound payload.
+  * `logs/debug.log` (not latest.log) records every applied Mixin: "Mixing <Mixin> from
+    appliedenhancements.mixins.json into <target>". 21 of our Mixins were applied in this session, including
+    W1 (AbstractContainerScreenQuickMoveMixin), ae2wtlib CraftingTerminalHandler, ExtendedAE GuiExPatternTerminal
+    and Configured NeoForgeConfig. A Mixin only shows up once its target class loads, so the rest need the
+    matching screen or machine to be used in game.
+  * "Applied" is not "works": behaviour still needs the in-game checklist.
+  * Pack noise: 52 ERROR lines from other mods (recipes, JEI slow-plugin timers). Configured logs "Failed to load
+    config provider from mod: configured / iceberg" 3 ms BEFORE our Configured Mixin is applied; not compared
+    with the real pack yet (its log has no Configured lines left).
