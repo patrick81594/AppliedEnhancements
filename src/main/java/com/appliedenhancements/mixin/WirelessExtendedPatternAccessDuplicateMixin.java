@@ -314,6 +314,27 @@ public abstract class WirelessExtendedPatternAccessDuplicateMixin
         }
     }
 
+    // MC 26 draws the labels (drawFG) BEFORE the slots; badges are drawn after the slots from
+    // ScreenEvent.Render.Foreground instead (DuplicatePatternBadgeClientEvents). That event is in screen
+    // coordinates, so shift to the GUI's top-left first.
+    @Override
+    public void appliedenhancements$renderDuplicateBadges(GuiGraphicsExtractor graphics) {
+        if (!appliedenhancements$isSupportedScreen() || !appliedenhancements$isFilterActive()) {
+            return;
+        }
+        var screen = (AbstractContainerScreen<?>) (Object) this;
+        graphics.pose().pushMatrix();
+        graphics.pose().translate(screen.getGuiLeft(), screen.getGuiTop());
+        try {
+            DuplicatePatternSourceDisplay.renderBadges(
+                    graphics,
+                    screen.getMenu().slots,
+                    appliedenhancements$displaySources);
+        } finally {
+            graphics.pose().popMatrix();
+        }
+    }
+
     @Inject(method = "drawFG", at = @At("RETURN"))
     private void appliedenhancements$drawQuickMoveState(
             GuiGraphicsExtractor graphics,
@@ -326,13 +347,6 @@ public abstract class WirelessExtendedPatternAccessDuplicateMixin
         if (!appliedenhancements$isSupportedScreen()) {
             appliedenhancements$headerHits = List.of();
             return;
-        }
-        if (appliedenhancements$isFilterActive()) {
-            var screen = (AbstractContainerScreen<?>) (Object) this;
-            DuplicatePatternSourceDisplay.renderBadges(
-                    graphics,
-                    screen.getMenu().slots,
-                    appliedenhancements$displaySources);
         }
         if (!appliedenhancements$quickMove.enabled()) {
             appliedenhancements$headerHits = List.of();

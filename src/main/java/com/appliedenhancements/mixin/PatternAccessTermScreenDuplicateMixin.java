@@ -420,6 +420,28 @@ public abstract class PatternAccessTermScreenDuplicateMixin
         }
     }
 
+    // MC 26 draws the labels (AE2's drawFG) BEFORE the slots, so badges drawn in drawFG end up under the
+    // pattern items. They are drawn from NeoForge's ScreenEvent.Render.Foreground instead, which fires
+    // after the slots (DuplicatePatternBadgeClientEvents). That event is in screen coordinates, so shift
+    // to the GUI's top-left first (drawFG got that shift from the container screen).
+    @Override
+    public void appliedenhancements$renderDuplicateBadges(GuiGraphicsExtractor graphics) {
+        if (!appliedenhancements$isSupportedScreen() || !appliedenhancements$isFilterActive()) {
+            return;
+        }
+        var screen = (PatternAccessTermScreen<?>) (Object) this;
+        graphics.pose().pushMatrix();
+        graphics.pose().translate(screen.getGuiLeft(), screen.getGuiTop());
+        try {
+            DuplicatePatternSourceDisplay.renderBadges(
+                    graphics,
+                    screen.getMenu().slots,
+                    appliedenhancements$displaySources);
+        } finally {
+            graphics.pose().popMatrix();
+        }
+    }
+
     @Inject(method = "drawFG", at = @At("RETURN"))
     private void appliedenhancements$drawQuickMoveState(
             GuiGraphicsExtractor graphics,
@@ -432,13 +454,6 @@ public abstract class PatternAccessTermScreenDuplicateMixin
         if (!appliedenhancements$isSupportedScreen()) {
             appliedenhancements$headerHits = List.of();
             return;
-        }
-        if (appliedenhancements$isFilterActive()) {
-            var screen = (PatternAccessTermScreen<?>) (Object) this;
-            DuplicatePatternSourceDisplay.renderBadges(
-                    graphics,
-                    screen.getMenu().slots,
-                    appliedenhancements$displaySources);
         }
         if (!appliedenhancements$quickMove.enabled()) {
             appliedenhancements$headerHits = List.of();

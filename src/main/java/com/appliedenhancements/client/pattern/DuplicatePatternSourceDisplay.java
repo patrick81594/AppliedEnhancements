@@ -43,8 +43,9 @@ public final class DuplicatePatternSourceDisplay {
             ItemStack icon = source.machine().group().icon() == null
                     ? ItemStack.EMPTY
                     : source.machine().group().icon().getReadOnlyStack();
-            // Was z 240 = above the pattern item in the slot (1.21 3D GUI). MC 26 is 2D:
-            // a new stratum puts the badge content above the items drawn before it.
+            // Was z 240 = above the pattern item in the slot (1.21 3D GUI). MC 26 is 2D: this method
+            // must run AFTER the slots were drawn (it is called from ScreenEvent.Render.Foreground),
+            // and a new stratum puts the badge icon above the items and the badge background.
             graphics.nextStratum();
             if (!icon.isEmpty()) {
                 graphics.pose().pushMatrix();
