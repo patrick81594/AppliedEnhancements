@@ -450,7 +450,9 @@ public final class AelisCraftConfirmScreen extends CraftConfirmScreen {
             }
             return;
         }
-        g.enableScissor(leftPos + 14, topPos + graphCanvasTop(), leftPos + canvasRight, topPos + canvasBottom);
+        // MC 26: enableScissor applies the current pose, which drawFG already shifted by leftPos/topPos.
+        // On 1.21.1 it took absolute screen coordinates, so the old leftPos/topPos offset is now applied twice.
+        g.enableScissor(14, graphCanvasTop(), canvasRight, canvasBottom);
         g.pose().pushMatrix();
         // MC 26 2D pose (Matrix3x2f) takes floats.
         g.pose().translate((float) graphViewport.x(), (float) (graphCanvasTop() + graphViewport.y()));

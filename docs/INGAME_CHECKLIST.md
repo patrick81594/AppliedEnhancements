@@ -82,12 +82,21 @@ checked in-game yet.
 
 ## 5. Crafting: amount screen and AELIS confirm screen
 
-- [ ] The craft amount screen opens and accepts an amount.
-- [ ] The AELIS confirm screen opens; the AELIS mark is drawn at 24×24 and complete.
-- [ ] Shift + start (force start) works.
-- [ ] The crafting graph can be dragged, zoomed and scrolled, and stays where it is put.
-- [ ] Toggling fullscreen resizes the screen without glitches. *Protects: access transformer for
-      `imageWidth` / `imageHeight`.*
+**Needs the AELIS planner:** the AELIS screen only replaces AE2's confirm screen for plans made by AELIS, and
+`crafting.aelis.enable_automatic_planner` is `false` by default (same on 1.21.1). Turn it on first, e.g. in game:
+Mods → Applied Enhancements → Config → Crafting → AELIS. With it off you get AE2's own screen (the "TTC" sorting
+and throughput tooltips there come from the AE2 Crafting Time mod, not from us).
+
+- [x] The craft amount screen opens and accepts an amount. *2026-11-17.*
+- [x] The AELIS confirm screen opens; the AELIS mark is drawn at 24×24 and complete. *2026-11-17; filters,
+      search and "AE2 view" work too.*
+- [x] Shift + start (force start) works. *2026-11-17.*
+- [x] The crafting graph can be dragged, zoomed and scrolled, and stays where it is put.
+      *2026-11-17 FAILED in the normal view (tree only drawn in the bottom-right of its area): MC 26
+      `enableScissor` applies the current pose, so the old `leftPos`/`topPos` offset counted twice. Fixed,
+      2026-11-17 passed.*
+- [x] Toggling fullscreen resizes the screen without glitches. *Protects: access transformer for
+      `imageWidth` / `imageHeight`.* *2026-11-17; Exit fullscreen and Esc both work.*
 - [ ] A wireless crafting terminal (ae2wtlib) opens and can start a craft.
 
 ## 6. Crafting CPUs: save and reload

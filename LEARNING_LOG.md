@@ -1064,3 +1064,19 @@ NeoForge 26.1.2.126, Java 25).
   * Validate what comes over the network: the client only accepts keys under our own prefix.
   * A checklist item can be wrong: "duplicate-pattern messages" was named after a file, not a feature. Read the code
     before asking someone to test it.
+
+## Phase 4: AELIS confirm screen, a scissor that moved
+- What: section 5 first showed AE2's normal confirm screen. Not a bug: the AELIS screen only replaces it for plans
+  made by the AELIS planner, which is off by default (crafting.aelis.enable_automatic_planner, same on 1.21.1). With
+  the planner on (via Configured), everything worked except the Craft Tree in the normal view: only its bottom-right
+  part was drawn. Fullscreen was fine.
+- Cause: MC 26 `GuiGraphicsExtractor.enableScissor` transforms its rectangle by the current pose
+  (`transformAxisAligned(this.pose)`). Our tree is drawn in drawFG, where the pose is already shifted by
+  leftPos/topPos; on 1.21.1 enableScissor ignored the pose, so the code added leftPos/topPos itself. Now the offset
+  counts twice. Fullscreen hid it because leftPos/topPos are about 0 there.
+- Fix: enableScissor(14, graphCanvasTop(), canvasRight, canvasBottom) (local coordinates).
+- Lessons:
+  * Same method name, same parameters, different meaning: javac and tests can't see it. Read the new method body
+    when a GUI call "almost" works.
+  * "Works in fullscreen but not in the window" points at an offset (leftPos/topPos) being applied twice or not at all.
+  * Before testing a feature, check the config switches it depends on (here: a planner that is off by default).
