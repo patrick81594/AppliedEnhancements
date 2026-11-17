@@ -1030,3 +1030,22 @@ NeoForge 26.1.2.126, Java 25).
   * Pack noise: 52 ERROR lines from other mods (recipes, JEI slow-plugin timers). Configured logs "Failed to load
     config provider from mod: configured / iceberg" 3 ms BEFORE our Configured Mixin is applied; not compared
     with the real pack yet (its log has no Configured lines left).
+
+## Phase 4: in-game checklist, two runtime bugs in the pattern access terminal
+- What: checklist sections 0–2 passed (startup, key bindings incl. restart, terminal item menu). Section 4 found
+  two bugs that compile, load and pass every test, and only show on screen:
+  1. Duplicate badge drawn BEHIND the pattern item. MC 26 draws a container screen as labels (AE2's drawFG,
+     where we drew the badge) → slots → foreground event. The GUI is 2D: later wins. `nextStratum()` only lifts
+     above what was drawn BEFORE it. Fix: draw the badges from NeoForge's `ScreenEvent.Render.Foreground`
+     (after the slots, in screen coordinates → translate by getGuiLeft/getGuiTop).
+  2. Quick-move selection one row too low. Our Mixin already moves PatternSlot.y down by the toolbar row; the
+     selection, highlight and hover lookup added that 18 px a second time. Found with an in-game experiment
+     ("drag one row below the patterns"), not by reading. The same code is on 1.21.1; unexplained why it worked there.
+- Why: "the Mixin applies" ≠ "the feature works". Draw order and coordinates are invisible to javac and tests.
+- Command: tools/build-and-count.sh phase4-pattern-fixes-2 (host WSL → JDK 25 container), then
+  scripts/run-test.ps1 -Deploy (host PowerShell).
+- Lessons:
+  * In MC 26, layering = draw ORDER. Find where the screen draws the thing you must cover, and draw after it.
+  * Check `@Deprecated(forRemoval)` before choosing an API: `ContainerScreenEvent.Render.Foreground` is
+    deprecated for removal since NeoForge 26.1.2 (javac warned; javap shows since="26.1.2").
+  * A cheap experiment in the running game can beat an hour of reading: change one input, watch what moves.

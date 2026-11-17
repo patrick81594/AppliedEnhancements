@@ -31,8 +31,8 @@ checked in-game yet.
 - [x] Options → Controls shows a category named "Applied Enhancements" with both bindings
       (right-click and Alt+right-click). *Protects: KeyMapping category change, new language key
       `key.category.appliedenhancements.category`.* *2026-11-14: header and both bindings seen.*
-- [ ] Rebinding one of them, restarting the game, and the binding is still set.
-      *2026-11-14: "Open Item Actions Menu" rebound to `-`, saved in options.txt; restart check still open.*
+- [x] Rebinding one of them, restarting the game, and the binding is still set.
+      *2026-11-14: "Open Item Actions Menu" rebound to `-`; 2026-11-17 after a restart still `-` (options.txt).*
 
 ## 2. ME terminal: network item context menu
 
@@ -56,15 +56,19 @@ checked in-game yet.
 
 ## 4. Pattern access terminal
 
-- [ ] The four pattern buttons are visible and not hidden behind other GUI parts: the header action
+- [x] The four pattern buttons are visible and not hidden behind other GUI parts: the header action
       button and the Duplicate / Invalid / Quick-Pattern-Move toggles. *Protects: removed `zOffset`.*
-- [ ] The three toggle buttons react to clicks, and their labels are readable.
-- [ ] The duplicate badge (machine icon or letter) is drawn above the pattern item.
+      *2026-11-14.*
+- [x] The three toggle buttons react to clicks, and their labels are readable. *2026-11-14, tooltips too.*
+- [x] The duplicate badge (machine icon or letter) is drawn above the pattern item.
+      *2026-11-14 FAILED (drawn behind: MC 26 draws the slots after drawFG). Fixed: badges are drawn from
+      `ScreenEvent.Render.Foreground`. 2026-11-17 passed.*
 - [ ] The expanded terminal header looks seamless (no visible seam or shifted strip).
       *Protects: new `blit` parameter order.*
-- [ ] Quick move: click, drag a selection box, release. Patterns move as expected. *Protects: W1
-      (mouse events, `extractRenderState`).*
-- [ ] The quick-move context menu opens above everything else.
+- [x] Quick move: click, drag a selection box, release. Patterns move as expected. *Protects: W1
+      (mouse events, `extractRenderState`).* *2026-11-14 FAILED (selection and highlight one row too low:
+      the toolbar offset was added twice). Fixed. 2026-11-17 passed: select, Cut, Paste into another provider.*
+- [x] The quick-move context menu opens above everything else. *2026-11-17.*
 - [ ] Duplicate-pattern messages appear in the action bar.
 - [ ] The same checks in ExtendedAE's extended pattern terminal and in a wireless pattern access terminal
       (ExtendedAE / ae2wtlib). *Protects: the optional-mod Mixins, which are never applied in dev runs.*

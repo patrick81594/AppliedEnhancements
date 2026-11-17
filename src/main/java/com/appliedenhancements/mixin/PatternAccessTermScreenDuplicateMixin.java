@@ -460,9 +460,10 @@ public abstract class PatternAccessTermScreenDuplicateMixin
             return;
         }
         var screen = (PatternAccessTermScreen<?>) (Object) this;
+        // No extra offset: PatternSlot.y already includes the toolbar row (shiftPatternSlotDown).
+        // Adding TOOLBAR_ROW_HEIGHT again put the highlight one row too low (seen in-game on 26.1.2).
         appliedenhancements$quickMove.renderSelectedSlots(
-                graphics, screen.getMenu().slots, appliedenhancements$displayToSource,
-                appliedenhancements$TOOLBAR_ROW_HEIGHT);
+                graphics, screen.getMenu().slots, appliedenhancements$displayToSource);
         appliedenhancements$updateQuickMoveButton();
 
         if (appliedenhancements$isFilterActive()) {
@@ -632,8 +633,8 @@ public abstract class PatternAccessTermScreenDuplicateMixin
                 screen.getGuiLeft(),
                 screen.getGuiTop(),
                 screen.getMenu().slots,
-                appliedenhancements$displayToSource,
-                appliedenhancements$TOOLBAR_ROW_HEIGHT);
+                // No extra offset: PatternSlot.y already includes the toolbar row.
+                appliedenhancements$displayToSource);
         if (handled) {
             appliedenhancements$updateQuickMoveButton();
         }
@@ -685,7 +686,8 @@ public abstract class PatternAccessTermScreenDuplicateMixin
     @Unique
     private PatternSlot appliedenhancements$findPatternSlot(double mouseX, double mouseY) {
         var screen = (PatternAccessTermScreen<?>) (Object) this;
-        double logicalMouseY = mouseY - appliedenhancements$TOOLBAR_ROW_HEIGHT;
+        // No toolbar offset: PatternSlot.y already includes it (shiftPatternSlotDown).
+        double logicalMouseY = mouseY;
         for (Slot slot : screen.getMenu().slots) {
             if (slot instanceof PatternSlot patternSlot
                     && mouseX >= screen.getGuiLeft() + patternSlot.x
