@@ -24,6 +24,8 @@ public final class NetworkHandler {
                 PatternBatchMovePayload.STREAM_CODEC,
                 PatternBatchMovePayload::handle
         );
+        // Client handler only (ClientPayloadHandlers), like AE2 26's InitNetwork: no client code here.
+        registrar.playToClient(PatternQuickMoveResultPayload.TYPE, PatternQuickMoveResultPayload.STREAM_CODEC);
         registrar.playToServer(
                 NetworkItemExtractPayload.TYPE,
                 NetworkItemExtractPayload.STREAM_CODEC,

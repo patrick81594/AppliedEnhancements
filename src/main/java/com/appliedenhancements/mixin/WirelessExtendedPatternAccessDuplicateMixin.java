@@ -621,10 +621,9 @@ public abstract class WirelessExtendedPatternAccessDuplicateMixin
 
     @Unique
     private void appliedenhancements$showQuickMoveMessage(String key, int count) {
-        var player = Minecraft.getInstance().player;
-        if (player != null) {
-            player.sendOverlayMessage(Component.translatable(key, count));
-        }
+        // A toast, not the action bar: the open terminal is drawn over the HUD and hid the message.
+        com.appliedenhancements.client.pattern.PatternQuickMoveToasts.show(
+                Component.translatable(key, count));
     }
 
     @Unique

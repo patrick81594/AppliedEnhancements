@@ -1,10 +1,13 @@
 package com.appliedenhancements.network;
 
 import com.appliedenhancements.AppliedEnhancements;
+import com.appliedenhancements.client.pattern.PatternQuickMoveToasts;
+import net.minecraft.network.chat.Component;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.network.event.RegisterClientPayloadHandlersEvent;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
 import org.jetbrains.annotations.ApiStatus;
 
 /**
@@ -23,5 +26,15 @@ public final class ClientPayloadHandlers {
     @SubscribeEvent
     public static void register(RegisterClientPayloadHandlersEvent event) {
         event.register(ExactCraftingAmountPayload.TYPE, ExactCraftingAmountPayload::handleOnClient);
+        event.register(PatternQuickMoveResultPayload.TYPE, ClientPayloadHandlers::showQuickMoveResult);
+    }
+
+    private static void showQuickMoveResult(PatternQuickMoveResultPayload payload, IPayloadContext context) {
+        // Only our own batch-move messages: never turn an arbitrary key from the network into a toast.
+        if (!payload.messageKey().startsWith(PatternQuickMoveResultPayload.KEY_PREFIX)) {
+            return;
+        }
+        context.enqueueWork(() -> PatternQuickMoveToasts.show(
+                Component.translatable(payload.messageKey(), payload.count())));
     }
 }

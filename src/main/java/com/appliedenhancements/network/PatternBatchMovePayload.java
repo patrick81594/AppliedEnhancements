@@ -7,10 +7,10 @@ import io.netty.handler.codec.DecoderException;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.network.RegistryFriendlyByteBuf;
-import net.minecraft.network.chat.Component;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.level.ServerPlayer;
+import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 /** Server-bound request to atomically move selected pattern slots. */
@@ -83,15 +83,13 @@ public record PatternBatchMovePayload(
             }
             PatternBatchMoveApi.Result result = PatternBatchMoveApi.execute(
                     player, payload.request());
-            if (result.success()) {
-                player.sendSystemMessage(Component.translatable(
-                        "message.appliedenhancements.pattern_batch_move.success",
-                        result.moved()));
-            } else {
-                player.sendSystemMessage(Component.translatable(
-                        "message.appliedenhancements.pattern_batch_move.failure."
-                                + failureKey(result.failure())));
-            }
+            // Was a chat message; the open pattern terminal covered it (chat is drawn before the screen).
+            // The client shows the result as a toast instead (PatternQuickMoveResultPayload).
+            String key = result.success()
+                    ? PatternQuickMoveResultPayload.KEY_PREFIX + "success"
+                    : PatternQuickMoveResultPayload.KEY_PREFIX + "failure." + failureKey(result.failure());
+            PacketDistributor.sendToPlayer(player,
+                    new PatternQuickMoveResultPayload(key, result.success() ? result.moved() : 0));
         });
     }
 

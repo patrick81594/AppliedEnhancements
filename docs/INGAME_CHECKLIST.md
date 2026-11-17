@@ -63,15 +63,22 @@ checked in-game yet.
 - [x] The duplicate badge (machine icon or letter) is drawn above the pattern item.
       *2026-11-14 FAILED (drawn behind: MC 26 draws the slots after drawFG). Fixed: badges are drawn from
       `ScreenEvent.Render.Foreground`. 2026-11-17 passed.*
-- [ ] The expanded terminal header looks seamless (no visible seam or shifted strip).
-      *Protects: new `blit` parameter order.*
+- [x] The expanded terminal header looks seamless (no visible seam or shifted strip).
+      *Protects: new `blit` parameter order.* *2026-11-17.*
 - [x] Quick move: click, drag a selection box, release. Patterns move as expected. *Protects: W1
       (mouse events, `extractRenderState`).* *2026-11-14 FAILED (selection and highlight one row too low:
       the toolbar offset was added twice). Fixed. 2026-11-17 passed: select, Cut, Paste into another provider.*
 - [x] The quick-move context menu opens above everything else. *2026-11-17.*
-- [ ] Duplicate-pattern messages appear in the action bar.
+- [x] Quick-move feedback ("Cut N patterns.", "Moved N patterns.", "Batch move failed: …") is readable while
+      the terminal is open. The header Cut all / Paste all icons only show with Quick Move ON and Duplicate OFF.
+      *Was: "duplicate-pattern messages in the action bar" (wrong name; these are the quick-move messages).
+      2026-11-17: Cut all / Paste all worked, but the action bar (Cut) and chat (Moved/Failed) were hidden behind
+      the terminal: Minecraft draws the HUD before the screen. Changed to a toast (drawn after the screen),
+      verified 2026-11-17.*
 - [ ] The same checks in ExtendedAE's extended pattern terminal and in a wireless pattern access terminal
       (ExtendedAE / ae2wtlib). *Protects: the optional-mod Mixins, which are never applied in dev runs.*
+      *2026-11-17: ExtendedAE Extended Pattern Access Terminal passed (its row Mixins applied, no crash).
+      Wireless pattern access terminal (ae2wtlib) not tested yet.*
 
 ## 5. Crafting: amount screen and AELIS confirm screen
 

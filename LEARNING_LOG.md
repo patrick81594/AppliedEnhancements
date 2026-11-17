@@ -1049,3 +1049,18 @@ NeoForge 26.1.2.126, Java 25).
   * Check `@Deprecated(forRemoval)` before choosing an API: `ContainerScreenEvent.Render.Foreground` is
     deprecated for removal since NeoForge 26.1.2 (javac warned; javap shows since="26.1.2").
   * A cheap experiment in the running game can beat an hour of reading: change one input, watch what moves.
+
+## Phase 4: quick-move feedback as a toast (a behaviour change, Patrick's choice)
+- What: "Cut N patterns." (action bar) and "Moved N patterns." / "Batch move failed" (chat) were invisible while the
+  pattern terminal was open. MC 26 GameRenderer draws HUD (action bar, chat) → screen → toasts, so any screen covers
+  the HUD. Options were toast / status line in the terminal / leave as is; Patrick chose the toast.
+- Change: client helper PatternQuickMoveToasts (vanilla SystemToast.addOrUpdate, one fixed id → replaces instead of
+  stacking, 5 s). The server result travels in a new pure-data payload PatternQuickMoveResultPayload, registered with
+  the 2-argument playToClient (handler only on the client, in ClientPayloadHandlers), as AE2 26 does.
+- Command: tools/build-and-count.sh phase4-quickmove-toast; scripts/run-test.ps1 -Deploy.
+- Lessons:
+  * Server → client feedback: send DATA (a translation key + numbers), translate on the client. Keep payload classes
+    free of client code so a dedicated server can load them.
+  * Validate what comes over the network: the client only accepts keys under our own prefix.
+  * A checklist item can be wrong: "duplicate-pattern messages" was named after a file, not a feature. Read the code
+    before asking someone to test it.
