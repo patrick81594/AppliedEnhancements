@@ -208,7 +208,13 @@ Tasks added on 2026-11-17, not done yet.
       the AELIS progress line, then the normal title once the plan is ready. Repeat with Recursive AE2 Pattern
       Provider in the pack: both mods change that title (`docs/ADDON_COMPATIBILITY.md`), so check which text wins
       and whether either is lost. *Protects: `CraftConfirmScreenMixin` `@ModifyArg` on `setTextContent`.*
-- [ ] **Recursive / catalyst crafts (Mystical Agriculture essences).** In the pack (Mystical Agriculture 9.0.11),
+- [x] **Recursive / catalyst crafts (Mystical Agriculture essences).** *2026-11-18, real world (FTB Evolution 2
+      1.9.0, AELIS planner on): AELIS planned 100 Prudentium from 400 Inferium + 1 Master Infusion Crystal and the
+      craft ran through; no hand-back in debug.log. Already supported: an input that returns unchanged is
+      `INVARIANT_REUSABLE` (`MolecularReusableInputAdapters`) and is borrowed once for all repetitions. Not
+      supported (seen the same day): a DIFFERENT returned item that feeds back into the same chain (glass bottles
+      from honey blocks: `fixed_remainder_input_feedback`), and duplicate producers of one item where one pattern
+      has an unsupported shape (AELIS then hands the whole request to AE2).* In the pack (Mystical Agriculture 9.0.11),
       an essence of the next tier is crafted from 4 essences of the tier below plus 1 Master Infusion Crystal,
       which is not used up (it comes back as a crafting remainder). Encode such a pattern (e.g. 4 Inferium →
       1 Prudentium + crystal), put exactly 1 crystal in the network, and request e.g. 100 Prudentium:
