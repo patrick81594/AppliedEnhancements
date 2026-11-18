@@ -80,9 +80,9 @@ public record CraftingCalculationProgressPayload(
         } catch (IllegalArgumentException exception) {
             throw new DecoderException(exception);
         }
-        if (phase == CraftingCalculationProgressPhase.IDLE) {
-            throw new DecoderException("IDLE progress must not be sent over the network");
-        }
+        // IDLE is a valid final update: the server sends it when AELIS hands a request back to AE2's own planner
+        // (CraftingCalculationProgressHandle.stopTracking). The client then stops showing AELIS progress.
+        // Rejecting it here threw a DecoderException, and a failed decode disconnects the player.
 
         AelisCalculationPath path;
         try {
