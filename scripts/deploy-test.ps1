@@ -5,14 +5,22 @@
 # Any Applied Enhancements jar already in mods/ is moved to minecraft\ae-port-rollback\<timestamp>\ first,
 # so the game never sees two versions of the mod.
 #
+# World backups: before every deploy and rollback, each world in minecraft\saves\ is zipped to
+# minecraft\ae-port-world-backups\<timestamp>\<world>.zip (the zip contains the world folder: restore by
+# extracting it into saves\ with the game closed). The newest -KeepWorldBackups sets are kept, older ones deleted.
+# Refuses to run while the instance's game is running (worlds and the jar are in use).
+#
 # Usage:
 #   powershell -ExecutionPolicy Bypass -File deploy-test.ps1             # deploy the newest jar
 #   powershell -ExecutionPolicy Bypass -File deploy-test.ps1 -Rollback   # undo the last deploy
+#   ... -NoWorldBackup                                                   # skip the world backup
 param(
     [string]$Instance = "FTB Evolution 2 - AE-TEST",
     [string]$JarDir = (Join-Path (Split-Path $PSScriptRoot -Parent) "build\libs"),
     [string]$PrismRoot = (Join-Path $env:APPDATA "PrismLauncher"),
-    [switch]$Rollback
+    [switch]$Rollback,
+    [switch]$NoWorldBackup,
+    [int]$KeepWorldBackups = 5
 )
 
 $ErrorActionPreference = "Stop"
@@ -33,6 +41,35 @@ function Show-Jar($path) {
     $hash = (Get-FileHash $path -Algorithm SHA256).Hash
     "{0}  {1:N0} bytes  SHA-256 {2}" -f $item.Name, $item.Length, $hash
 }
+
+# The game process of an instance is a javaw.exe whose command line contains the instance folder.
+$running = Get-CimInstance Win32_Process -Filter "Name = 'javaw.exe'" |
+    Where-Object { $_.CommandLine -and $_.CommandLine.Contains("instances/$Instance/") }
+if ($running) { throw "The '$Instance' game is running: close it first (its worlds and the mod jar are in use)." }
+
+function Backup-Worlds {
+    $saves = Join-Path $mc "saves"
+    $worlds = @(Get-ChildItem $saves -Directory -ErrorAction SilentlyContinue)
+    if ($worlds.Count -eq 0) { Write-Host "World backup: no worlds in $saves"; return }
+    $root = Join-Path $mc "ae-port-world-backups"
+    $dir = Join-Path $root $stamp
+    New-Item -ItemType Directory -Force -Path $dir | Out-Null
+    Add-Type -AssemblyName System.IO.Compression.FileSystem
+    foreach ($w in $worlds) {
+        $zip = Join-Path $dir ($w.Name + ".zip")
+        # includeBaseDirectory = $true: the zip holds "<world>\...", so extracting into saves\ restores it.
+        [System.IO.Compression.ZipFile]::CreateFromDirectory($w.FullName, $zip, [System.IO.Compression.CompressionLevel]::Optimal, $true)
+        Write-Host ("World backup: {0} -> {1:N1} MB" -f $w.Name, ((Get-Item $zip).Length / 1MB))
+    }
+    # Keep only the newest sets; these folders are created by this script alone.
+    $old = @(Get-ChildItem $root -Directory | Sort-Object Name -Descending | Select-Object -Skip $KeepWorldBackups)
+    foreach ($o in $old) {
+        Remove-Item -LiteralPath $o.FullName -Recurse -Confirm:$false
+        Write-Host "World backup: removed old set $($o.Name)"
+    }
+    Write-Host "World backups in $dir"
+}
+if (-not $NoWorldBackup) { Backup-Worlds }
 
 $installed = @(Get-ChildItem $mods -Filter $jarPattern -File)
 

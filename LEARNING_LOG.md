@@ -1176,3 +1176,18 @@ NeoForge 26.1.2.126, Java 25).
   * A launcher "restart" may only hide the window: check the process start time before assuming it re-read
     anything; and edit its files only while it is fully closed (it rewrites them).
   * Without Configured there is no config screen: this mod never registered one (NeoForge's IConfigScreenFactory).
+
+## Phase 5: world backups before every TEST deploy
+- What: scripts/deploy-test.ps1 now zips every world in minecraft\saves\ to
+  minecraft\ae-port-world-backups\<timestamp>\<world>.zip before each deploy and rollback (the zip contains the
+  world folder; restore = extract into saves\ with the game closed), keeps the newest 5 sets (-KeepWorldBackups),
+  can be skipped with -NoWorldBackup, and refuses to run while the instance's game is running.
+- Verified: TEST instance "AE Test" -> 20.8 MB zip containing AE Test\level.dat; AE-MINIMAL-TEST "AE Minimal" -> 13.8 MB.
+- NOT verified: the "game is running" refusal. My first test ran 7 s after the game had saved and closed: the
+  process was gone, but Windows still locked the jar for a moment, so the move failed (state checked and cleaned).
+- Lessons:
+  * A guard is only proven by a test where its condition is really true; a run that fails for another reason
+    proves nothing about it.
+  * Never trust a cut-off output (`Select-Object -First 3` hid the actual error message).
+  * Zip with the folder name inside (ZipFile.CreateFromDirectory ..., includeBaseDirectory = true) so a restore is a
+    single extract.
