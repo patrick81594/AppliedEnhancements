@@ -1217,3 +1217,27 @@ NeoForge 26.1.2.126, Java 25).
   2 ASM SimpleRemapper in tests), 0 Gradle deprecations, 516 + 30 tests green, audit 30 applied / 0 failed.
 - Lesson: write down what is NOT verified as carefully as what is. "Compiles", "the Mixin applies", "works in game"
   and "works in the pack next to other addons" are four different claims.
+
+## Phase 7: real-world bugs and the first AELIS extensions
+- Real world (Patrick's own instance, backed up first): a payload decoder that THREW on a legal value (IDLE progress)
+  disconnected the player → a decoder must accept every value the encoder can send. The pattern access terminal
+  scrollbar was offset twice: AE2 widget positions are relative to the GUI, so adding leftPos/topPos is wrong.
+- A2 (`crafting.aelis.prefer_plannable_producer`, default off): when an item has several producers (e.g. an AE2
+  pattern AND Replication's connector) and AELIS cannot compile the first, use the first one it can. A debug line
+  ("AELIS handed … back …: <reason>") was the key tool: without the reason we could only guess.
+- Canners: "only 1 of 4 machines works" was NOT the pattern provider. AE2's planner reuses a returned container
+  item (the empty bucket) one craft at a time, so the plan takes ~1 bucket from storage and the CPU can only feed
+  one canner. Read the planner (CraftingTreeProcess limitQty/containerItems) before changing the provider.
+- Assembler Matrix stuck: proven to need our mod (it crafted without our jar), but not reproducible afterwards.
+  Temporary read-only `[AE-DIAG]` logging stays installed (uncommitted) until it recurs.
+- B-b (`crafting.aelis.chunk_returned_item_feedback`, default off): AELIS used to refuse chains where a returned
+  item is consumed again further down (honey bottle ↔ glass bottle), because it runs all crafts of a pattern as ONE
+  batch and would need N returned items up front where AE2 needs ~1. Now such a pattern runs in chunks: chunk =
+  returned items in stock ÷ an upper bound of the demand per craft (≥ 1 = AE2's own one-at-a-time behaviour).
+  AE2 records the PEAK taken from storage (requiredExtract), so k items in stock → the CPU gets k → k machines in
+  parallel. 4 new FML tests (off = hand-back; 4 in stock → peak 4; 0 in stock → 1 missing for 16 crafts; chunk cap).
+- Lessons:
+  * Find the mechanism in the source before designing; three plausible hypotheses about the canners were wrong.
+  * "Works without my mod" is the fastest way to decide whose bug it is; a full world backup makes it safe.
+  * New planner behaviour goes behind a default-off switch and gets a test for "off = exactly as before".
+  * Windows PowerShell 5.1's ZipFile writes backslash paths: Windows restores fine, Linux `unzip` patterns miss them.

@@ -43,7 +43,8 @@ public interface AelisCraftingPlanner {
                 Config.AELIS_COMPILE_BUDGET_MS.get(),
                 pauseCheckpoint,
                 progressListener))
-                .preferPlannableProducer(Config.AELIS_PREFER_PLANNABLE_PRODUCER.get());
+                .preferPlannableProducer(Config.AELIS_PREFER_PLANNABLE_PRODUCER.get())
+                .chunkReturnedItemFeedback(Config.AELIS_CHUNK_RETURNED_ITEM_FEEDBACK.get());
     }
 
     /**
@@ -59,7 +60,8 @@ public interface AelisCraftingPlanner {
                 pauseCheckpoint,
                 progressListener,
                 craftingService))
-                .preferPlannableProducer(Config.AELIS_PREFER_PLANNABLE_PRODUCER.get());
+                .preferPlannableProducer(Config.AELIS_PREFER_PLANNABLE_PRODUCER.get())
+                .chunkReturnedItemFeedback(Config.AELIS_CHUNK_RETURNED_ITEM_FEEDBACK.get());
     }
 
     /** Creates a planner with explicit resource budgets. */
@@ -184,6 +186,12 @@ final class AelisCraftingPlannerImpl implements AelisCraftingPlanner {
     /** See {@link AelisPlanner.Session#preferPlannableProducer(boolean)}. */
     AelisCraftingPlannerImpl preferPlannableProducer(boolean prefer) {
         delegate.preferPlannableProducer(prefer);
+        return this;
+    }
+
+    /** See {@link AelisPlanner.Session#chunkReturnedItemFeedback(boolean)}. */
+    AelisCraftingPlannerImpl chunkReturnedItemFeedback(boolean chunk) {
+        delegate.chunkReturnedItemFeedback(chunk);
         return this;
     }
 

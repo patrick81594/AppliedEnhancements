@@ -313,6 +313,111 @@ class AelisFixedRemainderPlanningTest {
         assertTrue(((FakeProcess) root.processes.get(1)).possible);
     }
 
+    @Test
+    void returnedItemFeedbackHandsTheRequestBackWithoutTheOption() throws Exception {
+        loadConfig(false);
+        var tree = feedbackTree();
+        var state = new State();
+        state.network.put(glassBottle, 4L);
+        var result = new AelisPlanner.Session(1000, 2000, () -> {})
+                .tryExecute(tree.root, state, 16, false, new KeyCounter());
+        assertFalse(result.applied(), () -> result.toString());
+        assertTrue(result.fallbackReason().contains("fixed_remainder_input_feedback"), result.toString());
+        assertTrue(state.appliedenhancements$getCrafts().isEmpty());
+    }
+
+    @Test
+    void returnedItemFeedbackRunsInStockSizedChunks() throws Exception {
+        loadConfig(false);
+        var tree = feedbackTree();
+        var state = new State();
+        state.network.put(glassBottle, 4L);
+        var missing = new KeyCounter();
+        var result = new AelisPlanner.Session(1000, 2000, () -> {})
+                .chunkReturnedItemFeedback(true)
+                .tryExecute(tree.root, state, 16, false, missing);
+        assertTrue(result.applied(), () -> result.toString());
+        assertTrue(missing.isEmpty(), missing::toString);
+        assertEquals(16L, state.appliedenhancements$getCrafts().get(tree.shellPattern));
+        assertEquals(16L, state.appliedenhancements$getCrafts().get(tree.breathPattern));
+        // All 4 bottles come back, and the CPU takes all 4 from storage at job start (4 crafts in
+        // parallel); AE2's one-at-a-time loop would take only 1.
+        assertEquals(4L, state.extract(glassBottle, Long.MAX_VALUE, Actionable.SIMULATE));
+        assertEquals(4L, state.appliedenhancements$getRequiredExtract().get(glassBottle));
+    }
+
+    @Test
+    void returnedItemFeedbackWithoutStockBehavesLikeAe2OneAtATime() throws Exception {
+        loadConfig(false);
+        var tree = feedbackTree();
+        var state = new State();
+        var missing = new KeyCounter();
+        var result = new AelisPlanner.Session(1000, 2000, () -> {})
+                .chunkReturnedItemFeedback(true)
+                .tryExecute(tree.root, state, 16, true, missing);
+        assertTrue(result.applied(), () -> result.toString());
+        // One missing bottle, reused for all 16 crafts (a single batch would need 16).
+        assertEquals(1L, missing.get(glassBottle));
+        assertEquals(16L, state.appliedenhancements$getCrafts().get(tree.shellPattern));
+        assertEquals(1L, state.extract(glassBottle, Long.MAX_VALUE, Actionable.SIMULATE));
+    }
+
+    @Test
+    void returnedItemFeedbackBeyondTheChunkLimitHandsTheRequestBack() throws Exception {
+        loadConfig(false);
+        var tree = feedbackTree();
+        var state = new State();
+        state.network.put(glassBottle, 1L);
+        var result = new AelisPlanner.Session(1000, 60_000, () -> {})
+                .chunkReturnedItemFeedback(true)
+                .tryExecute(tree.root, state, AelisPlanner.MAX_RETURNED_ITEM_FEEDBACK_CHUNKS + 1L,
+                        false, new KeyCounter());
+        assertFalse(result.applied(), () -> result.toString());
+        assertTrue(result.fallbackReason().contains("returned_item_feedback_chunk_limit"), result.toString());
+        assertTrue(state.appliedenhancements$getCrafts().isEmpty());
+    }
+
+    private record FeedbackTree(FakeNode root, IPatternDetails shellPattern, IPatternDetails breathPattern) {
+    }
+
+    /**
+     * Shulker shell = 1 dragon breath (returns a glass bottle); dragon breath = 1 glass bottle.
+     * The returned bottle feeds back into the breath craft below the shell.
+     */
+    private static FeedbackTree feedbackTree() throws Exception {
+        var breathInput = exactInput(dragonBreath, 1L, glassBottle);
+        var bottleInput = exactInput(glassBottle, 1L, null);
+        var root = fakeNode(AEItemKey.of(Items.SHULKER_SHELL), null);
+        var breath = fakeNode(dragonBreath, breathInput);
+        var bottle = fakeNode(glassBottle, bottleInput);
+
+        IPatternDetails breathPattern = new IPatternDetails() {
+            public AEItemKey getDefinition() { return AEItemKey.of(Items.MAP); }
+            public List<GenericStack> getOutputs() { return List.of(new GenericStack(dragonBreath, 1)); }
+            public IInput[] getInputs() { return new IInput[]{bottleInput}; }
+            public boolean supportsPushInputsToExternalInventory() { return true; }
+        };
+        var breathProcess = allocate(FakeProcess.class);
+        breathProcess.pattern = breathPattern;
+        breathProcess.children = new LinkedHashMap<>(Map.of(bottle, 1L));
+        breathProcess.possible = true;
+        breathProcess.plain = true;
+        breath.processes.add(breathProcess);
+
+        IPatternDetails shellPattern = new IPatternDetails() {
+            public AEItemKey getDefinition() { return AEItemKey.of(Items.PAPER); }
+            public List<GenericStack> getOutputs() { return List.of(new GenericStack(root.key, 1)); }
+            public IInput[] getInputs() { return new IInput[]{breathInput}; }
+            public boolean supportsPushInputsToExternalInventory() { return true; }
+        };
+        var shellProcess = allocate(FakeProcess.class);
+        shellProcess.pattern = shellPattern;
+        shellProcess.children = new LinkedHashMap<>(Map.of(breath, 1L));
+        shellProcess.possible = true;
+        root.processes.add(shellProcess);
+        return new FeedbackTree(root, shellPattern, breathPattern);
+    }
+
     /** compiledTree(false) plus, in FRONT of its plannable producer, one AELIS rejects (dynamic_input_layout). */
     private static FakeNode twoProducerTree() throws Exception {
         var root = compiledTree(false);
@@ -406,11 +511,13 @@ class AelisFixedRemainderPlanningTest {
         IPatternDetails pattern;
         Map<CraftingTreeNode, Long> children;
         boolean possible;
+        // true = an ordinary pattern without container items (allocate() leaves it false).
+        boolean plain;
         private FakeProcess() { super(null, null, null, null); }
         public IPatternDetails molecularmanipulator$getDetails() { return pattern; }
         public Map<CraftingTreeNode, Long> molecularmanipulator$getChildNodes() { return children; }
-        public boolean molecularmanipulator$hasContainerItems() { return true; }
-        public boolean molecularmanipulator$limitsQuantity() { return true; }
+        public boolean molecularmanipulator$hasContainerItems() { return !plain; }
+        public boolean molecularmanipulator$limitsQuantity() { return !plain; }
         public boolean molecularmanipulator$isPossible() { return possible; }
         public void molecularmanipulator$setPossible(boolean value) { possible = value; }
         public boolean molecularmanipulator$hasMultiplePaths() { return false; }
@@ -634,18 +741,21 @@ class AelisFixedRemainderPlanningTest {
             AelisCraftingBytesTracker {
         Map<AEKey, BigInteger> exact = new HashMap<>();
         Map<AEKey, BigInteger> missing = new HashMap<>();
+        // Fake ME network stock; empty for all tests that predate the returned-item chunk tests.
+        // Items taken from it show up in AE2's requiredExtract (what a CPU takes at job start).
+        final Map<AEKey, Long> network = new HashMap<>();
         boolean previewOnly;
         AelisCalculationPath path;
         CraftingByteEstimate bytes = CraftingByteEstimate.ZERO;
 
         @Override
         protected long simulateExtractParent(AEKey key, long amount) {
-            return 0;
+            return Math.min(amount, network.getOrDefault(key, 0L));
         }
 
         @Override
         protected Iterable<AEKey> findFuzzyParent(AEKey key) {
-            return List.of();
+            return network.containsKey(key) ? List.of(key) : List.of();
         }
 
         @Override

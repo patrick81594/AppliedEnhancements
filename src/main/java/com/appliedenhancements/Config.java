@@ -18,6 +18,7 @@ public final class Config {
     public static final ModConfigSpec.BooleanValue ENABLE_AELIS_PLAN_SCREEN;
     public static final ModConfigSpec.BooleanValue ENABLE_AELIS_BIG_INTEGER_PLANNING;
     public static final ModConfigSpec.BooleanValue AELIS_PREFER_PLANNABLE_PRODUCER;
+    public static final ModConfigSpec.BooleanValue AELIS_CHUNK_RETURNED_ITEM_FEEDBACK;
     public static final ModConfigSpec.IntValue AELIS_MAX_NODES;
     public static final ModConfigSpec.IntValue AELIS_COMPILE_BUDGET_MS;
     public static final ModConfigSpec.BooleanValue AELIS_DIAGNOSTICS;
@@ -122,6 +123,18 @@ public final class Config {
                         "Default / 默认值: false")
                 .translation("appliedenhancements.config.aelis_prefer_plannable_producer")
                 .define("prefer_plannable_producer", false);
+
+        AELIS_CHUNK_RETURNED_ITEM_FEEDBACK = builder
+                .comment(
+                        "Let AELIS plan chains where a returned item (empty bucket, glass bottle) is used again in the same plan.",
+                        "Crafts run in chunks sized by the returned items in stock, so several machines can work in parallel.",
+                        "The CPU then takes up to that many returned items from storage and gives them back when the job ends.",
+                        "允许 AELIS 规划返还物品（空桶、玻璃瓶）在同一计划中再次被使用的合成链。",
+                        "合成按库存中返还物品的数量分批进行，使多台机器可以并行工作。",
+                        "合成处理器会从存储中取出相应数量的返还物品，并在任务结束时归还。",
+                        "Default / 默认值: false")
+                .translation("appliedenhancements.config.aelis_chunk_returned_item_feedback")
+                .define("chunk_returned_item_feedback", false);
 
         AELIS_MAX_NODES = builder
                 .comment(

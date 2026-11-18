@@ -49,6 +49,8 @@ import java.util.concurrent.TimeUnit;
 
 public final class AelisPlanner {
     private static final long MAX_LINEAR_NATIVE_BOUNDARY_ITEMS = 8_192L;
+    // chunkReturnedItemFeedback: chunks per node execution; beyond this AELIS hands the request back.
+    static final int MAX_RETURNED_ITEM_FEEDBACK_CHUNKS = 8_192;
     private static final long MAX_SIMULATION_ORDERED_REPLAY_STEPS = 64L;
     private static final String ADVANCED_AE_PROCESSING_PATTERN =
             "net.pedroksl.advanced_ae.common.patterns.AdvProcessingPattern";
@@ -89,6 +91,7 @@ public final class AelisPlanner {
         private final ProgressSink progressSink;
         private final ICraftingService craftingService;
         private boolean preferPlannableProducer;
+        private boolean chunkReturnedItemFeedback;
         private CraftingTreeNode root;
         private Graph graph;
         private String structuralFailure;
@@ -129,6 +132,18 @@ public final class AelisPlanner {
             return this;
         }
 
+        /**
+         * Plan patterns whose returned item (fixed remainder) can be consumed again further down the
+         * same chain, instead of handing the request back to AE2. Such a pattern runs in chunks: each
+         * chunk is as large as the returned items currently in stock allow (at least one craft, which
+         * is AE2's own one-at-a-time behaviour). Off by default
+         * (config {@code crafting.aelis.chunk_returned_item_feedback}).
+         */
+        public Session chunkReturnedItemFeedback(boolean chunk) {
+            this.chunkReturnedItemFeedback = chunk;
+            return this;
+        }
+
         public Result tryExecute(CraftingTreeNode requestedRoot, CraftingSimulationState inventory,
                 long requestedAmount, boolean simulation, KeyCounter missingItems)
                 throws InterruptedException {
@@ -165,7 +180,8 @@ public final class AelisPlanner {
                     while (graph == null && structuralFailure == null) {
                         var compiler = new Compiler(maxNodes, compileDeadline,
                                 pauseCheckpoint, Set.copyOf(contextSplitKeys),
-                                progressSink, craftingService, preferPlannableProducer);
+                                progressSink, craftingService, preferPlannableProducer,
+                                chunkReturnedItemFeedback);
                         try {
                             graph = compiler.compile(requestedRoot);
                         } catch (ContextSplit split) {
@@ -1708,11 +1724,26 @@ public final class AelisPlanner {
                     exactNonNegativeLong(remainingMultipliers, "big_integer_feedback_boundary_overflow"),
                     exactNonNegativeLong(patternTimes, "big_integer_feedback_boundary_overflow"), pauseCheckpoint);
         }
-        var returnedReusableInputs = new KeyCounter();
-        var returnedFixedInputs = new LinkedHashMap<AEKey, BigInteger>();
         List<OrderedGraphInput> selectedInputs = executeCompiledBoundary
                 ? compiledCandidate.orderedInputs
                 : node.orderedInputs;
+        // chunkReturnedItemFeedback: a returned item of this pattern feeds back into its own input
+        // chain. Run it in chunks sized by the returned items in stock (at least one craft = AE2's
+        // one-at-a-time behaviour), returning them after each chunk, so the next chunk reuses them.
+        Map<AEKey, Long> feedbackDemand = executeCompiledBoundary ? null : node.returnedItemFeedbackDemand;
+        BigInteger remainingTimes = patternTimes;
+        int chunks = 0;
+        while (remainingTimes.signum() > 0) {
+        BigInteger chunkTimes = remainingTimes;
+        if (feedbackDemand != null) {
+            if (++chunks > MAX_RETURNED_ITEM_FEEDBACK_CHUNKS) {
+                throw new Fallback("returned_item_feedback_chunk_limit");
+            }
+            chunkTimes = remainingTimes.min(BigInteger.valueOf(
+                    returnedItemFeedbackChunk(inventory, feedbackDemand)));
+        }
+        var returnedReusableInputs = new KeyCounter();
+        var returnedFixedInputs = new LinkedHashMap<AEKey, BigInteger>();
         for (OrderedGraphInput orderedInput : selectedInputs) {
             checkpoint(pauseCheckpoint);
             if (orderedInput.reusable()) {
@@ -1721,12 +1752,12 @@ public final class AelisPlanner {
                     if (!allocateDeterministicDamageInput(
                             inventory, reusableInput.input, reusableInput.child,
                             reusableInput.multiplier, exactNonNegativeLong(
-                                    patternTimes, "big_integer_damage_input_overflow"), pauseCheckpoint)) {
+                                    chunkTimes, "big_integer_damage_input_overflow"), pauseCheckpoint)) {
                         throw new Fallback("deterministic_damage_input_unavailable");
                     }
                 } else if (reusableInput.mode != BoundaryInputMode.INVARIANT_REUSABLE
                         || !leaseInvariantReusableInput(
-                                inventory, reusableInput, patternTimes,
+                                inventory, reusableInput, chunkTimes,
                                 returnedReusableInputs, pauseCheckpoint)) {
                     throw new Fallback("reusable_input_unavailable");
                 }
@@ -1742,7 +1773,7 @@ public final class AelisPlanner {
                     throw new Fallback("fixed_remainder_semantics_changed");
                 }
                 BigInteger childRequests = AelisBigIntegerMath.multiply(
-                        consumableInput.multiplier, patternTimes);
+                        consumableInput.multiplier, chunkTimes);
                 executeTransactionalNode(
                         graph, consumableInput.childIndex, inventory,
                         childRequests, rootRequestedAmount, simulation,
@@ -1768,8 +1799,10 @@ public final class AelisPlanner {
         }
         for (var stack : returnedReusableInputs) {
             inventory.insert(stack.getKey(), stack.getLongValue(), Actionable.MODULATE);
-            var logicalReturns = AelisBigIntegerMath.multiply(stack.getLongValue(), patternTimes);
+            var logicalReturns = AelisBigIntegerMath.multiply(stack.getLongValue(), chunkTimes);
             ExactCraftingBytes.addStackBytes(inventory, stack.getKey(), logicalReturns);
+        }
+        remainingTimes = remainingTimes.subtract(chunkTimes);
         }
 
         long remainder = totalRequestedItems.remainder(BigInteger.valueOf(effectiveOutputPerPattern)).longValueExact();
@@ -1800,6 +1833,25 @@ public final class AelisPlanner {
         } finally {
             AelisRecursionGuard.exitTransactional();
         }
+    }
+
+    /**
+     * Crafts one chunk may run: the returned items in stock divided by the (upper-bound) demand per
+     * craft, for the scarcest returned item; at least one craft. A chunk of this size never needs
+     * more returned items than are in stock, so it never crafts or misses one where AE2's
+     * one-at-a-time loop would not.
+     */
+    static long returnedItemFeedbackChunk(CraftingSimulationState inventory, Map<AEKey, Long> demand) {
+        long chunk = Long.MAX_VALUE;
+        for (var entry : demand.entrySet()) {
+            long perCraft = entry.getValue();
+            if (perCraft <= 0) {
+                continue;
+            }
+            long stock = inventory.extract(entry.getKey(), Long.MAX_VALUE, Actionable.SIMULATE);
+            chunk = Math.min(chunk, stock / perCraft);
+        }
+        return Math.max(1, chunk);
     }
 
     private static void executeQuantityFeedbackNode(
@@ -5854,10 +5906,13 @@ public final class AelisPlanner {
         private boolean hasSubstituteInputs;
         private boolean hasReusableInputs;
         private final boolean preferPlannableProducer;
+        private final boolean chunkReturnedItemFeedback;
 
         private Compiler(int maxNodes, long deadline, PauseCheckpoint pauseCheckpoint,
                 Set<AEKey> contextSplitKeys, ProgressSink progressSink,
-                ICraftingService craftingService, boolean preferPlannableProducer) {
+                ICraftingService craftingService, boolean preferPlannableProducer,
+                boolean chunkReturnedItemFeedback) {
+            this.chunkReturnedItemFeedback = chunkReturnedItemFeedback;
             this.maxNodes = maxNodes;
             this.deadline = deadline;
             this.pauseCheckpoint = pauseCheckpoint;
@@ -5926,7 +5981,12 @@ public final class AelisPlanner {
             return graph;
         }
 
-        /** Reject feedback through any input subtree before delaying container returns. */
+        /**
+         * Reject feedback through any input subtree before delaying container returns.
+         * With {@code chunkReturnedItemFeedback}, feedback of a returned item into the owner's own
+         * input subgraph is accepted instead: the owner then runs in stock-sized chunks (see
+         * {@code Node.returnedItemFeedbackDemand}). Every other unsafe shape still falls back.
+         */
         private void validateFixedRemainderIsolation()
                 throws Fallback, InterruptedException {
             for (Node owner : nodes) {
@@ -5943,6 +6003,27 @@ public final class AelisPlanner {
                             remainders.add(input.consumableInput.remainderKey);
                         }
                     }
+                    try {
+                        if (validateFixedRemainderSubgraph(owner, remainders)) {
+                            owner.returnedItemFeedbackDemand =
+                                    returnedItemDemandPerCraft(owner, candidate, remainders);
+                            com.appliedenhancements.AppliedEnhancements.LOGGER.debug("AELIS plans {} in chunks: its returned item(s) {} feed back into"
+                                    + " its own chain (demand per craft {})", owner.key, remainders,
+                                    owner.returnedItemFeedbackDemand);
+                        }
+                    } catch (Fallback fallback) {
+                        com.appliedenhancements.AppliedEnhancements.LOGGER.debug("AELIS returned-item check failed for {} (returns {}): {}",
+                                owner.key, remainders, fallback.reason);
+                        throw fallback;
+                    }
+                }
+            }
+        }
+
+        /** @return true when a returned item feeds back (only possible with chunkReturnedItemFeedback). */
+        private boolean validateFixedRemainderSubgraph(Node owner, Set<AEKey> remainders)
+                throws Fallback, InterruptedException {
+                    boolean feedback = false;
                     var pending = new ArrayDeque<Integer>();
                     var visited = new HashSet<Integer>();
                     var materialOccurrences = new HashMap<AEKey, Integer>();
@@ -5958,9 +6039,12 @@ public final class AelisPlanner {
                         if (previous != null && previous != descendant.index) {
                             throw new Fallback("fixed_remainder_contextual_material");
                         }
-                        if (remainders.contains(descendant.key) || descendant.barrier
-                                || !descendant.reusableInputs.isEmpty()) {
+                        if (descendant.barrier || !descendant.reusableInputs.isEmpty()
+                                || remainders.contains(descendant.key) && !chunkReturnedItemFeedback) {
                             throw new Fallback("fixed_remainder_feedback_or_native_input");
+                        }
+                        if (remainders.contains(descendant.key)) {
+                            feedback = true;
                         }
                         if (descendant.terminal || descendant.emitter) {
                             continue;
@@ -5982,20 +6066,77 @@ public final class AelisPlanner {
                                     throw new Fallback("fixed_remainder_contextual_input_subgraph");
                                 }
                                 GraphConsumableInput consumable = input.consumableInput;
-                                try {
-                                    for (AEKey remainder : remainders) {
-                                        if (consumable.input.isValid(remainder, descendant.level)) {
-                                            throw new Fallback("fixed_remainder_input_feedback");
-                                        }
+                                if (acceptsAnyRemainder(consumable, remainders, descendant.level)) {
+                                    if (!chunkReturnedItemFeedback) {
+                                        throw new Fallback("fixed_remainder_input_feedback");
                                     }
-                                } catch (RuntimeException exception) {
-                                    throw new Fallback("fixed_remainder_input_validation_error");
+                                    feedback = true;
                                 }
                                 pending.addLast(consumable.childIndex);
                             }
                         }
                     }
+                    return feedback;
+        }
+
+        private static boolean acceptsAnyRemainder(GraphConsumableInput consumable,
+                Set<AEKey> remainders, net.minecraft.world.level.Level level) throws Fallback {
+            try {
+                for (AEKey remainder : remainders) {
+                    if (consumable.input.isValid(remainder, level)) {
+                        return true;
+                    }
                 }
+                return false;
+            } catch (RuntimeException exception) {
+                throw new Fallback("fixed_remainder_input_validation_error");
+            }
+        }
+
+        /**
+         * Upper bound of the returned items ONE craft of {@code owner} consumes in its input subgraph:
+         * input slots that accept a returned item, and nodes that request one, count their full amount.
+         * Nodes are assumed to have no stock (stock only lowers real demand), and each node rounds its
+         * crafts up per owner craft (k owner crafts need at most k times this). Saturates at
+         * Long.MAX_VALUE, which makes every chunk a single craft.
+         */
+        private Map<AEKey, Long> returnedItemDemandPerCraft(Node owner, CompiledCandidate candidate,
+                Set<AEKey> remainders) throws Fallback, InterruptedException {
+            var demand = new HashMap<AEKey, Long>();
+            for (AEKey remainder : remainders) {
+                demand.put(remainder, 0L);
+            }
+            addReturnedItemDemand(owner, candidate, 1, remainders, demand);
+            return Map.copyOf(demand);
+        }
+
+        private void addReturnedItemDemand(Node node, CompiledCandidate candidate, long crafts,
+                Set<AEKey> remainders, Map<AEKey, Long> demand)
+                throws Fallback, InterruptedException {
+            checkBudget();
+            for (OrderedGraphInput input : candidate.orderedInputs) {
+                if (input.reusable()) {
+                    // validateFixedRemainderSubgraph already rejects reusable inputs in this subgraph.
+                    throw new Fallback("fixed_remainder_contextual_input_subgraph");
+                }
+                GraphConsumableInput consumable = input.consumableInput;
+                Node child = nodes.get(consumable.childIndex);
+                long childItems = saturatedMultiply(
+                        saturatedMultiply(crafts, consumable.multiplier), child.amount);
+                for (AEKey remainder : remainders) {
+                    if (remainder.equals(child.key)
+                            || acceptsAnyRemainder(consumable, Set.of(remainder), node.level)) {
+                        demand.merge(remainder, childItems, AelisPlanner::saturatedAdd);
+                    }
+                }
+                if (remainders.contains(child.key) || child.terminal || child.emitter
+                        || child.compiledCandidates.size() != 1) {
+                    continue;
+                }
+                CompiledCandidate childCandidate = child.compiledCandidates.getFirst();
+                long perPattern = Math.max(1, childCandidate.outputPerPattern);
+                long childCrafts = childItems / perPattern + (childItems % perPattern == 0 ? 0 : 1);
+                addReturnedItemDemand(child, childCandidate, childCrafts, remainders, demand);
             }
         }
 
@@ -7437,6 +7578,11 @@ public final class AelisPlanner {
         private final List<CompiledCandidate> compiledCandidates = new ArrayList<>();
         private final IdentityHashMap<IPatternDetails, Boolean>
                 noProgressPatterns = new IdentityHashMap<>();
+        // chunkReturnedItemFeedback: upper bound of how many of each returned item (fixed remainder)
+        // ONE craft of this node's single candidate can consume further down its input subgraph.
+        // Non-null only for patterns whose returned items feed back into their own chain; the
+        // transactional executor then runs this node in stock-sized chunks.
+        private Map<AEKey, Long> returnedItemFeedbackDemand;
         // Producers AELIS could not compile while a later producer could (preferPlannableProducer).
         // Filtered like noProgressPatterns: at every occurrence and at execution time.
         private final IdentityHashMap<IPatternDetails, Boolean>

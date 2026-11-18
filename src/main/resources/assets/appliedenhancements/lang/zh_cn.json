@@ -106,6 +106,8 @@
   "appliedenhancements.config.enable_aelis_big_integer_planning.tooltip": "对超过有符号 64 位整数上限的 AELIS 订单和中间需求使用精确大整数运算。long 投影仅供兼容；由合成处理器自行决定执行，并可读取精确执行接口。关闭后，自动 AELIS 使用原有 long 运算；显式精确接口请求仍使用精确大整数运算。\n默认：开启",
   "appliedenhancements.config.aelis_prefer_plannable_producer": "优先使用可规划的样板",
   "appliedenhancements.config.aelis_prefer_plannable_producer.tooltip": "若 AELIS 无法规划某物品的首个样板但可规划之后的样板，则改用之后的样板。关闭时，AELIS 会把整个请求交还给 AE2 规划器。与 AE2 的顺序相比，会改变所用的样板。\n默认：关闭",
+  "appliedenhancements.config.aelis_chunk_returned_item_feedback": "分批规划返还物品合成链",
+  "appliedenhancements.config.aelis_chunk_returned_item_feedback.tooltip": "允许 AELIS 规划返还物品（空桶、玻璃瓶）在同一计划中再次被使用的合成链。合成按库存中返还物品的数量分批进行，使多台机器可以并行工作。合成处理器会从存储中取出相应数量的返还物品，并在任务结束时归还。\n默认：关闭",
   "appliedenhancements.config.aelis_max_nodes": "AELIS 最大节点数",
   "appliedenhancements.config.aelis_max_nodes.tooltip": "AELIS 每次尝试允许分析的最大节点数。数值越高，可处理的配方越复杂，但会占用更多内存。\n取值范围：1000 ~ 1000000\n默认：100000",
   "appliedenhancements.config.aelis_compile_budget_ms": "AELIS 编译时间预算（毫秒）",

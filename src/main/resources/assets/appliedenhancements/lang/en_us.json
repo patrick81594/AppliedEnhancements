@@ -106,6 +106,8 @@
   "appliedenhancements.config.enable_aelis_big_integer_planning.tooltip": "Use exact BigInteger arithmetic for AELIS orders and intermediate demands above Long.MAX_VALUE. Long projections are for compatibility; CPUs decide execution and can read the exact execution API. When disabled, automatic AELIS uses legacy long arithmetic; explicit exact API requests remain exact.\nDefault: true",
   "appliedenhancements.config.aelis_prefer_plannable_producer": "Prefer Plannable Producer",
   "appliedenhancements.config.aelis_prefer_plannable_producer.tooltip": "If AELIS cannot plan an item's first pattern but can plan a later one, use the later pattern. Without this, AELIS hands the whole request back to AE2's planner. Changes which pattern is used compared with AE2's order.\nDefault: false",
+  "appliedenhancements.config.aelis_chunk_returned_item_feedback": "Chunk Returned-Item Chains",
+  "appliedenhancements.config.aelis_chunk_returned_item_feedback.tooltip": "Let AELIS plan chains where a returned item (empty bucket, glass bottle) is used again in the same plan. Crafts run in chunks sized by the returned items in stock, so several machines can work in parallel. The CPU then takes up to that many returned items from storage and gives them back when the job ends.\nDefault: false",
   "appliedenhancements.config.aelis_max_nodes": "AELIS Maximum Node Count",
   "appliedenhancements.config.aelis_max_nodes.tooltip": "Maximum nodes analyzed by AELIS per attempt. Higher values allow more complex recipes but use more memory.\nRange: 1000 ~ 1000000\nDefault: 100000",
   "appliedenhancements.config.aelis_compile_budget_ms": "AELIS Compilation Budget (ms)",

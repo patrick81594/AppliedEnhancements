@@ -85,22 +85,26 @@ class MaxFastLegacyApiTest {
         Object previousBudget = cached.get(Config.AELIS_COMPILE_BUDGET_MS);
         Object previousAutomatic = cached.get(Config.ENABLE_AUTOMATIC_AELIS_PLANNER);
         Object previousPreferPlannable = cached.get(Config.AELIS_PREFER_PLANNABLE_PRODUCER);
+        Object previousChunkFeedback = cached.get(Config.AELIS_CHUNK_RETURNED_ITEM_FEEDBACK);
         try {
             cached.set(Config.AELIS_MAX_NODES, 456);
             cached.set(Config.AELIS_COMPILE_BUDGET_MS, 789);
             cached.set(Config.ENABLE_AUTOMATIC_AELIS_PLANNER, false);
             cached.set(Config.AELIS_PREFER_PLANNABLE_PRODUCER, true);
+            cached.set(Config.AELIS_CHUNK_RETURNED_ITEM_FEEDBACK, true);
             var legacy = oldClient.getMethod("configured").invoke(null);
             var session = read(read(legacy, "delegate"), "delegate");
             assertEquals(456, read(session, "maxNodes"));
             assertEquals(789_000_000L, read(session, "compileBudgetNanos"));
             assertNull(read(session, "craftingService"));
             assertEquals(true, read(session, "preferPlannableProducer"));
+            assertEquals(true, read(session, "chunkReturnedItemFeedback"));
         } finally {
             cached.set(Config.AELIS_MAX_NODES, previousNodes);
             cached.set(Config.AELIS_COMPILE_BUDGET_MS, previousBudget);
             cached.set(Config.ENABLE_AUTOMATIC_AELIS_PLANNER, previousAutomatic);
             cached.set(Config.AELIS_PREFER_PLANNABLE_PRODUCER, previousPreferPlannable);
+            cached.set(Config.AELIS_CHUNK_RETURNED_ITEM_FEEDBACK, previousChunkFeedback);
         }
     }
 
