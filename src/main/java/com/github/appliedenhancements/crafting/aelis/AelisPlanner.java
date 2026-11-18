@@ -88,6 +88,7 @@ public final class AelisPlanner {
         private final PauseCheckpoint pauseCheckpoint;
         private final ProgressSink progressSink;
         private final ICraftingService craftingService;
+        private boolean preferPlannableProducer;
         private CraftingTreeNode root;
         private Graph graph;
         private String structuralFailure;
@@ -115,6 +116,17 @@ public final class AelisPlanner {
             this.pauseCheckpoint = pauseCheckpoint;
             this.progressSink = progressSink == null ? ProgressSink.NONE : progressSink;
             this.craftingService = craftingService;
+        }
+
+        /**
+         * When an item has several producers and AELIS cannot compile the first one, use the first
+         * producer it can compile instead of turning the whole item into a barrier. The skipped
+         * producers are removed from that item's candidate list and marked impossible in the live
+         * AE2 tree. Off by default (config {@code crafting.aelis.prefer_plannable_producer}).
+         */
+        public Session preferPlannableProducer(boolean prefer) {
+            this.preferPlannableProducer = prefer;
+            return this;
         }
 
         public Result tryExecute(CraftingTreeNode requestedRoot, CraftingSimulationState inventory,
@@ -153,7 +165,7 @@ public final class AelisPlanner {
                     while (graph == null && structuralFailure == null) {
                         var compiler = new Compiler(maxNodes, compileDeadline,
                                 pauseCheckpoint, Set.copyOf(contextSplitKeys),
-                                progressSink, craftingService);
+                                progressSink, craftingService, preferPlannableProducer);
                         try {
                             graph = compiler.compile(requestedRoot);
                         } catch (ContextSplit split) {
@@ -3772,7 +3784,8 @@ public final class AelisPlanner {
     private static List<CraftingTreeProcess> withoutNoProgressCandidates(
             Node node, List<CraftingTreeProcess> processes) {
         if (processes == null || processes.isEmpty() || node == null
-                || node.noProgressPatterns.isEmpty()) {
+                || node.noProgressPatterns.isEmpty()
+                        && node.skippedProducerPatterns.isEmpty()) {
             return processes;
         }
         var result = new ArrayList<CraftingTreeProcess>(processes.size());
@@ -3781,7 +3794,8 @@ public final class AelisPlanner {
                 IPatternDetails details =
                         ((AelisCraftingTreeProcessBridge) process)
                                 .molecularmanipulator$getDetails();
-                if (node.noProgressPatterns.containsKey(details)) {
+                if (node.noProgressPatterns.containsKey(details)
+                        || node.skippedProducerPatterns.containsKey(details)) {
                     continue;
                 }
             } catch (RuntimeException exception) {
@@ -5839,16 +5853,18 @@ public final class AelisPlanner {
         private int orderedChoiceCount;
         private boolean hasSubstituteInputs;
         private boolean hasReusableInputs;
+        private final boolean preferPlannableProducer;
 
         private Compiler(int maxNodes, long deadline, PauseCheckpoint pauseCheckpoint,
                 Set<AEKey> contextSplitKeys, ProgressSink progressSink,
-                ICraftingService craftingService) {
+                ICraftingService craftingService, boolean preferPlannableProducer) {
             this.maxNodes = maxNodes;
             this.deadline = deadline;
             this.pauseCheckpoint = pauseCheckpoint;
             this.contextSplitKeys = contextSplitKeys;
             this.progressSink = progressSink;
             this.craftingService = craftingService;
+            this.preferPlannableProducer = preferPlannableProducer;
         }
 
         private Graph compile(CraftingTreeNode root)
@@ -6272,6 +6288,53 @@ public final class AelisPlanner {
                 node.terminal = true;
                 return;
             }
+            CompiledCandidate primaryCandidate = null;
+            if (preferPlannableProducer && processes.size() > 1) {
+                // Try the producers in AE2's order as the primary. A Barrier is thrown during
+                // compileCandidate's read-only validation, before any graph state is written, so a
+                // failed attempt leaves nothing behind. The first producer that compiles becomes the
+                // primary; the ones before it are removed for this item (and marked impossible in
+                // the live AE2 tree; tryExecute restores that state if AELIS falls back).
+                var skipReasons = new ArrayList<String>();
+                Barrier firstBarrier = null;
+                int chosen = -1;
+                for (int candidateIndex = 0; candidateIndex < processes.size(); candidateIndex++) {
+                    // The fixed-remainder shape check counts the candidates: count only those left.
+                    node.candidatePatterns = getCandidatePatterns(
+                            processes.subList(candidateIndex, processes.size()));
+                    try {
+                        primaryCandidate = compileCandidate(
+                                node, processes.get(candidateIndex), context, 0, true);
+                        chosen = candidateIndex;
+                        break;
+                    } catch (Barrier barrier) {
+                        if (firstBarrier == null) {
+                            firstBarrier = barrier;
+                        }
+                        skipReasons.add(barrier.reason);
+                    }
+                }
+                if (chosen < 0) {
+                    // No producer can be compiled: exactly the behaviour without this option.
+                    node.candidatePatterns = getCandidatePatterns(processes);
+                    recordKeyContextBehavior(node, context, false, node.candidatePatterns);
+                    orderedChoiceCount++;
+                    node.executionMode = ExecutionMode.HYBRID_BARRIER;
+                    node.barrierReason = "ordered_pattern_choices";
+                    throw firstBarrier;
+                }
+                for (int skipped = 0; skipped < chosen; skipped++) {
+                    var skippedBridge = (AelisCraftingTreeProcessBridge) processes.get(skipped);
+                    node.skippedProducerPatterns.put(
+                            skippedBridge.molecularmanipulator$getDetails(), Boolean.TRUE);
+                    skippedBridge.molecularmanipulator$setPossible(false);
+                    com.appliedenhancements.AppliedEnhancements.LOGGER.debug(
+                            "AELIS skipped producer #{} of {} (prefer_plannable_producer): {}",
+                            skipped + 1, node.key, skipReasons.get(skipped));
+                }
+                processes = List.copyOf(processes.subList(chosen, processes.size()));
+            }
+
             node.candidatePatterns = getCandidatePatterns(processes);
             recordKeyContextBehavior(
                     node, context, false, node.candidatePatterns);
@@ -6284,8 +6347,9 @@ public final class AelisPlanner {
                 node.barrierReason = "ordered_pattern_choices";
             }
 
-            node.compiledCandidates.add(compileCandidate(
-                    node, processes.getFirst(), context, 0, true));
+            node.compiledCandidates.add(primaryCandidate != null
+                    ? primaryCandidate
+                    : compileCandidate(node, processes.getFirst(), context, 0, true));
             node.allCandidatesCompiled = processes.size() == 1;
 
             if (processes.size() > 1) {
@@ -6676,6 +6740,14 @@ public final class AelisPlanner {
                     candidateIndex < processes.size(); candidateIndex++) {
                 CraftingTreeProcess candidate = processes.get(candidateIndex);
                 var bridge = (AelisCraftingTreeProcessBridge) candidate;
+                if (!node.skippedProducerPatterns.isEmpty()
+                        && node.skippedProducerPatterns.containsKey(
+                                bridge.molecularmanipulator$getDetails())) {
+                    // Skipped at the canonical occurrence (preferPlannableProducer): every other
+                    // occurrence must see the same candidate list, and AE2 must not use it either.
+                    bridge.molecularmanipulator$setPossible(false);
+                    continue;
+                }
                 CandidateProgressCheck progress = checkDirectCandidateProgress(
                         node, bridge);
                 if (progress.noProgress()) {
@@ -7365,6 +7437,10 @@ public final class AelisPlanner {
         private final List<CompiledCandidate> compiledCandidates = new ArrayList<>();
         private final IdentityHashMap<IPatternDetails, Boolean>
                 noProgressPatterns = new IdentityHashMap<>();
+        // Producers AELIS could not compile while a later producer could (preferPlannableProducer).
+        // Filtered like noProgressPatterns: at every occurrence and at execution time.
+        private final IdentityHashMap<IPatternDetails, Boolean>
+                skippedProducerPatterns = new IdentityHashMap<>();
         private final Map<Integer, String> candidateCompileFailures =
                 new LinkedHashMap<>();
         private int indegree;

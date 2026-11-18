@@ -282,6 +282,59 @@ class AelisFixedRemainderPlanningTest {
         assertTrue(state.appliedenhancements$getCrafts().isEmpty());
     }
 
+    @Test
+    void unplannableFirstProducerHandsTheRequestBackWithoutTheOption() throws Exception {
+        loadConfig(false);
+        var root = twoProducerTree();
+        var state = new State();
+        state.insert(dragonBreath, BOTTLE_RETURNS, Actionable.MODULATE);
+        var result = new AelisPlanner.Session(1000, 2000, () -> {})
+                .tryExecute(root, state, SHELL_BATCH, false, new KeyCounter());
+        assertFalse(result.applied(), () -> result.toString());
+        assertEquals("native_boundary_work_limit:dynamic_input_layout", result.fallbackReason());
+        assertEquals(BOTTLE_RETURNS, state.extract(dragonBreath, Long.MAX_VALUE, Actionable.SIMULATE));
+        assertTrue(((FakeProcess) root.processes.get(0)).possible);
+    }
+
+    @Test
+    void preferPlannableProducerPlansWithTheNextProducer() throws Exception {
+        loadConfig(false);
+        var root = twoProducerTree();
+        var state = new State();
+        state.insert(dragonBreath, BOTTLE_RETURNS, Actionable.MODULATE);
+        var result = new AelisPlanner.Session(1000, 2000, () -> {})
+                .preferPlannableProducer(true)
+                .tryExecute(root, state, SHELL_BATCH, false, new KeyCounter());
+        assertTrue(result.applied(), () -> result.toString());
+        assertEquals(BOTTLE_RETURNS, state.extract(glassBottle, Long.MAX_VALUE, Actionable.SIMULATE));
+        assertEquals(0L, state.extract(dragonBreath, Long.MAX_VALUE, Actionable.SIMULATE));
+        // The skipped producer is marked impossible so AE2 cannot pick it either.
+        assertFalse(((FakeProcess) root.processes.get(0)).possible);
+        assertTrue(((FakeProcess) root.processes.get(1)).possible);
+    }
+
+    /** compiledTree(false) plus, in FRONT of its plannable producer, one AELIS rejects (dynamic_input_layout). */
+    private static FakeNode twoProducerTree() throws Exception {
+        var root = compiledTree(false);
+        var breathInput = exactInput(dragonBreath, 4L, glassBottle);
+        var children = new LinkedHashMap<CraftingTreeNode, Long>();
+        children.put(fakeNode(dragonBreath, breathInput), 4L);
+        IPatternDetails broken = new IPatternDetails() {
+            public AEItemKey getDefinition() { return AEItemKey.of(Items.BOOK); }
+            public List<GenericStack> getOutputs() { return List.of(new GenericStack(root.key, 1)); }
+            // Two declared inputs but only one child node: rejected during validation, before any
+            // graph state is written.
+            public IInput[] getInputs() { return new IInput[]{breathInput, breathInput}; }
+            public boolean supportsPushInputsToExternalInventory() { return true; }
+        };
+        var process = allocate(FakeProcess.class);
+        process.pattern = broken;
+        process.children = children;
+        process.possible = true;
+        root.processes.add(0, process);
+        return root;
+    }
+
     private static FakeNode compiledTree(boolean consumesReturn) throws Exception {
         var breathInput = exactInput(dragonBreath, 4L, glassBottle);
         var bottleInput = exactInput(glassBottle, 1L, null);

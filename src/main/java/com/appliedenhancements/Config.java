@@ -17,6 +17,7 @@ public final class Config {
     public static final ModConfigSpec.BooleanValue ENABLE_AUTOMATIC_AELIS_PLANNER;
     public static final ModConfigSpec.BooleanValue ENABLE_AELIS_PLAN_SCREEN;
     public static final ModConfigSpec.BooleanValue ENABLE_AELIS_BIG_INTEGER_PLANNING;
+    public static final ModConfigSpec.BooleanValue AELIS_PREFER_PLANNABLE_PRODUCER;
     public static final ModConfigSpec.IntValue AELIS_MAX_NODES;
     public static final ModConfigSpec.IntValue AELIS_COMPILE_BUDGET_MS;
     public static final ModConfigSpec.BooleanValue AELIS_DIAGNOSTICS;
@@ -111,6 +112,16 @@ public final class Config {
                         "Default / 默认值: true")
                 .translation("appliedenhancements.config.enable_aelis_big_integer_planning")
                 .define("enable_big_integer_planning", true);
+
+        AELIS_PREFER_PLANNABLE_PRODUCER = builder
+                .comment(
+                        "If AELIS cannot plan an item's first pattern but can plan a later one, use the later pattern.",
+                        "Without this, AELIS hands the whole request back to AE2's planner. Changes which pattern is used compared with AE2's order.",
+                        "若 AELIS 无法规划某物品的首个样板但可规划之后的样板，则改用之后的样板。",
+                        "关闭时，AELIS 会把整个请求交还给 AE2 规划器。与 AE2 的顺序相比，会改变所用的样板。",
+                        "Default / 默认值: false")
+                .translation("appliedenhancements.config.aelis_prefer_plannable_producer")
+                .define("prefer_plannable_producer", false);
 
         AELIS_MAX_NODES = builder
                 .comment(

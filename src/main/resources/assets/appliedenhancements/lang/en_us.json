@@ -104,6 +104,8 @@
   "appliedenhancements.config.enable_automatic_aelis_planner.tooltip": "Enable automatic AELIS integration in AE2's native planner. Third-party API calls are not affected. Manual crafting-plan inventory reservations are active only while this is enabled.\nDefault: false",
   "appliedenhancements.config.enable_aelis_big_integer_planning": "Enable BigInteger AELIS Planning",
   "appliedenhancements.config.enable_aelis_big_integer_planning.tooltip": "Use exact BigInteger arithmetic for AELIS orders and intermediate demands above Long.MAX_VALUE. Long projections are for compatibility; CPUs decide execution and can read the exact execution API. When disabled, automatic AELIS uses legacy long arithmetic; explicit exact API requests remain exact.\nDefault: true",
+  "appliedenhancements.config.aelis_prefer_plannable_producer": "Prefer Plannable Producer",
+  "appliedenhancements.config.aelis_prefer_plannable_producer.tooltip": "If AELIS cannot plan an item's first pattern but can plan a later one, use the later pattern. Without this, AELIS hands the whole request back to AE2's planner. Changes which pattern is used compared with AE2's order.\nDefault: false",
   "appliedenhancements.config.aelis_max_nodes": "AELIS Maximum Node Count",
   "appliedenhancements.config.aelis_max_nodes.tooltip": "Maximum nodes analyzed by AELIS per attempt. Higher values allow more complex recipes but use more memory.\nRange: 1000 ~ 1000000\nDefault: 100000",
   "appliedenhancements.config.aelis_compile_budget_ms": "AELIS Compilation Budget (ms)",

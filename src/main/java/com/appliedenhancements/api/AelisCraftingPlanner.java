@@ -38,11 +38,12 @@ public interface AelisCraftingPlanner {
      */
     static AelisCraftingPlanner createConfigured(
             PauseCheckpoint pauseCheckpoint, ProgressListener progressListener) {
-        return create(
+        return ((AelisCraftingPlannerImpl) create(
                 Config.AELIS_MAX_NODES.get(),
                 Config.AELIS_COMPILE_BUDGET_MS.get(),
                 pauseCheckpoint,
-                progressListener);
+                progressListener))
+                .preferPlannableProducer(Config.AELIS_PREFER_PLANNABLE_PRODUCER.get());
     }
 
     /**
@@ -52,12 +53,13 @@ public interface AelisCraftingPlanner {
     static AelisCraftingPlanner createConfigured(
             PauseCheckpoint pauseCheckpoint, ProgressListener progressListener,
             ICraftingService craftingService) {
-        return create(
+        return ((AelisCraftingPlannerImpl) create(
                 Config.AELIS_MAX_NODES.get(),
                 Config.AELIS_COMPILE_BUDGET_MS.get(),
                 pauseCheckpoint,
                 progressListener,
-                craftingService);
+                craftingService))
+                .preferPlannableProducer(Config.AELIS_PREFER_PLANNABLE_PRODUCER.get());
     }
 
     /** Creates a planner with explicit resource budgets. */
@@ -177,6 +179,12 @@ final class AelisCraftingPlannerImpl implements AelisCraftingPlanner {
                 pauseCheckpoint::pause,
                 adapt(progressListener),
                 craftingService);
+    }
+
+    /** See {@link AelisPlanner.Session#preferPlannableProducer(boolean)}. */
+    AelisCraftingPlannerImpl preferPlannableProducer(boolean prefer) {
+        delegate.preferPlannableProducer(prefer);
+        return this;
     }
 
     @Override
