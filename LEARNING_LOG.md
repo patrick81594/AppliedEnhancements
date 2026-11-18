@@ -1191,3 +1191,19 @@ NeoForge 26.1.2.126, Java 25).
   * Never trust a cut-off output (`Select-Object -First 3` hid the actual error message).
   * Zip with the folder name inside (ZipFile.CreateFromDirectory ..., includeBaseDirectory = true) so a restore is a
     single extract.
+
+## Phase 5: compatibility with the other AE2 addons (static Mixin check)
+- What: from a TEST session's debug.log ("Mixing X from <config> into <target>") → AE2 classes shared with other
+  mods → AE2 methods hooked by both sides → hook kinds via `javap -v -p`. Only AE2 Crafting Time and Recursive AE2
+  Pattern Provider hook the same methods; nobody uses @Redirect/@Overwrite there, so no hard conflict. One cosmetic
+  overlap (both @ModifyArg the confirm-screen title). AE2 Crafting Time ships an integration for our AELIS screen
+  but enables it only for our 1.21.1 build ("target_not_supported" on 26.1.2). Recorded in docs/ADDON_COMPATIBILITY.md.
+- Why: in a 400-mod pack, two mods changing the same method is the classic source of "works alone, breaks in the pack".
+- Lessons:
+  * Sharing a CLASS is normal; look at shared METHODS, then at hook kinds: @Redirect/@Overwrite are exclusive,
+    @Inject/@ModifyArg/@ModifyVariable/@WrapOperation/@WrapMethod stack.
+  * Stacking hooks can still overwrite each other's VALUES (two @ModifyArg on one argument: the later one wins if it
+    ignores its input). A hook that builds on the incoming value composes; one that replaces it doesn't.
+  * Mixin annotations are invisible at runtime but stay in the class file: `javap -v -p` shows method/target.
+  * A startup log line from another mod about yours (target_not_supported) is a hint worth decoding: here it named
+    our classes and a version gate.
