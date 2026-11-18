@@ -1121,3 +1121,19 @@ NeoForge 26.1.2.126, Java 25).
   * Test both sides of a feature switch: ON runs our code, OFF must leave AE2's original path untouched.
   * Know the base mod's rules before calling something a bug: an export bus exports from network storage, never
     from an interface's buffer.
+
+## Phase 4: JEI integration checked; all feedback messages moved to toasts
+- What: section 3 (our menu on JEI's item list and bookmarks, cheat-give through JEI internals, Bookmark missing)
+  works. The "missing" ME entries were a test-setup effect: the menu had been opened on JEI's recipe screen, where
+  the code deliberately leaves out terminal-only entries. In the terminal itself they appear.
+- Change (Patrick: "all six"): every feedback message sent while a screen is open is now a toast. One helper,
+  client/FeedbackToasts (kinds: Pattern Quick Move, Item Menu, Crafting plan; one toast slot each), and one
+  server → client payload, network/FeedbackToastPayload(kind, key, count) (renamed from the quick-move-only
+  versions with git mv). The client accepts only our own key prefixes. No action-bar/chat call is left in src/main.
+- Command: tools/build-and-count.sh phase4-feedback-toasts; tools/runserver-check.sh phase4-runserver-feedback;
+  scripts/run-test.ps1 -Deploy.
+- Lessons:
+  * When a feature "misses" options, first check WHERE it was opened: context-dependent menus behave differently on
+    different screens. A cheap re-test settled it; no code change was needed.
+  * Fix a whole class of problem once: after the second hidden message, a shared helper beat another one-off.
+  * Rename with `git mv` so `git log --follow` keeps the file's history.

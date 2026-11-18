@@ -49,6 +49,7 @@
   "message.appliedenhancements.pattern_quick_move.cut": "已剪切 %s 张样板。",
   "message.appliedenhancements.pattern_batch_move.success": "已移动 %s 张样板。",
   "toast.appliedenhancements.pattern_quick_move.title": "快速移动样板",
+  "toast.appliedenhancements.item_menu.title": "物品菜单",
   "message.appliedenhancements.pattern_batch_move.failure.invalid_menu": "批量移动失败：终端状态已失效。",
   "message.appliedenhancements.pattern_batch_move.failure.invalid_source": "批量移动失败：来源样板已发生变化。",
   "message.appliedenhancements.pattern_batch_move.failure.invalid_target": "批量移动失败：目标机器已失效。",

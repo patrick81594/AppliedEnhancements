@@ -480,9 +480,13 @@ public abstract class CraftConfirmMenuMixin implements CraftingCalculationProgre
         try {
             forced = com.appliedenhancements.runtime.AelisForcedPlan.prepare(original);
         } catch (ArithmeticException unsupportedAmount) {
-            // was displayClientMessage(c, false) = chat
-            menu.getPlayer().sendSystemMessage(Component.translatable(
-                    "gui.appliedenhancements.plan.force_amount_too_large"));
+            // Was a chat message; the confirm screen covered it (chat is drawn before the screen).
+            // The client shows it as a toast instead (FeedbackToastPayload).
+            if (menu.getPlayer() instanceof ServerPlayer player) {
+                com.appliedenhancements.network.FeedbackToastPayload.send(player,
+                        com.appliedenhancements.network.FeedbackToastPayload.Kind.CRAFTING_PLAN,
+                        "gui.appliedenhancements.plan.force_amount_too_large", 0);
+            }
             return;
         }
         this.result = forced;
@@ -552,8 +556,10 @@ public abstract class CraftConfirmMenuMixin implements CraftingCalculationProgre
         var menu = (CraftConfirmMenu) (Object) this;
         if (++appliedenhancements$reservationConflictReplans > 1) {
             if (menu.getPlayer() instanceof ServerPlayer player) {
-                player.sendSystemMessage(Component.translatable(
-                        "message.appliedenhancements.crafting_reservation_conflict"));
+                // Was a chat message, hidden behind the confirm screen; now a toast.
+                com.appliedenhancements.network.FeedbackToastPayload.send(player,
+                        com.appliedenhancements.network.FeedbackToastPayload.Kind.CRAFTING_PLAN,
+                        "message.appliedenhancements.crafting_reservation_conflict", 0);
             }
             menu.goBack();
             return;

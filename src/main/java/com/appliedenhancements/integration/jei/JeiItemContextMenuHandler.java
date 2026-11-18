@@ -1,5 +1,6 @@
 package com.appliedenhancements.integration.jei;
 
+import com.appliedenhancements.client.FeedbackToasts;
 import com.appliedenhancements.client.menu.NetworkItemContextMenu;
 import com.appliedenhancements.client.menu.NetworkItemContextMenu.ActionEntry;
 import com.appliedenhancements.client.menu.OptionalJeiItemContextMenu;
@@ -216,9 +217,7 @@ final class JeiItemContextMenuHandler
     private static void copyToClipboard(String value, String messageKey) {
         var minecraft = Minecraft.getInstance();
         minecraft.keyboardHandler.setClipboard(value);
-        if (minecraft.player != null) {
-            minecraft.player.sendOverlayMessage(
-                    Component.translatable(messageKey, value));
-        }
+        // A toast, not the action bar: the open screen is drawn over the HUD and hid the message.
+        FeedbackToasts.show(FeedbackToasts.Kind.ITEM_MENU, Component.translatable(messageKey, value));
     }
 }

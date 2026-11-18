@@ -1,7 +1,7 @@
 package com.appliedenhancements.network;
 
 import com.appliedenhancements.AppliedEnhancements;
-import com.appliedenhancements.client.pattern.PatternQuickMoveToasts;
+import com.appliedenhancements.client.FeedbackToasts;
 import net.minecraft.network.chat.Component;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -26,15 +26,23 @@ public final class ClientPayloadHandlers {
     @SubscribeEvent
     public static void register(RegisterClientPayloadHandlersEvent event) {
         event.register(ExactCraftingAmountPayload.TYPE, ExactCraftingAmountPayload::handleOnClient);
-        event.register(PatternQuickMoveResultPayload.TYPE, ClientPayloadHandlers::showQuickMoveResult);
+        event.register(FeedbackToastPayload.TYPE, ClientPayloadHandlers::showFeedbackToast);
     }
 
-    private static void showQuickMoveResult(PatternQuickMoveResultPayload payload, IPayloadContext context) {
-        // Only our own batch-move messages: never turn an arbitrary key from the network into a toast.
-        if (!payload.messageKey().startsWith(PatternQuickMoveResultPayload.KEY_PREFIX)) {
+    private static void showFeedbackToast(FeedbackToastPayload payload, IPayloadContext context) {
+        // Only our own messages: never turn an arbitrary key from the network into a toast.
+        if (!FeedbackToastPayload.isAllowedKey(payload.messageKey())) {
             return;
         }
-        context.enqueueWork(() -> PatternQuickMoveToasts.show(
+        FeedbackToasts.Kind kind = switch (payload.kind()) {
+            case 0 -> FeedbackToasts.Kind.PATTERN_QUICK_MOVE; // FeedbackToastPayload.Kind.PATTERN_QUICK_MOVE
+            case 1 -> FeedbackToasts.Kind.CRAFTING_PLAN;      // FeedbackToastPayload.Kind.CRAFTING_PLAN
+            default -> null;
+        };
+        if (kind == null) {
+            return;
+        }
+        context.enqueueWork(() -> FeedbackToasts.show(kind,
                 Component.translatable(payload.messageKey(), payload.count())));
     }
 }

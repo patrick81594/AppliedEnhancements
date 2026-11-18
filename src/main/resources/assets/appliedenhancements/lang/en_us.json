@@ -49,6 +49,7 @@
   "message.appliedenhancements.pattern_quick_move.cut": "Cut %s patterns.",
   "message.appliedenhancements.pattern_batch_move.success": "Moved %s patterns.",
   "toast.appliedenhancements.pattern_quick_move.title": "Pattern Quick Move",
+  "toast.appliedenhancements.item_menu.title": "Item Menu",
   "message.appliedenhancements.pattern_batch_move.failure.invalid_menu": "Batch move failed: the terminal state is no longer valid.",
   "message.appliedenhancements.pattern_batch_move.failure.invalid_source": "Batch move failed: a source pattern changed.",
   "message.appliedenhancements.pattern_batch_move.failure.invalid_target": "Batch move failed: the target machine is no longer valid.",

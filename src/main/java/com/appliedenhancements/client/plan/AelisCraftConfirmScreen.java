@@ -583,13 +583,14 @@ public final class AelisCraftConfirmScreen extends CraftConfirmScreen {
                 .map(AelisPlanRows.Row::key).distinct().toList();
         if (keys.isEmpty() || !OptionalPlanBookmarks.available()) return;
         var result = OptionalPlanBookmarks.add(keys);
-        if (minecraft.player != null) {
-            // MC 26: displayClientMessage(c, true) -> sendOverlayMessage (action bar),
-            // displayClientMessage(c, false) -> sendSystemMessage (chat).
-            minecraft.player.sendOverlayMessage(tr("bookmark_added", result.added()));
-            if (result.unsupported() > 0) minecraft.player.sendSystemMessage(
-                    tr("bookmark_unsupported", result.unsupported()));
+        // Was action bar ("added") + chat ("unsupported"); this screen covered both (the HUD is drawn
+        // before the screen). One toast, so the second message does not replace the first.
+        var message = Component.empty().append(tr("bookmark_added", result.added()));
+        if (result.unsupported() > 0) {
+            message.append(" ").append(tr("bookmark_unsupported", result.unsupported()));
         }
+        com.appliedenhancements.client.FeedbackToasts.show(
+                com.appliedenhancements.client.FeedbackToasts.Kind.CRAFTING_PLAN, message);
     }
 
     private Component status() {

@@ -10,7 +10,6 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.level.ServerPlayer;
-import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 /** Server-bound request to atomically move selected pattern slots. */
@@ -84,12 +83,13 @@ public record PatternBatchMovePayload(
             PatternBatchMoveApi.Result result = PatternBatchMoveApi.execute(
                     player, payload.request());
             // Was a chat message; the open pattern terminal covered it (chat is drawn before the screen).
-            // The client shows the result as a toast instead (PatternQuickMoveResultPayload).
+            // The client shows the result as a toast instead (FeedbackToastPayload).
+            String prefix = "message.appliedenhancements.pattern_batch_move.";
             String key = result.success()
-                    ? PatternQuickMoveResultPayload.KEY_PREFIX + "success"
-                    : PatternQuickMoveResultPayload.KEY_PREFIX + "failure." + failureKey(result.failure());
-            PacketDistributor.sendToPlayer(player,
-                    new PatternQuickMoveResultPayload(key, result.success() ? result.moved() : 0));
+                    ? prefix + "success"
+                    : prefix + "failure." + failureKey(result.failure());
+            FeedbackToastPayload.send(player, FeedbackToastPayload.Kind.PATTERN_QUICK_MOVE,
+                    key, result.success() ? result.moved() : 0);
         });
     }
 

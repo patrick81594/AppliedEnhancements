@@ -41,18 +41,29 @@ checked in-game yet.
       *2026-11-14. Extract One / Extract Stack and inserting also work (payload to the server).*
 - [x] Typing a number, Enter and Escape work in the menu's amount field. *Protects: input event adapters.*
       *2026-11-14. The field appears after clicking "Custom Amount…"; too-large numbers turn red.*
-- [x] Feedback messages after a menu action appear in the ACTION BAR (above the hotbar).
-      *2026-11-14. Only "Copy Item ID" shows a message ("Copied: …"); extract/insert show none by design.*
+- [x] Feedback messages after a menu action are visible. *2026-11-14: only "Copy Item ID" shows a message
+      ("Copied: …"); extract/insert show none by design. It went to the action bar, which the terminal covers.
+      2026-11-17: now an "Item Menu" toast (top-right, drawn above the screen), verified.*
 - [x] "Start Craft" in the menu starts a craft for an item with a pattern. *2026-11-14.*
-- [ ] The "force amount too large" message appears in CHAT. *Protects: overlay vs. system message split.*
+- [ ] The "force amount too large" message is visible. *Was chat (hidden behind the AELIS screen); since
+      2026-11-17 a "Crafting plan" toast sent by the server (same route as the verified quick-move result).
+      Only happens with huge missing amounts; not forced in game yet.*
 - [ ] Scrolling the terminal still works while the menu is closed and while it is open.
 
 ## 3. JEI integration
 
-- [ ] The JEI item context menu works; its feedback appears in the action bar.
-- [ ] "Bookmark added" appears in the action bar; "bookmark unsupported" appears in chat.
-- [ ] Cheat-give from the menu follows JEI's own give mode. *Protects: JEI internal config accessor
-      (`Internal.getClientConfigs()`), which can break on any JEI update.*
+Our menu key ("Open Item Actions Menu") works on JEI's item list and bookmark list. The ME entries (Extract,
+Craft in ME, Search in ME) only appear when the screen underneath is an ME terminal, not on JEI's own recipe
+screen.
+
+- [x] The JEI item context menu works; its feedback is visible. *2026-11-17: opens on top in the item list and
+      the bookmarks; Show Recipes/Uses, Search in ME, Extract One from ME work in the terminal. "Copied name"
+      went to the action bar behind the terminal; now an "Item Menu" toast, verified.*
+- [x] Bookmark missing works and its result is visible. *2026-11-17: missing materials bookmarked. Was action bar
+      ("added") + chat ("unsupported"), both behind the AELIS screen; now one "Crafting plan" toast, verified.*
+- [x] Cheat-give from the menu follows JEI's own give mode. *Protects: JEI internal config accessor
+      (`Internal.getClientConfigs()`), which can break on any JEI update.* *2026-11-17: Give One / Give Stack
+      shown with cheat mode on and working.*
 
 ## 4. Pattern access terminal
 

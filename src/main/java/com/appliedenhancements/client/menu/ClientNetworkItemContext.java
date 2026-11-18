@@ -5,6 +5,7 @@ import appeng.helpers.InventoryAction;
 import appeng.menu.me.common.GridInventoryEntry;
 import appeng.menu.me.common.MEStorageMenu;
 import com.appliedenhancements.api.NetworkItemContextMenuApi;
+import com.appliedenhancements.client.FeedbackToasts;
 import com.appliedenhancements.network.NetworkItemExtractPayload;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
@@ -100,9 +101,7 @@ public final class ClientNetworkItemContext
     private static void copyToClipboard(String value, String messageKey) {
         var minecraft = Minecraft.getInstance();
         minecraft.keyboardHandler.setClipboard(value);
-        if (minecraft.player != null) {
-            minecraft.player.sendOverlayMessage(Component.translatable(
-                    messageKey, value));
-        }
+        // A toast, not the action bar: the open terminal is drawn over the HUD and hid the message.
+        FeedbackToasts.show(FeedbackToasts.Kind.ITEM_MENU, Component.translatable(messageKey, value));
     }
 }

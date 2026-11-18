@@ -737,7 +737,8 @@ public abstract class PatternAccessTermScreenDuplicateMixin
     @Unique
     private void appliedenhancements$showQuickMoveMessage(String key, int count) {
         // A toast, not the action bar: the open terminal is drawn over the HUD and hid the message.
-        com.appliedenhancements.client.pattern.PatternQuickMoveToasts.show(
+        com.appliedenhancements.client.FeedbackToasts.show(
+                com.appliedenhancements.client.FeedbackToasts.Kind.PATTERN_QUICK_MOVE,
                 Component.translatable(key, count));
     }
 
