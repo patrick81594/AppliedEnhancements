@@ -275,6 +275,12 @@ public abstract class AelisCraftingCalculationMixin {
             return;
         }
 
+        // Diagnostics (debug level → logs/debug.log only): why AELIS handed this request to AE2's own planner.
+        com.appliedenhancements.AppliedEnhancements.LOGGER.debug(
+                "AELIS handed {} x{} back to AE2's planner: {}",
+                ((AelisCraftingTreeNodeAccessor) tree).molecularmanipulator$getWhat(),
+                requestedAmount,
+                result.fallbackReason());
         if (progress != null) {
             progress.stopTracking();
         }
