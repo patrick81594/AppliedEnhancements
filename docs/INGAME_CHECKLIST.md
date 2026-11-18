@@ -165,6 +165,21 @@ with both off. Set the storage bus priority above the drive cells (e.g. 10) so i
 - [x] With both switches OFF (via Configured, applied live without a restart): storage bus chest incl. the
       remove-by-hand case, export bus into a chest. *2026-11-17: all counts matched (AE2's own path).*
 
+## 9. Without the optional mods
+
+Instance "AE-MINIMAL-TEST", created with `scripts/make-minimal-instance.ps1`: NeoForge 26.1.2.126 + AE2 +
+GuideME (AE2's only required mod) + this mod. No JEI, ExtendedAE, ae2wtlib, AdvancedAE or Configured.
+Without Configured there is no in-game config screen (this mod never registered its own, also not on 1.21.1);
+set the AELIS planner in `config/appliedenhancements-common.toml`.
+
+- [x] The game starts and a world loads. *2026-11-17: 5 mods; all 13 optional Mixin targets (ExtendedAE,
+      ae2wtlib, AdvancedAE, Configured, AE2 Crafting Tree, Useless) skipped with a Mixin warning, no failures,
+      no errors naming the mod.*
+- [x] ME terminal and item menu work (no JEI entries). *2026-11-17.*
+- [x] Pattern access terminal: badges, quick move, Cut/Paste, toasts. *2026-11-17.*
+- [x] AELIS screen and Start work; "Bookmark missing" is disabled without JEI. *2026-11-17.*
+- [ ] JEI present, ExtendedAE/ae2wtlib absent (`make-minimal-instance.ps1 -WithJei`). *Skipped for now.*
+
 ## 8. Dedicated server
 
 Setup (2026-11-17): the official FTB Evolution 2 1.9.0 server (FTB pack 135, release 100614) installed with

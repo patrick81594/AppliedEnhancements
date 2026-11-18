@@ -1159,3 +1159,20 @@ NeoForge 26.1.2.126, Java 25).
   * "Error loading class … ClassNotFoundException" at startup from [mixin] is Mixin scanning optional targets; the
     real signal is a NoClassDefFoundError AFTER a player joins and uses the feature.
   * EULA: setting eula=true means accepting Mojang's EULA. That is the server owner's decision, not the tool's.
+
+## Phase 5, step 2: the mod without its optional mods, and a launcher identity bug
+- What: a minimal Prism instance (scripts/make-minimal-instance.ps1) with only NeoForge + AE2 + GuideME + this mod.
+  It starts, loads a world, and the terminal item menu, the pattern access terminal (badges, quick move, toasts)
+  and the AELIS screen all work. All 13 optional Mixin targets were skipped with a warning.
+- Why: optional dependencies in mods.toml and @Pseudo Mixins only cover loading. Code that USES an optional
+  mod's classes fails only when it runs, so the features have to be exercised without those mods.
+- Bug found on the way (mine): the new instance did not appear in Prism, and the TEST copy turned out to share the
+  real instance's `uuid=` in instance.cfg (copied verbatim by make-test-instance.ps1). Prism 11 identifies
+  instances by that uuid. Fixed with Prism fully closed (backups first, real instance checked unchanged by hash);
+  both scripts now write a fresh uuid.
+- Lessons:
+  * Look up the dependency chain in the jars' mods.toml (ours → AE2 → GuideME) to build the smallest valid setup.
+  * When copying an app's data folder, look for identity fields (uuid, id) and give the copy its own.
+  * A launcher "restart" may only hide the window: check the process start time before assuming it re-read
+    anything; and edit its files only while it is fully closed (it rewrites them).
+  * Without Configured there is no config screen: this mod never registered one (NeoForge's IConfigScreenFactory).

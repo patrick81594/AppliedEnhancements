@@ -34,10 +34,17 @@ robocopy $src $dst /E /XD @skipDirs /R:1 /W:1 /MT:8 /NFL /NDL /NP
 # robocopy exit codes: 0-7 = success (bit flags such as "files copied"), 8 and above = at least one failure.
 if ($LASTEXITCODE -ge 8) { throw "robocopy reported failures (exit code $LASTEXITCODE)." }
 
-# Give the copy its own name in Prism. Prism writes instance.cfg as UTF-8 without a BOM.
+# Give the copy its own name AND its own uuid in Prism. Prism 11 identifies instances by the uuid in
+# instance.cfg; a verbatim copy shares the source's uuid, and Prism then treats both as the same instance
+# (seen on 2026-11-17: the copy's name had been reset to the source's). Prism stores the uuid as 32 hex digits
+# without dashes and writes instance.cfg as UTF-8 without a BOM.
 $cfgPath = Join-Path $dst "instance.cfg"
 $cfg = [System.IO.File]::ReadAllLines($cfgPath)
-$cfg = $cfg | ForEach-Object { if ($_ -like "name=*") { "name=$Target" } else { $_ } }
+$cfg = $cfg | ForEach-Object {
+    if ($_ -like "name=*") { "name=$Target" }
+    elseif ($_ -like "uuid=*") { "uuid=" + [guid]::NewGuid().ToString("N") }
+    else { $_ }
+}
 [System.IO.File]::WriteAllLines($cfgPath, $cfg, (New-Object System.Text.UTF8Encoding $false))
 
 New-Item -ItemType Directory -Force -Path (Join-Path $dst "minecraft\saves") | Out-Null
