@@ -15,8 +15,8 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts\run-test.ps1 -Deploy
 That deploys the newest build, launches the instance, joins the world and runs the log check.
 Undo a deploy with `scripts\deploy-test.ps1 -Rollback`.
 
-Status of this list: collected from the notes made during the port (Phases 3 and 4). Nothing here has been
-checked in-game yet.
+Status of this list (2026-11-17): sections 0–9 worked through in FTB Evolution 2 1.9.0; open items are marked
+`[ ]`. Tasks for later are at the end ("Later").
 
 ## 0. Startup
 
@@ -198,3 +198,23 @@ The server did not log a reload after editing the file; restart it.
       confirm screen, Start and Shift + Force start all work. Server log: 0 class-loading errors after the join
       (all 19 are startup Mixin target scans of other mods' optional targets, plus Minecraft's harmless netty
       kqueue probe), 0 ERROR lines naming us/AE2/AELIS, no crash report.*
+
+## Later
+
+Tasks added on 2026-11-17, not done yet.
+
+- [ ] **AELIS progress in the confirm-screen title.** With the AELIS planner on, request a craft big enough that
+      the calculation takes a moment, and watch AE2's own confirm screen title while it calculates: it should show
+      the AELIS progress line, then the normal title once the plan is ready. Repeat with Recursive AE2 Pattern
+      Provider in the pack: both mods change that title (`docs/ADDON_COMPATIBILITY.md`), so check which text wins
+      and whether either is lost. *Protects: `CraftConfirmScreenMixin` `@ModifyArg` on `setTextContent`.*
+- [ ] **Recursive / catalyst crafts (Mystical Agriculture essences).** In the pack (Mystical Agriculture 9.0.11),
+      an essence of the next tier is crafted from 4 essences of the tier below plus 1 Master Infusion Crystal,
+      which is not used up (it comes back as a crafting remainder). Encode such a pattern (e.g. 4 Inferium →
+      1 Prudentium + crystal), put exactly 1 crystal in the network, and request e.g. 100 Prudentium:
+      * Does the plan (AE2 screen and AELIS screen) ask for 400 Inferium and only **1** crystal, or for 100?
+      * Does the craft run through with one crystal (molecular assembler and a pattern provider into a crafting
+        machine), and is the crystal back in the network at the end?
+      * Note what the existing code already does: AELIS "fixed remainder" handling (`AelisFixedRemainder`) and
+        `MolecularReusableInputAdapters`. The result decides how much of Phase 7 (a "reused ingredient" marker in
+        patterns) is still needed.

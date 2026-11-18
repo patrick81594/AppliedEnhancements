@@ -1207,3 +1207,13 @@ NeoForge 26.1.2.126, Java 25).
   * Mixin annotations are invisible at runtime but stay in the class file: `javap -v -p` shows method/target.
   * A startup log line from another mod about yours (target_not_supported) is a hint worth decoding: here it named
     our classes and a version gate.
+
+## Phase 6: wrap-up documents
+- What: docs/PORT_SUMMARY.md (versions, what changed, the 5 bugs found only in game, player-visible changes,
+  verification matrix "tests" vs "in game", what is NOT verified, a 12-item risk list); docs/PORTING_CHECKLIST.md
+  (this log turned into a repeatable procedure, incl. what to do when FTB Evolution 2 updates AE2); two later tasks
+  in docs/INGAME_CHECKLIST.md (AELIS progress title; Mystical Agriculture catalyst crafts).
+- Clean build for the numbers: 32 javac warnings (25 getGuiLeft/getGuiTop removal, 3 JEI removal, 2 ValueInput.lookup,
+  2 ASM SimpleRemapper in tests), 0 Gradle deprecations, 516 + 30 tests green, audit 30 applied / 0 failed.
+- Lesson: write down what is NOT verified as carefully as what is. "Compiles", "the Mixin applies", "works in game"
+  and "works in the pack next to other addons" are four different claims.
