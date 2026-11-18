@@ -1080,3 +1080,18 @@ NeoForge 26.1.2.126, Java 25).
     when a GUI call "almost" works.
   * "Works in fullscreen but not in the window" points at an offset (leftPos/topPos) being applied twice or not at all.
   * Before testing a feature, check the config switches it depends on (here: a planner that is off by default).
+
+## Phase 4: crafting CPU save/reload (W2) proven, with a look inside the save file
+- What: 6a, a plain AE2 job (processing pattern into a chest, so it waits on purpose), survived save + reload and
+  finished. 6b, an AELIS cyclic job (1 Dirt → 2 Dirt), survived too. Log: no "Cannot save/Invalid AELIS" or
+  "Cancelling AE2 crafting job" lines.
+- How we proved the SAVE half: tools/find-nbt-key.py (host WSL, read-only) opens the world's .mca region files
+  (4 KiB location table → per chunk: length, compression type, zlib/gzip NBT) and searches the decompressed NBT
+  for a string. Control first: `ae2:crafting_unit` found (the tool works), our key `appliedenhancementsCycleRuntime`
+  0 times before the job, then exactly 1 time, in the CPU's chunk, after save and quit.
+- Lessons:
+  * A hook that only writes data in a special state (here: unfinished AELIS cycle) is not tested by the normal
+    case. Read the condition in the code and build the special case on purpose.
+  * Save/load needs both halves checked: the data is on disk (file search) AND it is read back (job still there,
+    no recovery/cancel log line).
+  * NBT key names are plain UTF-8 inside the decompressed chunk: a byte search is enough to prove a key exists.

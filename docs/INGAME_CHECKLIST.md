@@ -101,11 +101,18 @@ and throughput tooltips there come from the AE2 Crafting Time mod, not from us).
 
 ## 6. Crafting CPUs: save and reload
 
-- [ ] AE2 crafting CPU: start a long job, save and quit while it runs, reload. The job is still there and
-      finishes. *Protects: W2 (CPU save hooks on `ValueInput` / `ValueOutput`).*
-- [ ] The same with a job that uses an AELIS cycle (cyclic or seed-protected recipe).
+- [x] AE2 crafting CPU: start a long job, save and quit while it runs, reload. The job is still there and
+      finishes. *Protects: W2 (CPU save hooks on `ValueInput` / `ValueOutput`).* *2026-11-17: processing
+      pattern 1 Cobblestone → 1 Stone into a plain chest (the job waits on purpose), 64 Stone; survived the
+      reload and finished after inserting stone through the terminal.*
+- [x] The same with a job that uses an AELIS cycle (cyclic or seed-protected recipe). *2026-11-17: processing
+      pattern 1 Dirt → 2 Dirt, 4 Dirt stored, request 64 (AELIS screen shows "Cyclic qty"). After save and quit,
+      `tools/find-nbt-key.py` found `appliedenhancementsCycleRuntime` in exactly the chunk of the crafting CPU
+      (0 before the job). After reloading the job was still there.* W2 only writes this key while the cycle
+      phase is unfinished, so a non-cyclic job does not test it.
 - [ ] AdvancedAE quantum computer: the same two checks. *Protects: W3 and W4.*
-- [ ] After reloading, `latest.log` has no "Cannot save AELIS …" or "Invalid AELIS …" error lines.
+- [x] After reloading, `latest.log` has no "Cannot save AELIS …" or "Invalid AELIS …" error lines.
+      *2026-11-17, both reloads; no "Cancelling AE2 crafting job" either.*
 
 ## 7. Storage bus and export bus
 
