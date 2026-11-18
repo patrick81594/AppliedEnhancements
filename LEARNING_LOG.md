@@ -1136,4 +1136,6 @@ NeoForge 26.1.2.126, Java 25).
   * When a feature "misses" options, first check WHERE it was opened: context-dependent menus behave differently on
     different screens. A cheap re-test settled it; no code change was needed.
   * Fix a whole class of problem once: after the second hidden message, a shared helper beat another one-off.
-  * Rename with `git mv` so `git log --follow` keeps the file's history.
+  * Git does not store renames; it GUESSES them later by content similarity (default 50%). `git mv` + a near-total
+    rewrite in the same commit showed up as delete + add (`git show -M` found no rename). To keep history: rename
+    in one commit, change the content in the next.
