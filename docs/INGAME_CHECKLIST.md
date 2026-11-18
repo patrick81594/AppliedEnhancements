@@ -110,7 +110,12 @@ and throughput tooltips there come from the AE2 Crafting Time mod, not from us).
       `tools/find-nbt-key.py` found `appliedenhancementsCycleRuntime` in exactly the chunk of the crafting CPU
       (0 before the job). After reloading the job was still there.* W2 only writes this key while the cycle
       phase is unfinished, so a non-cyclic job does not test it.
-- [ ] AdvancedAE quantum computer: the same two checks. *Protects: W3 and W4.*
+- [x] AdvancedAE quantum computer: the same two checks. *Protects: W3 and W4.* *2026-11-17: a single Quantum
+      Computer Core forms a computer on its own (cable on top or bottom). Dirt cycle job on it, chosen with the
+      AELIS CPU selector; after save and quit the key was only in the quantum core's chunk (the AE2 CPU's job had
+      been cancelled, which also removed the key there); after reloading the job was still on the quantum core,
+      0 AELIS save/load lines, 0 errors. debug.log shows all three AdvancedAE Mixins applied. W4 itself only acts
+      on Data Energistics "virtual orders"; that mod is not in the pack, so W4 is proven to APPLY, not to work.*
 - [x] After reloading, `latest.log` has no "Cannot save AELIS …" or "Invalid AELIS …" error lines.
       *2026-11-17, both reloads; no "Cancelling AE2 crafting job" either.*
 

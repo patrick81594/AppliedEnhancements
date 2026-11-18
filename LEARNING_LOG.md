@@ -1095,3 +1095,15 @@ NeoForge 26.1.2.126, Java 25).
   * Save/load needs both halves checked: the data is on disk (file search) AND it is read back (job still there,
     no recovery/cancel log line).
   * NBT key names are plain UTF-8 inside the decompressed chunk: a byte search is enough to prove a key exists.
+
+## Phase 4: AdvancedAE quantum computer save/reload (W3) proven
+- What: one Quantum Computer Core (a complete AdvancedAE CPU on its own), the AELIS dirt cycle job on it, save and
+  quit, reload. find-nbt-key.py: `appliedenhancementsCycleRuntime` only in the quantum core's chunk; job still
+  there after reload; no AELIS/cancel lines, no errors. debug.log: all three AdvancedAE Mixins applied, the first
+  time they ever ran (AdvancedAE is not in the dev setup).
+- Lessons:
+  * Keep a test isolated: the first run left a job on the AE2 CPU too, so the key showed up in two chunks. Cancelling
+    that job (which also removed its key) made the result unambiguous.
+  * Use controls that name the block (`ae2:crafting_unit`, `advanced_ae:quantum_core`) to tie a chunk to a machine.
+  * Some hooks can't be exercised without a mod the pack doesn't have (W4: Data Energistics). Record that honestly
+    as "applies" rather than "works".
