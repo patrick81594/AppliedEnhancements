@@ -88,8 +88,10 @@ screen.
       2026-11-17: Cut all / Paste all worked, but the action bar (Cut) and chat (Moved/Failed) were hidden behind
       the terminal: Minecraft draws the HUD before the screen. Changed to a toast (drawn after the screen),
       verified 2026-11-17.*
-- [ ] The same checks in ExtendedAE's extended pattern terminal and in a wireless pattern access terminal
+- [x] The same checks in ExtendedAE's extended pattern terminal and in a wireless pattern access terminal
       (ExtendedAE / ae2wtlib). *Protects: the optional-mod Mixins, which are never applied in dev runs.*
+      *2026-11-17: wireless pattern access terminal (ae2wtlib `WATScreen`, linked through the Wireless Access
+      Point's link slots): toolbar, toggles, badges on top, quick move incl. Cut/Paste and toast all work.*
       *2026-11-17: ExtendedAE Extended Pattern Access Terminal passed (its row Mixins applied, no crash).
       Wireless pattern access terminal (ae2wtlib) not tested yet.*
 
@@ -110,7 +112,9 @@ and throughput tooltips there come from the AE2 Crafting Time mod, not from us).
       2026-11-17 passed.*
 - [x] Toggling fullscreen resizes the screen without glitches. *Protects: access transformer for
       `imageWidth` / `imageHeight`.* *2026-11-17; Exit fullscreen and Esc both work.*
-- [ ] A wireless crafting terminal (ae2wtlib) opens and can start a craft.
+- [x] A wireless crafting terminal (ae2wtlib) opens and can start a craft. *2026-11-17: items shown, item menu
+      (extract, Copy Item ID toast), craft amount → AELIS screen → craft started. `AE2WTLibCraftingTerminalHandlerMixin`
+      (a clamp for negative "accessible amounts", only visible with overflowing storage) applied, no errors.*
 
 ## 6. Crafting CPUs: save and reload
 
