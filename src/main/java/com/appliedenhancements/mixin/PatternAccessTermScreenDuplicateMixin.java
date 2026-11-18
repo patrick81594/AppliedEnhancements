@@ -274,9 +274,10 @@ public abstract class PatternAccessTermScreenDuplicateMixin
         ((ScreenWidgetBridge) this).appliedenhancements$addRenderableWidget(
                 appliedenhancements$quickMoveButton);
 
-        scrollbar.setPosition(new Point(
-                screen.getGuiLeft() + 175,
-                screen.getGuiTop() + 36));
+        // AE2 widget positions are RELATIVE to the GUI's top-left (style pattern_access_terminal.json: left 175,
+        // top 18); move it one toolbar row lower. Adding getGuiLeft()/getGuiTop() counted the GUI position twice
+        // and put the scrollbar far to the right, over JEI (seen in game, wired and wireless terminal).
+        scrollbar.setPosition(new Point(175, 36));
     }
 
     @Inject(method = "refreshList", at = @At("RETURN"))
