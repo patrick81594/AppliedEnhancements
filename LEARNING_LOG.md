@@ -1139,3 +1139,23 @@ NeoForge 26.1.2.126, Java 25).
   * Git does not store renames; it GUESSES them later by content similarity (default 50%). `git mv` + a near-total
     rewrite in the same commit showed up as delete + add (`git show -M` found no rename). To keep history: rename
     in one commit, change the content in the next.
+
+## Phase 5, step 1: the real FTB Evolution 2 server (dedicated-server proof)
+- What: FTB's own server installer for the exact pack release (FTB API: pack 135, 1.9.0 = release 100614;
+  the client came from CurseForge project 1731757 file 9546350), run inside a container. 397 mods (the client's
+  432 minus client-only mods). Joined from the TEST instance; quick move and the AELIS confirm screen incl. force
+  start work; the server log has no class-loading errors after the join and no errors naming our mod.
+- Why: our common code refers to the client-only `ClientPacketDistributor` (NeoForge 26 moved sendToServer there).
+  That is only safe if the server never runs those lines. Single player can't prove it: its integrated server
+  runs inside the client, where client classes exist.
+- Commands (host WSL): tools/ftb-install.sh, ftb-server-prep.sh, ftb-server-start.sh, ftb-server-cmd.sh "op <name>",
+  ftb-server-restart.sh, ftb-server-logcheck.sh.
+- Lessons:
+  * Pin the pack version: the installer takes the LATEST release unless you pass -version.
+  * The same pack can differ between distributions (CurseForge client vs FTB server files: Just Dire Things
+    1.6.10 vs 1.6.11). Diff the mods folders before blaming a mod for a join failure.
+  * Common configs are per side and not synced; on a server, settings like the AELIS planner are server-side.
+  * A container started detached has no console. `tail -f console.in | sh run.sh` gives it one you can write to.
+  * "Error loading class … ClassNotFoundException" at startup from [mixin] is Mixin scanning optional targets; the
+    real signal is a NoClassDefFoundError AFTER a player joins and uses the feature.
+  * EULA: setting eula=true means accepting Mojang's EULA. That is the server owner's decision, not the tool's.

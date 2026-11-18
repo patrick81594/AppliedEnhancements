@@ -165,8 +165,21 @@ with both off. Set the storage bus priority above the drive cells (e.g. 10) so i
 - [x] With both switches OFF (via Configured, applied live without a restart): storage bus chest incl. the
       remove-by-hand case, export bus into a chest. *2026-11-17: all counts matched (AE2's own path).*
 
-## 8. Dedicated server (later)
+## 8. Dedicated server
 
-- [ ] A client connected to a dedicated server can use the craft confirm screen and batch pattern moves
+Setup (2026-11-17): the official FTB Evolution 2 1.9.0 server (FTB pack 135, release 100614) installed with
+FTB's server installer in a container, plus our jar; Just Dire Things matched to the CurseForge client (1.6.10
+instead of FTB's 1.6.11). Scripts in `~/dev/ae-port/tools/` (outside the repo): `ftb-install.sh`,
+`ftb-server-prep.sh`, `ftb-server-start.sh`, `ftb-server-cmd.sh "<command>"`, `ftb-server-restart.sh`,
+`ftb-server-logcheck.sh`. The client is the TEST instance (Direct Connection `localhost`).
+
+**On a server, the AELIS planner switch lives in the SERVER's `config/appliedenhancements-common.toml`.** It is a
+common config: each side has its own copy and it is not synced, so Configured on the client only shows "local".
+The server did not log a reload after editing the file; restart it.
+
+- [x] A client connected to a dedicated server can use the craft confirm screen and batch pattern moves
       without a `NoClassDefFoundError` on the server. *Protects: use of the client-package class
-      `ClientPacketDistributor` in common code.*
+      `ClientPacketDistributor` in common code.* *2026-11-17: quick move (select, Cut, Paste, toasts), AELIS
+      confirm screen, Start and Shift + Force start all work. Server log: 0 class-loading errors after the join
+      (all 19 are startup Mixin target scans of other mods' optional targets, plus Minecraft's harmless netty
+      kqueue probe), 0 ERROR lines naming us/AE2/AELIS, no crash report.*
