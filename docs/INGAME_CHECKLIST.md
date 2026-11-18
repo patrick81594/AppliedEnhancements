@@ -121,19 +121,32 @@ and throughput tooltips there come from the AE2 Crafting Time mod, not from us).
 
 ## 7. Storage bus and export bus
 
-Config switches involved: `ENABLE_STORAGE_BUS_SLOT_INDEX` and `ENABLE_IO_BUS_OPTIMIZATION`. Do the checks
-with both on (default state to be confirmed in the config file), then once with both off.
+Config switches involved (`appliedenhancements-common.toml`, both default `true`):
+`performance.storage_bus.enable_slot_index` (`ENABLE_STORAGE_BUS_SLOT_INDEX`) and
+`performance.io_bus.enable_slot_routing` (`ENABLE_IO_BUS_OPTIMIZATION`). Do the checks with both on, then once
+with both off. Set the storage bus priority above the drive cells (e.g. 10) so inserts go to the chest.
 
-- [ ] Storage bus on a chest: items in the chest show in the terminal; inserting through the terminal
+- [x] Storage bus on a chest: items in the chest show in the terminal; inserting through the terminal
       puts them into the chest; extracting takes them out. Counts stay correct, nothing is duplicated or lost.
-      *Protects: W5 (slot index on the transfer API).*
-- [ ] Take items out of the chest by hand, then extract the same item through the terminal: the amount
-      delivered matches what is really there.
-- [ ] The same on a large multi-slot inventory.
-- [ ] Fluid storage bus on a tank still works (the storage-bus Mixin now also sits on the fluid facade).
-- [ ] Export bus into a chest and into a multi-slot machine: items arrive, the count is right.
-      *Protects: W6 (slot hints on the transfer API).*
-- [ ] ME interface pushing items into an adjacent inventory.
+      *Protects: W5 (slot index on the transfer API).* *2026-11-17, both switches on: 2×32 Iron + 16 Gold shown
+      as 64/16, 64 Cobblestone inserted into the chest, 10 Iron extracted → 54 left. debug.log: W5 applied to
+      `ExternalStorageFacade$ResourceHandlerFacade`, W6 to `HandlerStrategy$1`.*
+- [x] Take items out of the chest by hand, then extract the same item through the terminal: the amount
+      delivered matches what is really there. *2026-11-17, both switches on: 20 Iron removed by hand, terminal
+      showed 34, extracting all gave exactly 34 and left none. (W5 dropped the old "re-check on retry" hook;
+      this is the case it covered.)*
+- [x] The same on a large multi-slot inventory. *2026-11-17, both switches on.*
+- [x] Fluid storage bus on a tank still works (the storage-bus Mixin now also sits on the fluid facade).
+      *2026-11-17, both switches on.*
+- [x] Export bus into a chest and into a multi-slot machine: items arrive, the count is right.
+      *Protects: W6 (slot hints on the transfer API).* *2026-11-17, both switches on: 64 Cobblestone → chest
+      exactly 64 / network 0; Iron into a furnace only into its input slot, totals unchanged.*
+- [x] ME interface pushing items into an adjacent inventory. *2026-11-17, switches off: interface set to 32 Coal
+      stocked exactly 32 (all the network had) and no more. Note: an export bus exports from network storage, not
+      from an interface's buffer, so it stays idle once the network is empty; use a hopper/pipe on the interface
+      to move items out of it.*
+- [x] With both switches OFF (via Configured, applied live without a restart): storage bus chest incl. the
+      remove-by-hand case, export bus into a chest. *2026-11-17: all counts matched (AE2's own path).*
 
 ## 8. Dedicated server (later)
 

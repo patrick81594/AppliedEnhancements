@@ -1107,3 +1107,17 @@ NeoForge 26.1.2.126, Java 25).
   * Use controls that name the block (`ae2:crafting_unit`, `advanced_ae:quantum_core`) to tie a chunk to a machine.
   * Some hooks can't be exercised without a mod the pack doesn't have (W4: Data Energistics). Record that honestly
     as "applies" rather than "works".
+
+## Phase 4: storage bus / export bus on the new NeoForge transfer API (W5, W6) verified
+- What: section 7 with both optimisation switches ON (performance.storage_bus.enable_slot_index,
+  performance.io_bus.enable_slot_routing) and again OFF: storage bus on a chest (insert, extract, extract after
+  removing items by hand: exactly 34 of 34), export bus into a chest (exactly 64) and into a furnace (input slot
+  only), a large inventory, a fluid storage bus, an ME interface. All counts matched; no errors.
+- Why: W5/W6 were the biggest rewrites (old IItemHandler → ResourceHandler + Transaction) and the riskiest area:
+  a bug here duplicates or loses items. W5 also dropped a "re-check on retry" hook; the remove-by-hand case is
+  exactly what that hook covered.
+- Lessons:
+  * For item-moving code, test with exact numbers and a manual change in between, not just "items show up".
+  * Test both sides of a feature switch: ON runs our code, OFF must leave AE2's original path untouched.
+  * Know the base mod's rules before calling something a bug: an export bus exports from network storage, never
+    from an interface's buffer.
