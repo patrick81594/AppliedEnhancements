@@ -48,7 +48,9 @@ checked in-game yet.
 - [ ] The "force amount too large" message is visible. *Was chat (hidden behind the AELIS screen); since
       2026-11-17 a "Crafting plan" toast sent by the server (same route as the verified quick-move result).
       Only happens with huge missing amounts; not forced in game yet.*
-- [ ] Scrolling the terminal still works while the menu is closed and while it is open.
+- [x] Scrolling the terminal works while the menu is closed; while it is open the wheel is blocked on purpose
+      (`NetworkItemContextMenu.mouseScrolled` returns `isOpen()`, same as 1.21.1, so the menu keeps pointing at
+      its item). *2026-11-17: scrolls when closed, blocked while open, works again right after closing.*
 
 ## 3. JEI integration
 
