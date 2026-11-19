@@ -39,7 +39,8 @@ public final class ChanceTopUpRunner {
         if (key == null || !marks.contains(key) || !job.tasksEmpty() || job.remaining() <= 0) {
             return;
         }
-        if (!ChanceTopUp.isIdle(now, state.lastActivity(), Config.CHANCE_TOP_UP_IDLE_SECONDS.get() * 20L)) {
+        long idleTicks = Config.CHANCE_TOP_UP_IDLE_SECONDS.get() * 20L * state.idleMultiplier();
+        if (!ChanceTopUp.isIdle(now, state.lastActivity(), idleTicks)) {
             return;
         }
         IPatternDetails pattern = state.producerOf(key);

@@ -42,6 +42,22 @@ class ChanceTopUpTest {
     }
 
     @Test
+    void idleTimeDoublesWithEveryEmptyWaveAndResetsOnOutput() {
+        var state = new ChanceTopUpState<String>();
+        var key = new TestAEKey("olivine");
+        assertEquals(1, state.idleMultiplier());
+        long expected = 1;
+        for (int i = 0; i < 8; i++) {
+            state.onPush("p", key, i);
+            state.endWave("p", key);
+            expected = Math.min(expected * 2, 32);
+            assertEquals(expected, state.idleMultiplier());
+        }
+        state.onOutput(key, 1, 100);
+        assertEquals(1, state.idleMultiplier());
+    }
+
+    @Test
     void stateCountsWavesAndLimitsExtras() {
         var state = new ChanceTopUpState<String>();
         var flint = new TestAEKey("flint");

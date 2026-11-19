@@ -21,6 +21,18 @@ public final class ChanceTopUpState<P> {
     private final Map<AEKey, P> producers = new HashMap<>();
     private final Map<AEKey, Long> outputs = new HashMap<>();
     private long lastActivity = -1;
+    private int emptyWaves;
+
+    /** Most doublings of the idle time: 2^5 = 32 times the configured value. */
+    private static final int MAX_BACKOFF_STEPS = 5;
+
+    /**
+     * How many times the configured idle time applies right now: it doubles with every wave that saw no output
+     * (a slow machine or a low chance), up to 32 times, and is back to 1 as soon as an output arrives.
+     */
+    public long idleMultiplier() {
+        return 1L << Math.min(emptyWaves, MAX_BACKOFF_STEPS);
+    }
 
     public long lastActivity() {
         return lastActivity;
@@ -37,6 +49,7 @@ public final class ChanceTopUpState<P> {
     }
 
     public void onOutput(AEKey key, long amount, long now) {
+        emptyWaves = 0;
         outputs.merge(key, amount, Long::sum);
         lastActivity = now;
     }
@@ -52,6 +65,9 @@ public final class ChanceTopUpState<P> {
     public long[] endWave(P pattern, AEKey key) {
         var wave = waves.computeIfAbsent(pattern, p -> new Wave());
         long[] seen = {outputs.getOrDefault(key, 0L), wave.crafts};
+        if (seen[0] == 0) {
+            emptyWaves++;
+        }
         if (wave.planned == 0) {
             wave.planned = wave.crafts;
         }
@@ -87,5 +103,6 @@ public final class ChanceTopUpState<P> {
         producers.clear();
         outputs.clear();
         lastActivity = -1;
+        emptyWaves = 0;
     }
 }
