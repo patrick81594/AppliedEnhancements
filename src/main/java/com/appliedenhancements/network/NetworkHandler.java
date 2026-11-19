@@ -31,5 +31,9 @@ public final class NetworkHandler {
                 NetworkItemExtractPayload.STREAM_CODEC,
                 NetworkItemExtractPayload::handle
         );
+        // Feature G (pattern provider pulls outputs back): request/answer for the provider side panel.
+        registrar.playToServer(ProviderPullSideRequestPayload.TYPE, ProviderPullSideRequestPayload.STREAM_CODEC,
+                ProviderPullSideRequestPayload::handle);
+        registrar.playToClient(ProviderPullSidesPayload.TYPE, ProviderPullSidesPayload.STREAM_CODEC);
     }
 }

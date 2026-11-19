@@ -19,6 +19,8 @@ public final class Config {
     public static final ModConfigSpec.BooleanValue ENABLE_AELIS_BIG_INTEGER_PLANNING;
     public static final ModConfigSpec.BooleanValue AELIS_PREFER_PLANNABLE_PRODUCER;
     public static final ModConfigSpec.BooleanValue AELIS_CHUNK_RETURNED_ITEM_FEEDBACK;
+    public static final ModConfigSpec.BooleanValue ENABLE_PROVIDER_OUTPUT_PULL;
+    public static final ModConfigSpec.IntValue PROVIDER_OUTPUT_PULL_EXPIRY_SECONDS;
     public static final ModConfigSpec.IntValue AELIS_MAX_NODES;
     public static final ModConfigSpec.IntValue AELIS_COMPILE_BUDGET_MS;
     public static final ModConfigSpec.BooleanValue AELIS_DIAGNOSTICS;
@@ -317,6 +319,36 @@ public final class Config {
                 .define("enable_listing_limit_bypass", false);
 
         builder.pop();
+        builder.pop();
+
+        builder.comment(
+                "Pattern provider behavior",
+                "样板供应器行为")
+                .translation("appliedenhancements.config.section.pattern_provider")
+                .push("pattern_provider");
+
+        ENABLE_PROVIDER_OUTPUT_PULL = builder
+                .comment(
+                        "Allow pattern providers to pull the outputs of their crafts back out of machines that keep them.",
+                        "Each provider face is configured in the provider's side panel (off by default). Only declared",
+                        "pattern outputs that are owed are pulled, never anything that is an input of the provider's patterns.",
+                        "允许样板供应器从保留产物的机器中取回其合成的产物。",
+                        "每个面在供应器的侧面板中单独设置（默认关闭）。只取回尚未返回的样板声明产物，",
+                        "绝不取出供应器样板的任何输入物。",
+                        "Default / 默认值: false")
+                .translation("appliedenhancements.config.enable_provider_output_pull")
+                .define("enable_output_pull", false);
+
+        PROVIDER_OUTPUT_PULL_EXPIRY_SECONDS = builder
+                .comment(
+                        "Forget owed outputs of a provider face after this many seconds without any output arriving",
+                        "(cancelled jobs, chance outputs that never come).",
+                        "若某面在此秒数内没有任何产物到达，则放弃记录的待取回产物（已取消的任务、未产出的概率产物）。",
+                        "Range / 取值范围: 10 ~ 86400",
+                        "Default / 默认值: 300")
+                .translation("appliedenhancements.config.provider_output_pull_expiry_seconds")
+                .defineInRange("output_pull_expiry_seconds", 300, 10, 86_400);
+
         builder.pop();
 
         SPEC = builder.build();

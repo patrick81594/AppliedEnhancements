@@ -1259,3 +1259,22 @@ NeoForge 26.1.2.126, Java 25).
     stall the craft. Always filter an import bus on a machine to its outputs (Patrick's hypothesis, confirmed).
   * Check results after the job is really finished: the CPU returns held items when the job ends, a tick later.
   * Compare the automated result with a known manual one (Patrick's in-game sugar line) before trusting it.
+
+## Phase 7, feature G1: pattern providers pull outputs back (AE2 + ExtendedAE providers)
+- What: config pattern_provider.enable_output_pull (default off) + per-face pull mode in a side panel of the
+  provider screen (off / same face / a specific machine side). After a push the provider records the owed outputs
+  per face; while something is owed it pulls exactly those outputs out of the machine (any side: a capability can
+  be queried for any side of a block) into its return inventory, which AE2 delivers to the CPU. Never a key that
+  is an input of any pattern on that provider (items or fluids); counted down when outputs come back otherwise;
+  expires after 5 min without progress; saved with the world.
+- Verified on the pack server: 6 new rigs (sugar chain WITHOUT import bus on AE2 and ExtendedAE providers, from the
+  same face and from the bottler's bottom, AE2 planner and AELIS; input protection; global switch off) + the old 6.
+  NOT verified: the side panel UI in game.
+- Lessons:
+  * Look for an existing passive path first: AE2's returnInv already turns "items handed to the provider" into CPU
+    deliveries, so the pull only has to fill it — no own network/CPU code.
+  * A protection rule is only real with a test where the protected item IS present (honey bottle as input AND
+    output on the same provider).
+  * Values restored during chunk load see no level yet (game time 0); defer time-based decisions to the first tick
+    (found by the G2 research agent before it bit).
+  * Commit only the feature, not the temporary diagnostics sharing the same files (mixins.json staged separately).

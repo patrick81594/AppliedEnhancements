@@ -27,6 +27,8 @@ public final class ClientPayloadHandlers {
     public static void register(RegisterClientPayloadHandlersEvent event) {
         event.register(ExactCraftingAmountPayload.TYPE, ExactCraftingAmountPayload::handleOnClient);
         event.register(FeedbackToastPayload.TYPE, ClientPayloadHandlers::showFeedbackToast);
+        event.register(ProviderPullSidesPayload.TYPE, (payload, context) -> context.enqueueWork(
+                () -> com.appliedenhancements.client.provider.ClientProviderPullState.update(payload)));
     }
 
     private static void showFeedbackToast(FeedbackToastPayload payload, IPayloadContext context) {
