@@ -1292,3 +1292,11 @@ NeoForge 26.1.2.126, Java 25).
   Known trade-off: in a narrow window the clamped panel covers the last pattern slot.
 - **Lesson:** a client mixin only runs in the game. The dedicated-server audit cannot see it, so one in-game click
   of each new screen element is part of the test, as this one was.
+
+## G2 step 1: shared output-pull state (2026-11-19)
+- **What:** moved feature G's state and rules out of the AE2 Mixin into a plain class, OutputPullState. The Mixin now
+  only records pushes and forwards hooks, through a small Host interface.
+- **Why:** AdvancedAE's pattern provider logic is a different class (no AE2 superclass), so it cannot reuse a Mixin.
+  A shared plain class lets both providers run the same rules.
+- **Check:** no behaviour change. Build and unit tests green; the 8 G1 pack rigs pass with the same tick counts.
+- **Lesson:** refactor first, with the rigs as the safety net, then add the new provider on top.
