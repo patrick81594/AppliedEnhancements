@@ -161,6 +161,12 @@ public abstract class CraftingCpuLogicBatchMixin {
         }
         try (dispatch) {
             boolean pushed = original.call(provider, details, inputHolder);
+            if (com.appliedenhancements.runtime.DiagLog.isMatrix(provider) || !pushed) {
+                com.appliedenhancements.runtime.DiagLog.log(
+                        "cpu.push." + pushed + "." + provider.getClass().getName() + "." + details.getPrimaryOutput().what(),
+                        "cpu pushPattern {} to {} -> {}", details.getPrimaryOutput().what(),
+                        provider.getClass().getName(), pushed);
+            }
             if (pushed) {
                 dispatch.accepted();
                 if (job == completionJob && virtualCompletion != null) {
@@ -169,6 +175,23 @@ public abstract class CraftingCpuLogicBatchMixin {
             }
             return pushed;
         }
+    }
+
+    /** TEMPORARY diagnostics (2026-11-18, Assembler Matrix): which providers does the CPU see per pattern? */
+    @WrapOperation(method = "executeCrafting", require = 0, at = @At(value = "INVOKE",
+            target = "Lappeng/me/service/CraftingService;getProviders(Lappeng/api/crafting/IPatternDetails;)Ljava/lang/Iterable;"))
+    private Iterable<ICraftingProvider> appliedenhancements$diagProviders(CraftingService service,
+            IPatternDetails details, Operation<Iterable<ICraftingProvider>> original) {
+        var providers = original.call(service, details);
+        var names = new java.util.ArrayList<String>();
+        for (var provider : providers) {
+            names.add(provider.getClass().getSimpleName()
+                    + (com.appliedenhancements.runtime.DiagLog.isMatrix(provider) ? "(busy=" + provider.isBusy() + ")" : ""));
+        }
+        com.appliedenhancements.runtime.DiagLog.log("cpu.providers." + details.getPrimaryOutput().what() + "." + names.size(),
+                "cpu getProviders {} -> {} provider(s) {} patternClass={}", details.getPrimaryOutput().what(),
+                names.size(), names, details.getClass().getName());
+        return providers;
     }
 
     @WrapOperation(method = "executeCrafting", require = 0, at = @At(value = "INVOKE",
@@ -183,10 +206,17 @@ public abstract class CraftingCpuLogicBatchMixin {
         var guarded = AelisCycleExecutionApi.guardInputs(
                 appliedenhancements$cycleRuntime, details.getDefinition(), sourceInventory);
         if (guarded == null) {
+            com.appliedenhancements.runtime.DiagLog.log("cpu.guard.null." + details.getPrimaryOutput().what(),
+                    "cpu inputs {}: cycle guard returned no inventory", details.getPrimaryOutput().what());
             return null;
         }
         KeyCounter[] extracted = original.call(
                 details, guarded, level, expectedOutputs, expectedContainerItems);
+        if (extracted == null) {
+            com.appliedenhancements.runtime.DiagLog.log("cpu.extract.null." + details.getPrimaryOutput().what(),
+                    "cpu inputs {}: AE2 extractPatternInputs returned null (inputs not in CPU) patternClass={}",
+                    details.getPrimaryOutput().what(), details.getClass().getName());
+        }
         if (extracted != null
                 && job != null
                 && !appliedenhancements$canTrackExpectedOutputs(
@@ -194,6 +224,9 @@ public abstract class CraftingCpuLogicBatchMixin {
                                 .appliedenhancements$getWaitingFor().list,
                         expectedOutputs,
                         expectedContainerItems)) {
+            com.appliedenhancements.runtime.DiagLog.log("cpu.track." + details.getPrimaryOutput().what(),
+                    "cpu inputs {}: expected outputs not trackable, inputs reinjected",
+                    details.getPrimaryOutput().what());
             CraftingCpuHelper.reinjectPatternInputs(guarded, extracted);
             return null;
         }

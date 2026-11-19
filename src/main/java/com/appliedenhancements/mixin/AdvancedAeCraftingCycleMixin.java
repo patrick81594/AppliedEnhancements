@@ -76,7 +76,35 @@ public abstract class AdvancedAeCraftingCycleMixin {
             ICraftingInventory inventory, Level level, KeyCounter outputs,
             KeyCounter remainders, Operation<KeyCounter[]> original) {
         var guarded = AelisCycleExecutionApi.guardInputs(appliedenhancements$cycleRuntime, pattern.getDefinition(), inventory);
-        return guarded == null ? null : original.call(pattern, guarded, level, outputs, remainders);
+        if (guarded == null) {
+            com.appliedenhancements.runtime.DiagLog.log("quantum.guard.null." + pattern.getPrimaryOutput().what(),
+                    "quantum cpu inputs {}: cycle guard returned no inventory", pattern.getPrimaryOutput().what());
+            return null;
+        }
+        var extracted = original.call(pattern, guarded, level, outputs, remainders);
+        if (extracted == null) {
+            com.appliedenhancements.runtime.DiagLog.log("quantum.extract.null." + pattern.getPrimaryOutput().what(),
+                    "quantum cpu inputs {}: extractPatternInputs returned null (inputs not in CPU) patternClass={}",
+                    pattern.getPrimaryOutput().what(), pattern.getClass().getName());
+        }
+        return extracted;
+    }
+
+    /** TEMPORARY diagnostics (2026-11-18, Assembler Matrix): which providers does the quantum CPU see? */
+    @WrapOperation(method = "executeCrafting", require = 0, at = @At(value = "INVOKE",
+            target = "Lappeng/me/service/CraftingService;getProviders(Lappeng/api/crafting/IPatternDetails;)Ljava/lang/Iterable;"))
+    private Iterable<ICraftingProvider> appliedenhancements$diagProviders(CraftingService service,
+            IPatternDetails pattern, Operation<Iterable<ICraftingProvider>> original) {
+        var providers = original.call(service, pattern);
+        var names = new java.util.ArrayList<String>();
+        for (var provider : providers) {
+            names.add(provider.getClass().getSimpleName()
+                    + (com.appliedenhancements.runtime.DiagLog.isMatrix(provider) ? "(busy=" + provider.isBusy() + ")" : ""));
+        }
+        com.appliedenhancements.runtime.DiagLog.log("quantum.providers." + pattern.getPrimaryOutput().what() + "." + names.size(),
+                "quantum cpu getProviders {} -> {} provider(s) {} patternClass={}", pattern.getPrimaryOutput().what(),
+                names.size(), names, pattern.getClass().getName());
+        return providers;
     }
 
     @WrapMethod(method = "executeCrafting")
@@ -109,6 +137,12 @@ public abstract class AdvancedAeCraftingCycleMixin {
         }
         try (dispatch) {
             boolean accepted = original.call(provider, pattern, inputs);
+            if (com.appliedenhancements.runtime.DiagLog.isMatrix(provider) || !accepted) {
+                com.appliedenhancements.runtime.DiagLog.log(
+                        "quantum.push." + accepted + "." + provider.getClass().getName() + "." + pattern.getPrimaryOutput().what(),
+                        "quantum cpu pushPattern {} to {} -> {}", pattern.getPrimaryOutput().what(),
+                        provider.getClass().getName(), accepted);
+            }
             if (accepted) dispatch.accepted();
             return accepted;
         }
