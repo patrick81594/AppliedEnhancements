@@ -2,10 +2,14 @@ package com.appliedenhancements.packtests;
 
 import appeng.api.config.Actionable;
 import appeng.api.crafting.PatternDetailsHelper;
+import appeng.api.inventories.InternalInventory;
+import appeng.api.networking.crafting.ICraftingProvider;
+import appeng.api.networking.security.IActionHost;
 import appeng.api.stacks.AEFluidKey;
 import appeng.api.stacks.AEItemKey;
 import appeng.api.stacks.GenericStack;
 import appeng.core.definitions.AEBlocks;
+import appeng.helpers.patternprovider.PatternContainer;
 import appeng.helpers.patternprovider.PatternProviderLogicHost;
 import appeng.server.testplots.CraftingPatternHelper;
 import appeng.server.testplots.TestPlot;
@@ -23,13 +27,20 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.material.Fluid;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Feature G (pattern provider pulls outputs back): the sugar chain of {@link SugarChainTestPlots}, but WITHOUT an
  * import bus — the honey-bottle provider pulls the filled bottles out of the Productive Bees bottler itself (like
  * Patrick's Pipez pipes). Also checks the input protection: a key that is an input of any pattern on the provider
  * is never pulled. These tests change server-wide settings: run them one at a time.
+ *
+ * <p>Provider types: AE2's (block), ExtendedAE's extended provider (same AE2 logic) and AdvancedAE's Advanced and
+ * Small Advanced providers (their own logic, reached through the same generic pull lookup).
  */
 @TestPlotClass
 public final class OutputPullTestPlots {
@@ -45,26 +56,40 @@ public final class OutputPullTestPlots {
 
     @TestPlot(value = PackTestsMod.RIG_PREFIX + "pull_sugar_ae2_same_face", maxTicks = MAX_TICKS)
     public static void ae2SameFace(PlotBuilder plot) {
-        build(plot, false);
+        build(plot, null);
         plot.test(helper -> runSugar(helper, "pull_sugar_ae2_same_face", true, ProviderOutputPull.SAME_FACE));
     }
 
     @TestPlot(value = PackTestsMod.RIG_PREFIX + "pull_sugar_ae2_planner_off", maxTicks = MAX_TICKS)
     public static void ae2PlannerOff(PlotBuilder plot) {
-        build(plot, false);
+        build(plot, null);
         plot.test(helper -> runSugar(helper, "pull_sugar_ae2_planner_off", false, ProviderOutputPull.SAME_FACE));
     }
 
     @TestPlot(value = PackTestsMod.RIG_PREFIX + "pull_sugar_exprovider", maxTicks = MAX_TICKS)
     public static void extendedProvider(PlotBuilder plot) {
-        build(plot, true);
+        build(plot, "extendedae:ex_pattern_provider");
         plot.test(helper -> runSugar(helper, "pull_sugar_exprovider", true, ProviderOutputPull.SAME_FACE));
+    }
+
+    /** AdvancedAE's Advanced Pattern Provider: its own logic, so the Mixin for that logic must do the work. */
+    @TestPlot(value = PackTestsMod.RIG_PREFIX + "pull_sugar_adv_provider", maxTicks = MAX_TICKS)
+    public static void advProvider(PlotBuilder plot) {
+        build(plot, "advanced_ae:adv_pattern_provider");
+        plot.test(helper -> runSugar(helper, "pull_sugar_adv_provider", true, ProviderOutputPull.SAME_FACE));
+    }
+
+    /** AdvancedAE's Small Advanced Pattern Provider (a subclass of the Advanced one in AdvancedAE). */
+    @TestPlot(value = PackTestsMod.RIG_PREFIX + "pull_sugar_small_adv_provider", maxTicks = MAX_TICKS)
+    public static void smallAdvProvider(PlotBuilder plot) {
+        build(plot, "advanced_ae:small_adv_pattern_provider");
+        plot.test(helper -> runSugar(helper, "pull_sugar_small_adv_provider", true, ProviderOutputPull.SAME_FACE));
     }
 
     /** Pull from the bottler's BOTTOM side although the provider touches its east side. */
     @TestPlot(value = PackTestsMod.RIG_PREFIX + "pull_sugar_ae2_bottom_side", maxTicks = MAX_TICKS)
     public static void ae2BottomSide(PlotBuilder plot) {
-        build(plot, false);
+        build(plot, null);
         plot.test(helper -> runSugar(helper, "pull_sugar_ae2_bottom_side", true,
                 ProviderOutputPull.sideMode(Direction.DOWN)));
     }
@@ -76,7 +101,7 @@ public final class OutputPullTestPlots {
      */
     @TestPlot(value = PackTestsMod.RIG_PREFIX + "pull_never_takes_inputs", maxTicks = 20 * 30)
     public static void neverTakesInputs(PlotBuilder plot) {
-        build(plot, false);
+        build(plot, null);
         plot.test(helper -> {
             var honeyBottle = AEItemKey.of(Items.HONEY_BOTTLE);
             var job = new TestCraftingJob(helper, BlockPos.ZERO, honeyBottle, 1);
@@ -107,7 +132,7 @@ public final class OutputPullTestPlots {
     /** Global switch off: a configured face must not pull (old behaviour: the output stays in the bottler). */
     @TestPlot(value = PackTestsMod.RIG_PREFIX + "pull_global_switch_off", maxTicks = 20 * 30)
     public static void globalSwitchOff(PlotBuilder plot) {
-        build(plot, false);
+        build(plot, null);
         plot.test(helper -> {
             var honeyBottle = AEItemKey.of(Items.HONEY_BOTTLE);
             var job = new TestCraftingJob(helper, BlockPos.ZERO, honeyBottle, 1);
@@ -169,10 +194,11 @@ public final class OutputPullTestPlots {
     }
 
     /**
-     * Same layout as the sugar rig without the import bus. {@code extendedProvider}: the honey-bottle provider is
-     * ExtendedAE's extended pattern provider (same AE2 logic) instead of AE2's.
+     * Same layout as the sugar rig without the import bus. {@code providerId} = null: AE2's pattern provider;
+     * otherwise the block id of an addon provider holding the honey-bottle pattern (its BE must have a pattern
+     * container, which all of them have).
      */
-    private static void build(PlotBuilder plot, boolean extendedProvider) {
+    private static void build(PlotBuilder plot, @Nullable String providerId) {
         Rigs.ae2CraftingCpu(plot);
         plot.cable("0 0 -2");
         plot.cable("0 0 -3");
@@ -188,13 +214,18 @@ public final class OutputPullTestPlots {
                 List.of(new GenericStack(AEItemKey.of(Items.GLASS_BOTTLE), 1),
                         new GenericStack(AEFluidKey.of(honey), 250)),
                 List.of(new GenericStack(AEItemKey.of(Items.HONEY_BOTTLE), 1)));
-        if (extendedProvider) {
-            plot.block(HONEY_PROVIDER, Rigs.modBlock("extendedae:ex_pattern_provider"));
-            plot.customizeBlockEntity(HONEY_PROVIDER, exProviderType(),
-                    be -> ((PatternProviderLogicHost) be).getLogic().getPatternInv().addItems(honeyPattern.copy()));
-        } else {
+        if (providerId == null) {
             plot.blockEntity("-1 0 -3", AEBlocks.PATTERN_PROVIDER,
                     provider -> provider.getLogic().getPatternInv().addItems(honeyPattern.copy()));
+        } else if (providerId.startsWith("extendedae:")) {
+            Block block = Rigs.modBlock(providerId);
+            plot.block(HONEY_PROVIDER, block);
+            plot.customizeBlockEntity(HONEY_PROVIDER, beType(block),
+                    be -> ((PatternProviderLogicHost) be).getLogic().getPatternInv().addItems(honeyPattern.copy()));
+        } else {
+            Block block = Rigs.modBlock(providerId);
+            plot.block(HONEY_PROVIDER, block);
+            plot.customizeBlockEntity(HONEY_PROVIDER, beType(block), be -> putPattern(be, honeyPattern));
         }
         plot.block(BOTTLER, Rigs.modBlock("productivebees:bottler"));
         // Cable so the honey-bottle provider is on the network (no import bus on the bottler).
@@ -205,21 +236,46 @@ public final class OutputPullTestPlots {
         plot.creativeEnergyCell("1 0 -5");
     }
 
-    @SuppressWarnings("unchecked")
-    private static net.minecraft.world.level.block.entity.BlockEntityType<net.minecraft.world.level.block.entity.BlockEntity> exProviderType() {
-        return (net.minecraft.world.level.block.entity.BlockEntityType<net.minecraft.world.level.block.entity.BlockEntity>)
-                BuiltInRegistries.BLOCK_ENTITY_TYPE.getOptional(Identifier.parse("extendedae:ex_pattern_provider"))
-                        .orElseThrow(() -> new IllegalStateException("extendedae:ex_pattern_provider BE type missing"));
+    /** Puts a pattern into the first free slot of a provider's pattern container (AE2's interface, any addon). */
+    private static void putPattern(BlockEntity be, ItemStack pattern) {
+        if (!(be instanceof PatternContainer container)) {
+            throw new IllegalStateException(be + " has no pattern container");
+        }
+        InternalInventory inv = container.getTerminalPatternInventory();
+        for (int slot = 0; slot < inv.size(); slot++) {
+            if (inv.getStackInSlot(slot).isEmpty()) {
+                inv.setItemDirect(slot, pattern.copy());
+                return;
+            }
+        }
+        throw new IllegalStateException("no free pattern slot in " + be);
     }
 
+    /** The block entity type that this block's state belongs to (asked of the registry, not assumed by id). */
+    @SuppressWarnings("unchecked")
+    private static BlockEntityType<BlockEntity> beType(Block block) {
+        var state = block.defaultBlockState();
+        for (var type : BuiltInRegistries.BLOCK_ENTITY_TYPE) {
+            if (type.isValid(state)) {
+                return (BlockEntityType<BlockEntity>) type;
+            }
+        }
+        throw new IllegalStateException(block + " has no block entity type");
+    }
+
+    /**
+     * The pull host of the provider at the test position, found through its grid node the way the server does it
+     * (open menu → grid node → crafting-provider service), so it works for AE2, ExtendedAE and AdvancedAE alike.
+     */
     private static ProviderOutputPullHost host(PlotTestHelper helper) {
         var be = helper.getLevel().getBlockEntity(helper.absolutePos(HONEY_PROVIDER));
-        if (!(be instanceof PatternProviderLogicHost logicHost)
-                || !(logicHost.getLogic() instanceof ProviderOutputPullHost host)) {
-            throw helper.assertionException("no pull-capable pattern provider at " + HONEY_PROVIDER + ": " + be,
-                    HONEY_PROVIDER);
+        if (be instanceof IActionHost actionHost && actionHost.getActionableNode() != null
+                && actionHost.getActionableNode().getService(ICraftingProvider.class)
+                        instanceof ProviderOutputPullHost host) {
+            return host;
         }
-        return host;
+        throw helper.assertionException("no pull-capable pattern provider at " + HONEY_PROVIDER + ": " + be,
+                HONEY_PROVIDER);
     }
 
     private static String describe(appeng.api.stacks.KeyCounter counter) {

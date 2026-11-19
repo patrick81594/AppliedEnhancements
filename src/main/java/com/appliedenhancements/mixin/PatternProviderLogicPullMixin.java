@@ -173,4 +173,9 @@ public abstract class PatternProviderLogicPullMixin implements ProviderOutputPul
     public Set<Direction> appliedenhancements$getPushFaces() {
         return getActiveSides();
     }
+
+    @Override
+    public BlockEntity appliedenhancements$getPullBlockEntity() {
+        return host.getBlockEntity();
+    }
 }

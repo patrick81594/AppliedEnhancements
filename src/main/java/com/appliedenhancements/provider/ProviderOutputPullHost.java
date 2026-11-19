@@ -3,6 +3,8 @@ package com.appliedenhancements.provider;
 import appeng.api.stacks.KeyCounter;
 import java.util.Set;
 import net.minecraft.core.Direction;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Implemented (via Mixin) by pattern provider logics that support feature G. Server side only; the client
@@ -19,4 +21,8 @@ public interface ProviderOutputPullHost {
 
     /** Faces this provider pushes to (all six, or one for a directional provider / cable part). */
     Set<Direction> appliedenhancements$getPushFaces();
+
+    /** The block entity (or the part's block entity) the provider lives in; null if not set up. */
+    @Nullable
+    BlockEntity appliedenhancements$getPullBlockEntity();
 }

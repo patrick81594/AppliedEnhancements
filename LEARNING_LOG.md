@@ -1300,3 +1300,16 @@ NeoForge 26.1.2.126, Java 25).
   A shared plain class lets both providers run the same rules.
 - **Check:** no behaviour change. Build and unit tests green; the 8 G1 pack rigs pass with the same tick counts.
 - **Lesson:** refactor first, with the rigs as the safety net, then add the new provider on top.
+
+## G2 steps 2–4: AdvancedAE pattern providers pull outputs too (2026-11-19)
+- **What:** AdvancedAE's Advanced and Small Advanced providers get their own Mixin on their logic (they do not
+  extend AE2's logic). The menu lookup and the screen check now work for any AE2 provider, found through the open
+  menu target and its grid node.
+- **Bug found by the rig:** the directional push handler took a CallbackInfo, but a handler injected into a method that
+  returns a value must take CallbackInfoReturnable. Mixin refused to apply it, which stopped the server. Fixed.
+- **Check:** pack rigs pull_sugar_adv_provider and pull_sugar_small_adv_provider pass (48 sugar, 8 bottles back). The
+  full G1 + AdvancedAE set (10 rigs) passes on the second run; the first run failed at startup with a registry-freeze
+  error that did not recur (flake, not our code).
+- **Not yet tested:** the side panel on the AdvancedAE screens (client), and the AppliedFlux upgrade panel overlap.
+- **Lesson:** a Mixin for an optional mod only fails when the server loads that class, so the pack server rig is the
+  first place it can be caught.

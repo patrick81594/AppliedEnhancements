@@ -50,9 +50,35 @@ public abstract class PatternProviderScreenPullPanelMixin<T extends AEBaseMenu> 
     @Shadow
     public abstract boolean isHandlingRightClick();
 
+    /** Cached: the screen's class never changes. Null until the first check. */
+    @Unique
+    private Boolean appliedenhancements$pullScreen;
+
     @Unique
     private boolean appliedenhancements$isPullScreen() {
-        return (Object) this instanceof PatternProviderScreen<?>;
+        if (appliedenhancements$pullScreen == null) {
+            appliedenhancements$pullScreen = appliedenhancements$isProviderScreen(getClass());
+        }
+        return appliedenhancements$pullScreen;
+    }
+
+    /**
+     * AE2's provider screen and its subclasses (ExtendedAE), plus AdvancedAE's two provider screens. AdvancedAE's
+     * screens cannot be referenced here (optional mod), so they are matched by name up the class hierarchy.
+     */
+    @Unique
+    private boolean appliedenhancements$isProviderScreen(Class<?> type) {
+        for (Class<?> c = type; c != null; c = c.getSuperclass()) {
+            if (c == PatternProviderScreen.class) {
+                return true;
+            }
+            String name = c.getName();
+            if (name.equals("net.pedroksl.advanced_ae.client.gui.AdvPatternProviderScreen")
+                    || name.equals("net.pedroksl.advanced_ae.client.gui.SmallAdvPatternProviderScreen")) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Unique
