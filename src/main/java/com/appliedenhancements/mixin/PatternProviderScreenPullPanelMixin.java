@@ -57,7 +57,7 @@ public abstract class PatternProviderScreenPullPanelMixin<T extends AEBaseMenu> 
 
     @Unique
     private Rect2i appliedenhancements$pullBounds() {
-        return ProviderPullPanel.bounds(font, leftPos, topPos, imageWidth);
+        return ProviderPullPanel.bounds(font, leftPos, topPos, imageWidth, width);
     }
 
     /** HEAD: before AE2's widgets.populateScreen, so the vertical toolbar lays the new button out with the rest. */
@@ -130,7 +130,9 @@ public abstract class PatternProviderScreenPullPanelMixin<T extends AEBaseMenu> 
     }
 
     /** Keep JEI's item list away from the open panel. */
-    @Inject(method = "getExclusionZones", at = @At("RETURN"))
+    // cancellable is required for setReturnValue, also at RETURN (without it Mixin throws CancellationException
+    // the first time JEI asks for the zones while the panel is open; found in the TEST instance 2026-11-19).
+    @Inject(method = "getExclusionZones", at = @At("RETURN"), cancellable = true)
     private void appliedenhancements$excludePullPanel(CallbackInfoReturnable<List<Rect2i>> cir) {
         if (appliedenhancements$isPullScreen() && ClientProviderPullState.isPanelOpen()) {
             var zones = new ArrayList<>(cir.getReturnValue());

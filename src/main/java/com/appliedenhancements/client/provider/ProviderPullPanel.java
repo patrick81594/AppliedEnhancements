@@ -26,6 +26,13 @@ public final class ProviderPullPanel {
     private static final int NOTE_HEIGHT = 10;
     /** Gap between the provider window and the panel. */
     private static final int GAP = 2;
+    /**
+     * Distance from the window's top edge to the panel's top. AE2 draws a small side box (upgrades / cards) at the
+     * top right of the provider window that the panel would otherwise cover (found in the TEST instance 2026-11-19).
+     */
+    private static final int TOP_CLEARANCE = 44;
+    /** Minimum distance from the screen edge when the panel is pushed back inside a narrow window. */
+    private static final int SCREEN_MARGIN = 2;
     private static final int GRID_COLUMNS = 4;
     private static final int GRID_ROWS = 3;
 
@@ -65,12 +72,21 @@ public final class ProviderPullPanel {
         return content + 2 * PADDING;
     }
 
-    public static Rect2i bounds(Font font, int leftPos, int topPos, int imageWidth) {
+    /**
+     * Right of the provider window, below AE2's top-right side box. If that would run past the screen's right edge
+     * (narrow GUI scale), the panel is pushed left so it stays fully visible; it may then cover part of the window.
+     */
+    public static Rect2i bounds(Font font, int leftPos, int topPos, int imageWidth, int screenWidth) {
         int height = PADDING + TITLE_HEIGHT + GRID_ROWS * CELL - (CELL - BUTTON_SIZE) + PADDING;
         if (note() != null) {
             height += NOTE_HEIGHT;
         }
-        return new Rect2i(leftPos + imageWidth + GAP, topPos, width(font), height);
+        int width = width(font);
+        int x = leftPos + imageWidth + GAP;
+        if (x + width > screenWidth - SCREEN_MARGIN) {
+            x = Math.max(SCREEN_MARGIN, screenWidth - width - SCREEN_MARGIN);
+        }
+        return new Rect2i(x, topPos + TOP_CLEARANCE, width, height);
     }
 
     public static boolean contains(Rect2i bounds, double x, double y) {

@@ -14,8 +14,8 @@ public final class ProviderPullPanelToggleButton extends IconButton {
 
     @Override
     protected Icon getIcon() {
-        // Arrow pointing back into the provider ("pull back"); right arrow while the panel is open (= close it).
-        return ClientProviderPullState.isPanelOpen() ? Icon.ARROW_RIGHT : Icon.ARROW_LEFT;
+        // A machine icon (AE2's, 10x10 and centred in the 16x16 button) instead of the plain arrow, which read as "back".
+        return Icon.S_MACHINE;
     }
 
     @Override

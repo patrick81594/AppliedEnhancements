@@ -1278,3 +1278,17 @@ NeoForge 26.1.2.126, Java 25).
   * Values restored during chunk load see no level yet (game time 0); defer time-based decisions to the first tick
     (found by the G2 research agent before it bit).
   * Commit only the feature, not the temporary diagnostics sharing the same files (mixins.json staged separately).
+
+## G1 side panel: first in-game test (2026-11-19)
+- **What:** the Pull Outputs panel was tested in the TEST instance. The first click crashed the client with
+  "CancellationException: The call getExclusionZones is not cancellable".
+- **Why:** an @Inject that calls setReturnValue or cancel must say cancellable = true. Mixin accepts the missing
+  flag at load time and only fails when the handler runs. JEI runs getExclusionZones on every screen, so the bug
+  appeared only with the panel open.
+- **Fix:** cancellable = true, plus a plain ASM test (InjectCancellableGuardTest) that scans every mixin in the
+  mixins.json lists, client ones included. It failed with the fix reverted and passes with it.
+- **Layout:** the panel moved 44 px down (AE2's top-right side box), keeps its x clamped inside the screen for
+  narrow windows, and the toggle uses AE2's machine icon (S_MACHINE) instead of the arrow that read as "back".
+  Known trade-off: in a narrow window the clamped panel covers the last pattern slot.
+- **Lesson:** a client mixin only runs in the game. The dedicated-server audit cannot see it, so one in-game click
+  of each new screen element is part of the test, as this one was.
