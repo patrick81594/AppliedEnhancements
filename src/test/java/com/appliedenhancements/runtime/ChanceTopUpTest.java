@@ -12,8 +12,10 @@ class ChanceTopUpTest {
     @Test
     void yieldStartsAtOnePerCraftAndFollowsObservations() {
         assertEquals(1.0, ChanceTopUp.estimateYield(0, 0), 1e-9);
-        assertEquals(1.0 / 7.0, ChanceTopUp.estimateYield(0, 6), 1e-9);
+        assertEquals(10.0 / 16.0, ChanceTopUp.estimateYield(0, 6), 1e-9);
         assertTrue(ChanceTopUp.estimateYield(50, 1000) < 0.06);
+        // an empty wave of a slow machine (8 crafts, nothing yet) must not look like a 1-in-9 pattern
+        assertTrue(ChanceTopUp.estimateYield(0, 8) > 0.5);
     }
 
     @Test
@@ -57,6 +59,11 @@ class ChanceTopUpTest {
         state.onPush("sieve", flint, 30);
         assertArrayEquals(new long[] {0, 1}, state.endWave("sieve", flint));
         assertEquals(25, state.allowedExtra("sieve", 10));
+        // late outputs with no crafts in the wave are kept for the next wave, not lost
+        state.onOutput(flint, 3, 40);
+        assertArrayEquals(new long[] {3, 0}, state.endWave("sieve", flint));
+        state.onPush("sieve", flint, 50);
+        assertArrayEquals(new long[] {3, 1}, state.endWave("sieve", flint));
         state.clear();
         assertEquals(0, state.allowedExtra("sieve", 10));
         state.seedPlannedIfUnknown("sieve", 3);

@@ -236,3 +236,4 @@ Tasks added on 2026-11-17, not done yet.
 - [x] (2026-11-19) Learned yield is saved with the world and used after a restart; a job reloaded mid-wave recovers the marked producer.
 - [x] (2026-11-19) AdvancedAE quantum CPU top-up (reflection): wave fired, limited by affordable inputs, job finished.
 - [ ] A real chance-output machine (e.g. LTX hydrosieve) end to end.
+- [x] (2026-11-19, pack-test rigs on the headless FTB server, LTX hydrosieve with its craft time shortened to 3 s) chance_flint_pull, chance_flint_bus and chance_olivine_hcl_pull all pass: flint 8, raw olivine 2 (25%, nothing guaranteed, only top-up waves can finish it). Note: the idle time must exceed the machine's real latency, otherwise early waves over-push (extra crafts sit in the machine after the job ends).

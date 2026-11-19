@@ -5,12 +5,15 @@ public final class ChanceTopUp {
     private ChanceTopUp() {
     }
 
+    /** Weight of the prior, in virtual crafts: one empty wave of a slow machine must not look like "never". */
+    public static final double PRIOR_CRAFTS = 10.0;
+
     /**
-     * Outputs per craft, from what was observed. Starts from a prior of one output per craft (the
-     * pattern's promise) and moves toward the observed rate as crafts accumulate.
+     * Outputs per craft, from what was observed. Starts from the pattern's promise (one output per craft,
+     * worth {@link #PRIOR_CRAFTS} crafts) and moves toward the observed rate as crafts accumulate.
      */
     public static double estimateYield(long outputs, long crafts) {
-        return (Math.max(outputs, 0) + 1.0) / (Math.max(crafts, 0) + 1.0);
+        return (Math.max(outputs, 0) + PRIOR_CRAFTS) / (Math.max(crafts, 0) + PRIOR_CRAFTS);
     }
 
     /** Extra crafts needed to cover {@code shortfall} items at {@code yield} outputs per craft, within the limit. */

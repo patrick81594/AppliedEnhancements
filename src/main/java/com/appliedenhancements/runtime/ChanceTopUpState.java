@@ -56,7 +56,11 @@ public final class ChanceTopUpState<P> {
             wave.planned = wave.crafts;
         }
         wave.crafts = 0;
-        outputs.remove(key);
+        // Outputs that arrive while no craft of this wave exists (late deliveries of an earlier wave) stay
+        // counted until crafts exist to pair them with, so they are never lost to the learned yield.
+        if (seen[1] > 0) {
+            outputs.remove(key);
+        }
         return seen;
     }
 

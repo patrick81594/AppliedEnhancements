@@ -1313,3 +1313,7 @@ NeoForge 26.1.2.126, Java 25).
 - **Not yet tested:** the side panel on the AdvancedAE screens (client), and the AppliedFlux upgrade panel overlap.
 - **Lesson:** a Mixin for an optional mod only fails when the server loads that class, so the pack server rig is the
   first place it can be caught.
+
+## Phase 7 D3 - chance outputs (2026-11-19)
+- What: marker data component + processing-panel toggle (menu Mixin with @GuiSync/client action, screen Mixin on AEBaseScreen because the widget container rejects ids missing from AE2's style json), bonus counting in both CPUs (AdvancedAE by reflection), top-up waves (idle detection, learned yield in SavedData, inputs from storage), pack-test rigs with the real LTX hydrosieve.
+- Lessons: @Shadow does not see inherited methods (extend the target's superclass in the mixin); AE2 removes a pattern from job.tasks after its last push; MC 26 SavedDataType + overworld.getDataStorage().computeIfAbsent; a rate-limited logger hides repeated lines (use plain info for debugging); learn yield from every arrival, not only inside a wave (late outputs were lost); give the yield prior weight (10 virtual crafts) so one empty wave of a slow machine does not look like a 1-in-9 pattern; third-party machines keep outputs - open their sides (reflection) and pull or import.
