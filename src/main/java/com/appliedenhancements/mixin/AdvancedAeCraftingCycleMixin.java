@@ -53,6 +53,9 @@ public abstract class AdvancedAeCraftingCycleMixin {
     @Unique private AelisCycleRuntimeController appliedenhancements$cycleRuntime;
     @Unique private int appliedenhancements$dispatchDepth;
     @Unique private boolean appliedenhancements$retainingCycleOutput;
+    @Unique private final com.appliedenhancements.runtime.ChanceJobMarks appliedenhancements$chanceMarks =
+            new com.appliedenhancements.runtime.ChanceJobMarks();
+    @Unique private static final String APPLIEDENHANCEMENTS_CHANCE_MARKS_TAG = "appliedenhancementsChanceMarks";
     @Unique private static final String APPLIEDENHANCEMENTS_CYCLE_TAG = "appliedenhancementsCycleRuntime";
 
     @ModifyVariable(method = "trySubmitJob", at = @At("HEAD"), argsOnly = true)
@@ -143,7 +146,10 @@ public abstract class AdvancedAeCraftingCycleMixin {
                         "quantum cpu pushPattern {} to {} -> {}", pattern.getPrimaryOutput().what(),
                         provider.getClass().getName(), accepted);
             }
-            if (accepted) dispatch.accepted();
+            if (accepted) {
+                dispatch.accepted();
+                appliedenhancements$chanceMarks.recordIfMarked(pattern);
+            }
             return accepted;
         }
     }
@@ -160,7 +166,8 @@ public abstract class AdvancedAeCraftingCycleMixin {
         }
         // Chance outputs of marked patterns: extra items count toward the requested total.
         accepted += com.appliedenhancements.runtime.AdvancedAeChanceOutputBonus.insertBonus(
-                this, getInventory(), key, amount, accepted, mode, () -> finishJob(true));
+                this, appliedenhancements$chanceMarks, getInventory(), key, amount, accepted, mode,
+                () -> finishJob(true));
         return accepted;
     }
 
@@ -206,6 +213,10 @@ public abstract class AdvancedAeCraftingCycleMixin {
 
     @Inject(method = "writeToNBT", at = @At("RETURN"))
     private void appliedenhancements$saveCycle(ValueOutput output, CallbackInfo callback) {
+        if (hasJob() && !appliedenhancements$chanceMarks.isEmpty()) {
+            output.store(APPLIEDENHANCEMENTS_CHANCE_MARKS_TAG, AEKey.CODEC.listOf(),
+                    appliedenhancements$chanceMarks.toList());
+        }
         if (hasJob() && appliedenhancements$cycleRuntime != null
                 && appliedenhancements$cycleRuntime.hasActiveSeedProtection()) {
             // MC 26: ValueOutput carries no registries, and AdvancedAE's `cpu` field type
@@ -228,6 +239,9 @@ public abstract class AdvancedAeCraftingCycleMixin {
 
     @Inject(method = "readFromNBT", at = @At("RETURN"))
     private void appliedenhancements$loadCycle(ValueInput input, CallbackInfo callback) {
+        appliedenhancements$chanceMarks.load(!hasJob() ? java.util.List.of()
+                : input.read(APPLIEDENHANCEMENTS_CHANCE_MARKS_TAG, AEKey.CODEC.listOf())
+                        .orElse(java.util.List.of()));
         Optional<CompoundTag> stored = hasJob()
                 ? input.read(APPLIEDENHANCEMENTS_CYCLE_TAG, CompoundTag.CODEC)
                 : Optional.empty();
@@ -266,5 +280,6 @@ public abstract class AdvancedAeCraftingCycleMixin {
     @Inject(method = "finishJob", at = @At("TAIL"))
     private void appliedenhancements$finishCycle(boolean success, CallbackInfo callback) {
         appliedenhancements$cycleRuntime = null;
+        appliedenhancements$chanceMarks.clear();
     }
 }

@@ -66,7 +66,7 @@ public final class AdvancedAeChanceOutputBonus {
      * @param accepted amount the CPU's normal insert accepted
      * @return the bonus amount (0 if none); in MODULATE mode the CPU state is already updated
      */
-    public static long insertBonus(Object cpuLogic, ListCraftingInventory inventory, AEKey what, long amount,
+    public static long insertBonus(Object cpuLogic, ChanceJobMarks marks, ListCraftingInventory inventory, AEKey what, long amount,
             long accepted, Actionable mode, Runnable finishJob) {
         if (failed || what == null || amount <= accepted || !Config.ENABLE_CHANCE_OUTPUT_BONUS.get()) {
             return 0;
@@ -79,7 +79,7 @@ public final class AdvancedAeChanceOutputBonus {
             }
             @SuppressWarnings("unchecked")
             Iterable<IPatternDetails> patterns = ((Map<IPatternDetails, ?>) a.jobTasks().get(job)).keySet();
-            if (!ChanceOutputBonus.hasMarkedProducer(patterns, what)) {
+            if (!marks.contains(what) && !ChanceOutputBonus.hasMarkedProducer(patterns, what)) {
                 return 0;
             }
             long remaining = a.jobRemaining().getLong(job);

@@ -90,6 +90,14 @@ public abstract class CraftingCpuLogicBatchMixin {
 
     @Unique private int appliedenhancements$dispatchDepth;
 
+    /** Marked (chance-output) patterns pushed in this job; see ChanceJobMarks. */
+    @Unique
+    private final com.appliedenhancements.runtime.ChanceJobMarks appliedenhancements$chanceMarks =
+            new com.appliedenhancements.runtime.ChanceJobMarks();
+
+    @Unique
+    private static final String APPLIEDENHANCEMENTS_CHANCE_MARKS_TAG = "appliedenhancementsChanceMarks";
+
     @ModifyVariable(method = "trySubmitJob", at = @At("HEAD"), argsOnly = true)
     private ICraftingPlan appliedenhancements$prepareCyclePlan(ICraftingPlan plan) {
         return AelisCycleExecutionApi.preparePlan(plan);
@@ -171,6 +179,7 @@ public abstract class CraftingCpuLogicBatchMixin {
             }
             if (pushed) {
                 dispatch.accepted();
+                appliedenhancements$chanceMarks.recordIfMarked(details);
                 if (job == completionJob && virtualCompletion != null) {
                     virtualCompletion.reconcileAcceptedPush();
                 }
@@ -411,7 +420,8 @@ public abstract class CraftingCpuLogicBatchMixin {
         if (finalOutput == null || !what.matches(finalOutput)) {
             return accepted;
         }
-        if (!ChanceOutputBonus.hasMarkedProducer(jobAccess.appliedenhancements$getTasks().keySet(), what)) {
+        if (!appliedenhancements$chanceMarks.contains(what)
+                && !ChanceOutputBonus.hasMarkedProducer(jobAccess.appliedenhancements$getTasks().keySet(), what)) {
             return accepted;
         }
         long remaining = jobAccess.appliedenhancements$getRemainingAmount();
@@ -437,6 +447,10 @@ public abstract class CraftingCpuLogicBatchMixin {
     private void appliedenhancements$writeCycleRuntime(
             ValueOutput output,
             CallbackInfo callback) {
+        if (job != null && !appliedenhancements$chanceMarks.isEmpty()) {
+            output.store(APPLIEDENHANCEMENTS_CHANCE_MARKS_TAG, AEKey.CODEC.listOf(),
+                    appliedenhancements$chanceMarks.toList());
+        }
         if (appliedenhancements$cycleRuntime != null
                 && appliedenhancements$cycleRuntime.hasActiveSeedProtection()) {
             // MC 26: ValueOutput carries no registries (ValueInput does, via lookup()).
@@ -462,6 +476,9 @@ public abstract class CraftingCpuLogicBatchMixin {
     private void appliedenhancements$readCycleRuntime(
             ValueInput input,
             CallbackInfo callback) {
+        appliedenhancements$chanceMarks.load(job == null ? java.util.List.of()
+                : input.read(APPLIEDENHANCEMENTS_CHANCE_MARKS_TAG, AEKey.CODEC.listOf())
+                        .orElse(java.util.List.of()));
         Optional<CompoundTag> stored = job != null
                 ? input.read(APPLIEDENHANCEMENTS_CYCLE_RUNTIME_TAG, CompoundTag.CODEC)
                 : Optional.empty();
@@ -501,6 +518,7 @@ public abstract class CraftingCpuLogicBatchMixin {
     private void appliedenhancements$clearCycleRuntime(
             boolean success, CallbackInfo callback) {
         appliedenhancements$cycleRuntime = null;
+        appliedenhancements$chanceMarks.clear();
     }
 
 }
