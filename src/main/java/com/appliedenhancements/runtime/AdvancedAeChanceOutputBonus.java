@@ -30,11 +30,12 @@ public final class AdvancedAeChanceOutputBonus {
     private AdvancedAeChanceOutputBonus() {
     }
 
-    private record Access(Field logicJob, Field logicCpu, Field jobFinal, Field jobRemaining, Field jobTasks,
-            Field jobTracker, Method decrement, Method markDirty, Method updateOutput) {
+    record Access(Field logicJob, Field logicCpu, Field jobFinal, Field jobRemaining, Field jobTasks,
+            Field jobTracker, Field jobWaiting, Method decrement, Method addMax, Method markDirty,
+            Method updateOutput, Method cpuLevel, Method cpuGrid) {
     }
 
-    private static Access access() throws ReflectiveOperationException {
+    static Access access() throws ReflectiveOperationException {
         var local = access;
         if (local == null) {
             var loader = AdvancedAeChanceOutputBonus.class.getClassLoader();
@@ -45,9 +46,12 @@ public final class AdvancedAeChanceOutputBonus {
             var cpuClass = cpuField.getType();
             var decrement = tracker.getDeclaredMethod("decrementItems", long.class, AEKeyType.class);
             decrement.setAccessible(true);
+            var addMax = tracker.getDeclaredMethod("addMaxItems", long.class, AEKeyType.class);
+            addMax.setAccessible(true);
             local = new Access(open(logic, "job"), cpuField, open(job, "finalOutput"), open(job, "remainingAmount"),
-                    open(job, "tasks"), open(job, "timeTracker"), decrement,
-                    cpuClass.getMethod("markDirty"), cpuClass.getMethod("updateOutput", GenericStack.class));
+                    open(job, "tasks"), open(job, "timeTracker"), open(job, "waitingFor"), decrement, addMax,
+                    cpuClass.getMethod("markDirty"), cpuClass.getMethod("updateOutput", GenericStack.class),
+                    cpuClass.getMethod("getLevel"), cpuClass.getMethod("getGrid"));
             access = local;
         }
         return local;

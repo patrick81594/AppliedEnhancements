@@ -56,6 +56,8 @@ public abstract class AdvancedAeCraftingCycleMixin {
     @Unique private final com.appliedenhancements.runtime.ChanceJobMarks appliedenhancements$chanceMarks =
             new com.appliedenhancements.runtime.ChanceJobMarks();
     @Unique private static final String APPLIEDENHANCEMENTS_CHANCE_MARKS_TAG = "appliedenhancementsChanceMarks";
+    @Unique private final com.appliedenhancements.runtime.ChanceTopUpState<IPatternDetails> appliedenhancements$topUp =
+            new com.appliedenhancements.runtime.ChanceTopUpState<>();
     @Unique private static final String APPLIEDENHANCEMENTS_CYCLE_TAG = "appliedenhancementsCycleRuntime";
 
     @ModifyVariable(method = "trySubmitJob", at = @At("HEAD"), argsOnly = true)
@@ -148,7 +150,10 @@ public abstract class AdvancedAeCraftingCycleMixin {
             }
             if (accepted) {
                 dispatch.accepted();
-                appliedenhancements$chanceMarks.recordIfMarked(pattern);
+                if (appliedenhancements$chanceMarks.recordIfMarked(pattern)) {
+                    appliedenhancements$topUp.onPush(pattern, pattern.getPrimaryOutput().what(),
+                            com.appliedenhancements.runtime.AdvancedAeTopUp.now(this));
+                }
             }
             return accepted;
         }
@@ -168,7 +173,24 @@ public abstract class AdvancedAeCraftingCycleMixin {
         accepted += com.appliedenhancements.runtime.AdvancedAeChanceOutputBonus.insertBonus(
                 this, appliedenhancements$chanceMarks, getInventory(), key, amount, accepted, mode,
                 () -> finishJob(true));
+        if (accepted > 0 && mode == Actionable.MODULATE && key != null) {
+            long now = com.appliedenhancements.runtime.AdvancedAeTopUp.now(this);
+            if (appliedenhancements$chanceMarks.contains(key)) {
+                appliedenhancements$topUp.onOutput(key, accepted, now);
+            } else {
+                appliedenhancements$topUp.touch(now);
+            }
+        }
         return accepted;
+    }
+
+    /** After the normal tick: start a chance top-up wave when a marked pattern's outputs are overdue. */
+    @WrapMethod(method = "tickCraftingLogic")
+    private void appliedenhancements$chanceTopUp(IEnergyService energyService, CraftingService craftingService,
+            Operation<Void> original) {
+        original.call(energyService, craftingService);
+        com.appliedenhancements.runtime.AdvancedAeTopUp.tick(this, appliedenhancements$chanceMarks,
+                appliedenhancements$topUp, getInventory());
     }
 
     @Unique
@@ -281,5 +303,6 @@ public abstract class AdvancedAeCraftingCycleMixin {
     private void appliedenhancements$finishCycle(boolean success, CallbackInfo callback) {
         appliedenhancements$cycleRuntime = null;
         appliedenhancements$chanceMarks.clear();
+        appliedenhancements$topUp.clear();
     }
 }

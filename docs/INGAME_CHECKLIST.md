@@ -234,5 +234,5 @@ Tasks added on 2026-11-17, not done yet.
 ## D3 chance outputs (step b: top-up waves) - needs enable_chance_output_bonus and enable_chance_top_up
 - [x] (2026-11-19, AE2 CPU) Marked pattern whose output never arrives: after the idle time the CPU drops the stale outputs and pushes more crafts (logged as "Chance top-up wave ..."); limit = factor x planned crafts, then it keeps waiting; inserting the output by hand finishes the job.
 - [x] (2026-11-19) Learned yield is saved with the world and used after a restart; a job reloaded mid-wave recovers the marked producer.
-- [ ] AdvancedAE quantum CPU top-up: NOT implemented yet (only the bonus is).
+- [x] (2026-11-19) AdvancedAE quantum CPU top-up (reflection): wave fired, limited by affordable inputs, job finished.
 - [ ] A real chance-output machine (e.g. LTX hydrosieve) end to end.
