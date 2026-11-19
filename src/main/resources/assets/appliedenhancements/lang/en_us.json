@@ -121,6 +121,8 @@
   "appliedenhancements.config.enable_progress_display.tooltip": "Show crafting calculation progress and the selected planner path.\nDefault: false",
   "appliedenhancements.config.enable_automatic_aelis_planner": "Enable Automatic AELIS Planner",
   "appliedenhancements.config.enable_automatic_aelis_planner.tooltip": "Enable automatic AELIS integration in AE2's native planner. Third-party API calls are not affected. Manual crafting-plan inventory reservations are active only while this is enabled.\nDefault: false",
+  "appliedenhancements.config.enable_chance_output_bonus": "Chance Output Bonus",
+  "appliedenhancements.config.enable_chance_output_bonus.tooltip": "Count extra (chance) outputs of marked processing patterns toward the requested total. Only patterns marked as chance-output patterns are affected. Requires the marker toggle on the processing encoding panel.\nDefault: false",
   "appliedenhancements.config.enable_aelis_big_integer_planning": "Enable BigInteger AELIS Planning",
   "appliedenhancements.config.enable_aelis_big_integer_planning.tooltip": "Use exact BigInteger arithmetic for AELIS orders and intermediate demands above Long.MAX_VALUE. Long projections are for compatibility; CPUs decide execution and can read the exact execution API. When disabled, automatic AELIS uses legacy long arithmetic; explicit exact API requests remain exact.\nDefault: true",
   "appliedenhancements.config.aelis_prefer_plannable_producer": "Prefer Plannable Producer",

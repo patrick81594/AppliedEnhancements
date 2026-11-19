@@ -121,6 +121,8 @@
   "appliedenhancements.config.enable_progress_display.tooltip": "显示合成计算进度与所选规划路径。\n默认：关闭",
   "appliedenhancements.config.enable_automatic_aelis_planner": "自动启用 AELIS 规划器",
   "appliedenhancements.config.enable_automatic_aelis_planner.tooltip": "在 AE2 原生规划流程中自动启用 AELIS。第三方接口调用不受此设置影响。手动合成计划的库存预留仅在此项开启时生效。\n默认：关闭",
+  "appliedenhancements.config.enable_chance_output_bonus": "概率产物加成",
+  "appliedenhancements.config.enable_chance_output_bonus.tooltip": "为已标记的处理样板计算额外（概率）产物，并计入请求的总数。仅影响已标记为概率产物的处理样板。需要在处理编码面板上启用标记开关。\n默认：关闭",
   "appliedenhancements.config.enable_aelis_big_integer_planning": "启用 AELIS 大整数规划",
   "appliedenhancements.config.enable_aelis_big_integer_planning.tooltip": "对超过有符号 64 位整数上限的 AELIS 订单和中间需求使用精确大整数运算。long 投影仅供兼容；由合成处理器自行决定执行，并可读取精确执行接口。关闭后，自动 AELIS 使用原有 long 运算；显式精确接口请求仍使用精确大整数运算。\n默认：开启",
   "appliedenhancements.config.aelis_prefer_plannable_producer": "优先使用可规划的样板",

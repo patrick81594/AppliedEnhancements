@@ -19,6 +19,7 @@ public final class Config {
     public static final ModConfigSpec.BooleanValue ENABLE_AELIS_BIG_INTEGER_PLANNING;
     public static final ModConfigSpec.BooleanValue AELIS_PREFER_PLANNABLE_PRODUCER;
     public static final ModConfigSpec.BooleanValue AELIS_CHUNK_RETURNED_ITEM_FEEDBACK;
+    public static final ModConfigSpec.BooleanValue ENABLE_CHANCE_OUTPUT_BONUS;
     public static final ModConfigSpec.BooleanValue ENABLE_PROVIDER_OUTPUT_PULL;
     public static final ModConfigSpec.IntValue PROVIDER_OUTPUT_PULL_EXPIRY_SECONDS;
     public static final ModConfigSpec.IntValue AELIS_MAX_NODES;
@@ -218,6 +219,18 @@ public final class Config {
                 .defineEnum("seed_policy", AelisCycleSeedPolicy.PRESERVE_MINIMUM);
 
         builder.pop();
+
+        ENABLE_CHANCE_OUTPUT_BONUS = builder
+                .comment(
+                        "Count extra (chance) outputs of marked processing patterns toward the requested total.",
+                        "Only patterns marked as chance-output patterns are affected.",
+                        "Requires the marker toggle on the processing encoding panel.",
+                        "为已标记的处理样板计算额外（概率）产物，并计入请求的总数。",
+                        "仅影响已标记为概率产物的处理样板。",
+                        "需要在处理编码面板上启用标记开关。",
+                        "Default / 默认值: false")
+                .translation("appliedenhancements.config.enable_chance_output_bonus")
+                .define("enable_chance_output_bonus", false);
 
         builder.pop();
         builder.pop();
