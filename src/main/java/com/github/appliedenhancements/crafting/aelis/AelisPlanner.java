@@ -6052,6 +6052,16 @@ public final class AelisPlanner {
                         if (!descendant.allCandidatesCompiled
                                 || descendant.compiledCandidates.size() != 1
                                 || descendant.candidatePatterns.size() != 1) {
+                            var outputs = new ArrayList<String>();
+                            for (IPatternDetails pattern : descendant.candidatePatterns) {
+                                outputs.add(pattern.getOutputs().toString());
+                            }
+                            com.appliedenhancements.AppliedEnhancements.LOGGER.debug(
+                                    "AELIS returned-item check: {} below {} has {} pattern(s), {} compiled,"
+                                            + " all compiled={}, barrier={} ({}); patterns: {}",
+                                    descendant.key, owner.key, descendant.candidatePatterns.size(),
+                                    descendant.compiledCandidates.size(), descendant.allCandidatesCompiled,
+                                    descendant.barrier, descendant.barrierReason, outputs);
                             throw new Fallback("fixed_remainder_incomplete_input_subgraph");
                         }
                         for (CompiledCandidate nested : descendant.compiledCandidates) {
