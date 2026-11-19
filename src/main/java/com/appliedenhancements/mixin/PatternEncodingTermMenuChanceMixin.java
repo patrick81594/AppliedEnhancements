@@ -78,10 +78,13 @@ public abstract class PatternEncodingTermMenuChanceMixin extends MEStorageMenu i
         return encoded;
     }
 
-    /** A pattern placed in the encoded slot sets the toggle from its marker. */
+    /**
+     * A pattern placed in the encoded slot sets the toggle from its marker. Emptying the slot keeps the
+     * toggle (otherwise taking out a freshly encoded pattern would reset it, found in game).
+     */
     @Inject(method = "onSlotChange", at = @At("TAIL"))
     private void appliedenhancements$loadChanceOutput(Slot slot, CallbackInfo ci) {
-        if (slot == (Object) encodedPatternSlot && isServerSide()) {
+        if (slot == (Object) encodedPatternSlot && isServerSide() && !slot.getItem().isEmpty()) {
             appliedenhancements$chanceOutput = ChanceOutputMarker.isMarked(slot.getItem());
         }
     }
