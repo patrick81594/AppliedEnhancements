@@ -23,6 +23,9 @@ public interface ExecutingCraftingJobCycleAccessor {
     @Accessor("remainingAmount")
     long appliedenhancements$getRemainingAmount();
 
+    @Accessor("remainingAmount")
+    void appliedenhancements$setRemainingAmount(long remainingAmount);
+
     @Accessor("timeTracker")
     ElapsedTimeTracker appliedenhancements$getTimeTracker();
 }

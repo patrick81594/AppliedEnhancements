@@ -25,6 +25,8 @@ import com.appliedenhancements.runtime.AelisCycleDispatchScope;
 import com.appliedenhancements.runtime.AelisCycleRuntimePreparation;
 import com.appliedenhancements.runtime.DataEnergisticsOrderCompletion;
 import com.appliedenhancements.runtime.CraftingAmountProjection;
+import com.appliedenhancements.runtime.ChanceOutputBonus;
+import com.appliedenhancements.Config;
 
 import appeng.api.config.Actionable;
 import appeng.api.crafting.IPatternDetails;
@@ -386,6 +388,49 @@ public abstract class CraftingCpuLogicBatchMixin {
                 ? 0
                 : original.call(what, forwardedAmount, mode);
         return retained + forwarded;
+    }
+
+    /**
+     * Chance-output bonus (step 2 of chance support). AE2 accepts only the items the job
+     * expects, so an extra item of the final output is refused. When the config is on and a
+     * marked pattern produces that output, the refused extra counts toward the requested total,
+     * capped at what the job still needs. The job finishes when the total is reached.
+     */
+    @WrapMethod(method = "insert")
+    private long appliedenhancements$chanceOutputBonus(
+            AEKey what,
+            long amount,
+            Actionable mode,
+            Operation<Long> original) {
+        long accepted = original.call(what, amount, mode);
+        if (what == null || job == null || amount <= accepted || !Config.ENABLE_CHANCE_OUTPUT_BONUS.get()) {
+            return accepted;
+        }
+        var jobAccess = (ExecutingCraftingJobCycleAccessor) job;
+        var finalOutput = jobAccess.appliedenhancements$getFinalOutput();
+        if (finalOutput == null || !what.matches(finalOutput)) {
+            return accepted;
+        }
+        if (!ChanceOutputBonus.hasMarkedProducer(jobAccess.appliedenhancements$getTasks().keySet(), what)) {
+            return accepted;
+        }
+        long remaining = jobAccess.appliedenhancements$getRemainingAmount();
+        long bonus = ChanceOutputBonus.bonusToAccept(amount - accepted, remaining);
+        if (bonus <= 0) {
+            return accepted;
+        }
+        if (mode == Actionable.SIMULATE) {
+            return accepted + bonus;
+        }
+        inventory.insert(what, bonus, Actionable.MODULATE);
+        ((ElapsedTimeTrackerAccessor) jobAccess.appliedenhancements$getTimeTracker())
+                .appliedenhancements$decrementItems(bonus, what.getType());
+        jobAccess.appliedenhancements$setRemainingAmount(remaining - bonus);
+        cluster.markDirty();
+        if (remaining - bonus <= 0) {
+            finishJob(true);
+        }
+        return accepted + bonus;
     }
 
     @Inject(method = "writeToNBT", at = @At("RETURN"))
