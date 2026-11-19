@@ -17,4 +17,7 @@ public interface ElapsedTimeTrackerAccessor {
 
     @Invoker("decrementItems")
     void appliedenhancements$decrementItems(long amount, AEKeyType keyType);
+
+    @Invoker("addMaxItems")
+    void appliedenhancements$addMaxItems(long amount, AEKeyType keyType);
 }

@@ -20,6 +20,9 @@ public final class Config {
     public static final ModConfigSpec.BooleanValue AELIS_PREFER_PLANNABLE_PRODUCER;
     public static final ModConfigSpec.BooleanValue AELIS_CHUNK_RETURNED_ITEM_FEEDBACK;
     public static final ModConfigSpec.BooleanValue ENABLE_CHANCE_OUTPUT_BONUS;
+    public static final ModConfigSpec.BooleanValue ENABLE_CHANCE_TOP_UP;
+    public static final ModConfigSpec.IntValue CHANCE_TOP_UP_IDLE_SECONDS;
+    public static final ModConfigSpec.IntValue CHANCE_TOP_UP_MAX_FACTOR;
     public static final ModConfigSpec.BooleanValue ENABLE_PROVIDER_OUTPUT_PULL;
     public static final ModConfigSpec.IntValue PROVIDER_OUTPUT_PULL_EXPIRY_SECONDS;
     public static final ModConfigSpec.IntValue AELIS_MAX_NODES;
@@ -231,6 +234,35 @@ public final class Config {
                         "Default / 默认值: false")
                 .translation("appliedenhancements.config.enable_chance_output_bonus")
                 .define("enable_chance_output_bonus", false);
+
+        ENABLE_CHANCE_TOP_UP = builder
+                .comment(
+                        "When all crafts of a marked processing pattern are pushed and no output arrives for the idle time,",
+                        "push more crafts (sized by the pattern's learned yield, inputs taken from network storage) until",
+                        "the requested amount is reached. Requires the chance output bonus to be enabled.",
+                        "当已标记处理样板的所有合成均已推送且在空闲时间内没有产物到达时，",
+                        "按该样板学习到的产出率追加合成（输入取自网络存储），直到达到请求数量。需要同时启用概率产物计数。",
+                        "Default / 默认值: false")
+                .translation("appliedenhancements.config.enable_chance_top_up")
+                .define("enable_chance_top_up", false);
+
+        CHANCE_TOP_UP_IDLE_SECONDS = builder
+                .comment(
+                        "Seconds without any output (after every craft was pushed) before a top-up wave starts.",
+                        "在所有合成均已推送后，多少秒没有产物到达才开始追加一轮合成。",
+                        "Range / 取值范围: 1 ~ 3600",
+                        "Default / 默认值: 30")
+                .translation("appliedenhancements.config.chance_top_up_idle_seconds")
+                .defineInRange("chance_top_up_idle_seconds", 30, 1, 3_600);
+
+        CHANCE_TOP_UP_MAX_FACTOR = builder
+                .comment(
+                        "A job may add at most this many times its planned crafts of a pattern as top-up crafts.",
+                        "单个任务追加的合成数最多为该样板计划合成数的这个倍数。",
+                        "Range / 取值范围: 1 ~ 1000",
+                        "Default / 默认值: 10")
+                .translation("appliedenhancements.config.chance_top_up_max_factor")
+                .defineInRange("chance_top_up_max_factor", 10, 1, 1_000);
 
         builder.pop();
         builder.pop();

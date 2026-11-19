@@ -98,6 +98,17 @@ public abstract class CraftingCpuLogicBatchMixin {
     @Unique
     private static final String APPLIEDENHANCEMENTS_CHANCE_MARKS_TAG = "appliedenhancementsChanceMarks";
 
+    /** Top-up wave bookkeeping of this job (not saved). */
+    @Unique
+    private final com.appliedenhancements.runtime.ChanceTopUpState<IPatternDetails> appliedenhancements$topUp =
+            new com.appliedenhancements.runtime.ChanceTopUpState<>();
+
+    @Unique
+    private long appliedenhancements$now() {
+        var level = cluster.getLevel();
+        return level == null ? -1 : level.getGameTime();
+    }
+
     @ModifyVariable(method = "trySubmitJob", at = @At("HEAD"), argsOnly = true)
     private ICraftingPlan appliedenhancements$prepareCyclePlan(ICraftingPlan plan) {
         return AelisCycleExecutionApi.preparePlan(plan);
@@ -179,7 +190,10 @@ public abstract class CraftingCpuLogicBatchMixin {
             }
             if (pushed) {
                 dispatch.accepted();
-                appliedenhancements$chanceMarks.recordIfMarked(details);
+                if (appliedenhancements$chanceMarks.recordIfMarked(details)) {
+                    appliedenhancements$topUp.onPush(details, details.getPrimaryOutput().what(),
+                            appliedenhancements$now());
+                }
                 if (job == completionJob && virtualCompletion != null) {
                     virtualCompletion.reconcileAcceptedPush();
                 }
@@ -412,25 +426,37 @@ public abstract class CraftingCpuLogicBatchMixin {
             Actionable mode,
             Operation<Long> original) {
         long accepted = original.call(what, amount, mode);
+        long total = accepted + appliedenhancements$chanceBonusFor(what, amount, accepted, mode);
+        if (total > 0 && mode == Actionable.MODULATE && what != null) {
+            long now = appliedenhancements$now();
+            if (appliedenhancements$chanceMarks.contains(what)) {
+                appliedenhancements$topUp.onOutput(what, total, now);
+            } else {
+                appliedenhancements$topUp.touch(now);
+            }
+        }
+        return total;
+    }
+
+    /** The bonus part of {@link #appliedenhancements$chanceOutputBonus}: 0 when nothing applies. */
+    @Unique
+    private long appliedenhancements$chanceBonusFor(AEKey what, long amount, long accepted, Actionable mode) {
         if (what == null || job == null || amount <= accepted || !Config.ENABLE_CHANCE_OUTPUT_BONUS.get()) {
-            return accepted;
+            return 0;
         }
         var jobAccess = (ExecutingCraftingJobCycleAccessor) job;
         var finalOutput = jobAccess.appliedenhancements$getFinalOutput();
         if (finalOutput == null || !what.matches(finalOutput)) {
-            return accepted;
+            return 0;
         }
         if (!appliedenhancements$chanceMarks.contains(what)
                 && !ChanceOutputBonus.hasMarkedProducer(jobAccess.appliedenhancements$getTasks().keySet(), what)) {
-            return accepted;
+            return 0;
         }
         long remaining = jobAccess.appliedenhancements$getRemainingAmount();
         long bonus = ChanceOutputBonus.bonusToAccept(amount - accepted, remaining);
-        if (bonus <= 0) {
-            return accepted;
-        }
-        if (mode == Actionable.SIMULATE) {
-            return accepted + bonus;
+        if (bonus <= 0 || mode == Actionable.SIMULATE) {
+            return Math.max(bonus, 0);
         }
         inventory.insert(what, bonus, Actionable.MODULATE);
         ((ElapsedTimeTrackerAccessor) jobAccess.appliedenhancements$getTimeTracker())
@@ -440,7 +466,30 @@ public abstract class CraftingCpuLogicBatchMixin {
         if (remaining - bonus <= 0) {
             finishJob(true);
         }
-        return accepted + bonus;
+        return bonus;
+    }
+
+    /** After the normal tick: start a chance top-up wave when a marked pattern's outputs are overdue. */
+    @WrapMethod(method = "tickCraftingLogic")
+    private void appliedenhancements$chanceTopUp(
+            appeng.api.networking.energy.IEnergyService energyService,
+            CraftingService craftingService,
+            Operation<Void> original) {
+        original.call(energyService, craftingService);
+        if (job == null || appliedenhancements$chanceMarks.isEmpty()) {
+            return;
+        }
+        var grid = cluster.getGrid();
+        long now = appliedenhancements$now();
+        if (grid == null || now < 0) {
+            return;
+        }
+        if (appliedenhancements$topUp.lastActivity() < 0) {
+            appliedenhancements$topUp.touch(now);
+        }
+        com.appliedenhancements.runtime.ChanceTopUpRunner.tick(
+                new com.appliedenhancements.runtime.Ae2TopUpJob(job, inventory),
+                appliedenhancements$topUp, appliedenhancements$chanceMarks, grid, now);
     }
 
     @Inject(method = "writeToNBT", at = @At("RETURN"))
@@ -519,6 +568,7 @@ public abstract class CraftingCpuLogicBatchMixin {
             boolean success, CallbackInfo callback) {
         appliedenhancements$cycleRuntime = null;
         appliedenhancements$chanceMarks.clear();
+        appliedenhancements$topUp.clear();
     }
 
 }

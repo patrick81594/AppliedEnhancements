@@ -230,3 +230,9 @@ Tasks added on 2026-11-17, not done yet.
 - [x] (2026-11-19, blocked provider + 16 extra stone inserted: marked job ends, unmarked keeps waiting) AE2 CPU: marked pattern with chance extras - extras count toward the requested total, job ends early; unmarked pattern unchanged.
 - [x] (2026-11-19, job ended; no unmarked control on quantum) AdvancedAE quantum CPU: same (reflection path; look for "Chance-output bonus disabled" in the log).
 - Note: the config switch must be set in the Configured screen (editing the toml while the game runs is not reloaded).
+
+## D3 chance outputs (step b: top-up waves) - needs enable_chance_output_bonus and enable_chance_top_up
+- [x] (2026-11-19, AE2 CPU) Marked pattern whose output never arrives: after the idle time the CPU drops the stale outputs and pushes more crafts (logged as "Chance top-up wave ..."); limit = factor x planned crafts, then it keeps waiting; inserting the output by hand finishes the job.
+- [x] (2026-11-19) Learned yield is saved with the world and used after a restart; a job reloaded mid-wave recovers the marked producer.
+- [ ] AdvancedAE quantum CPU top-up: NOT implemented yet (only the bonus is).
+- [ ] A real chance-output machine (e.g. LTX hydrosieve) end to end.

@@ -20,10 +20,12 @@ public final class ChanceJobMarks {
     private final Set<AEKey> keys = new LinkedHashSet<>();
 
     /** Records the pattern's primary output when the pattern is marked. */
-    public void recordIfMarked(IPatternDetails pattern) {
+    public boolean recordIfMarked(IPatternDetails pattern) {
         if (pattern.getDefinition() instanceof AEItemKey item && ChanceOutputMarker.isMarked(item.toStack())) {
             add(pattern.getPrimaryOutput().what());
+            return true;
         }
+        return false;
     }
 
     public void add(AEKey key) {
