@@ -224,3 +224,8 @@ Tasks added on 2026-11-17, not done yet.
       * Note what the existing code already does: AELIS "fixed remainder" handling (`AelisFixedRemainder`) and
         `MolecularReusableInputAdapters`. The result decides how much of Phase 7 (a "reused ingredient" marker in
         patterns) is still needed.
+## D3 chance outputs (step a) - needs crafting.enable_chance_output_bonus = true
+- [ ] Processing mode of the pattern encoding terminal shows a green/grey "%" toggle left of the clear button; tooltip texts OK; hidden in the other modes.
+- [ ] Encode with the toggle on: reloading that pattern into the terminal shows it on; an unmarked pattern shows it off; marked and unmarked patterns do not stack.
+- [ ] AE2 CPU: marked pattern with chance extras - extras count toward the requested total, job ends early; unmarked pattern unchanged.
+- [ ] AdvancedAE quantum CPU: same (reflection path; look for "Chance-output bonus disabled" in the log).

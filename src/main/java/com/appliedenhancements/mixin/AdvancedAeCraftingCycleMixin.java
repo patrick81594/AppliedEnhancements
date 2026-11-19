@@ -158,6 +158,9 @@ public abstract class AdvancedAeCraftingCycleMixin {
             runtime.recordReturned(key, Math.max(0, Math.min(amount, before - getWaitingFor(key))));
             appliedenhancements$finishReturnedCycle();
         }
+        // Chance outputs of marked patterns: extra items count toward the requested total.
+        accepted += com.appliedenhancements.runtime.AdvancedAeChanceOutputBonus.insertBonus(
+                this, getInventory(), key, amount, accepted, mode, () -> finishJob(true));
         return accepted;
     }
 
