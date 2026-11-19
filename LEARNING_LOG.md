@@ -1241,3 +1241,21 @@ NeoForge 26.1.2.126, Java 25).
   * "Works without my mod" is the fastest way to decide whose bug it is; a full world backup makes it safe.
   * New planner behaviour goes behind a default-off switch and gets a test for "off = exactly as before".
   * Windows PowerShell 5.1's ZipFile writes backslash paths: Windows restores fine, Linux `unzip` patterns miss them.
+
+## Phase 7: automated in-world tests on the real modpack ("pack tests")
+- What: a separate test-only mod (source set `packtests`) with AE2 test plots — rigs built in code: AE2 CPU,
+  Quantum Computer, Assembler Matrix, pattern providers, a Productive Bees bottler with an import bus. They run as
+  Minecraft game tests on a copy of the FTB Evolution 2 server (scripts/packtest/). First green suite: 3 smoke
+  rigs (64 planks each) + 3 sugar rigs for B-b (AELIS chunks: 48 sugar in 344 ticks vs AE2 386, the CPU took all
+  8 glass bottles at once; with 0 bottles the plan misses exactly 1).
+- Why: Patrick's manual tests depended on the state of his base (two honey-bottle patterns hid B-b for an hour);
+  a rig contains exactly what the test needs, and every later change can be re-checked without him.
+- Lessons:
+  * Read the WHOLE guard before trusting a flag: NeoForge's isGametestEnabled() returns false on any production
+    server before it even reads -Dneoforge.enableGameTest (my first claim "the flag is enough" was wrong).
+  * An empty MC 26 server pauses after 60 s (pause-when-empty-seconds) — game tests freeze silently.
+  * A script that waits for a log line must know the exact wording ("2 required test(s) failed :(").
+  * An unfiltered AE2 26 import bus also imports FLUIDS: on a machine it can drain the machine's input tank and
+    stall the craft. Always filter an import bus on a machine to its outputs (Patrick's hypothesis, confirmed).
+  * Check results after the job is really finished: the CPU returns held items when the job ends, a tick later.
+  * Compare the automated result with a known manual one (Patrick's in-game sugar line) before trusting it.

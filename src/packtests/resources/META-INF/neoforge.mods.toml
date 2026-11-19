@@ -1,0 +1,29 @@
+# TEST-ONLY mod: in-world test rigs for Applied Enhancements on a copy of the FTB Evolution 2 server.
+# Never install this jar in a real instance. The rigs are only registered when the server runs with
+# -Dneoforge.enableGameTest=true -Dappeng.tests=true.
+modLoader="javafml"
+loaderVersion="${loader_version_range}"
+license="${mod_license}"
+
+[[mods]]
+modId="appliedenhancements_packtests"
+version="${mod_version}"
+displayName="Applied Enhancements pack tests (DO NOT SHIP)"
+description='''In-world test rigs (AE2 test plots) for Applied Enhancements, run on a test server only.'''
+
+[[mixins]]
+config="appliedenhancements_packtests.mixins.json"
+
+[[dependencies.appliedenhancements_packtests]]
+modId="appliedenhancements"
+type="required"
+versionRange="[${mod_version},)"
+ordering="AFTER"
+side="BOTH"
+
+[[dependencies.appliedenhancements_packtests]]
+modId="ae2"
+type="required"
+versionRange="${ae2_version_range}"
+ordering="AFTER"
+side="BOTH"

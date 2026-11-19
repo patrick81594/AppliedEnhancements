@@ -139,6 +139,28 @@ configurations {
     runtimeClasspath.extendsFrom localRuntime
 }
 
+// Pack tests: a separate TEST-ONLY mod (appliedenhancements_packtests) holding in-world AE2 test rigs
+// (AE2's @TestPlotClass/@TestPlot, run as Minecraft game tests). It runs on a COPY of the FTB Evolution 2
+// server with -Dneoforge.enableGameTest=true -Dappeng.tests=true. Never install it in a real instance.
+sourceSets {
+    packtests {
+        compileClasspath += sourceSets.main.output
+        runtimeClasspath += sourceSets.main.output
+    }
+}
+configurations {
+    packtestsImplementation.extendsFrom implementation
+}
+neoForge {
+    addModdingDependenciesTo sourceSets.packtests
+}
+tasks.register('packtestsJar', Jar) {
+    group = 'build'
+    description = 'Builds the test-only pack-test mod (never ship or install it in a real instance).'
+    archiveBaseName = "${mod_id}-packtests"
+    from sourceSets.packtests.output
+}
+
 dependencies {
     // NeoForge/Minecraft come from `neoForge { version = ... }` above (ModDevGradle).
 

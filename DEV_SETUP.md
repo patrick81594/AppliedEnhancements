@@ -117,3 +117,25 @@ but several other tests instantiate or inspect Mixin classes directly, which a r
 
 Notes: the first `test` run downloads Minecraft's assets (~438 MiB, once, into the Gradle cache);
 the FML tests run in `build/minecraft-junit` as working directory.
+
+## Pack tests (in-world rigs on the real modpack)
+
+In-world test rigs (AE2 "test plots") that build small AE2 setups — including blocks from other mods in the
+FTB Evolution 2 pack (AdvancedAE Quantum Computer, ExtendedAE Assembler Matrix, Productive Bees bottler …) —
+start a crafting job and check the result. They run headless on a COPY of the FTB Evolution 2 server.
+
+- Code: source set `src/packtests` → `./gradlew packtestsJar` → `build/libs/appliedenhancements-packtests-*.jar`,
+  a separate TEST-ONLY mod (`appliedenhancements_packtests`). **Never install it in a real instance.**
+- Rigs: classes annotated `@TestPlotClass`, methods `@TestPlot("appliedenhancements/<name>")`; AE2 registers them
+  as Minecraft game tests `ae2:appliedenhancements/<name>`. Helpers in `Rigs` (CPU, Assembler Matrix, pattern
+  insertion, capability-based content probe, `[AE-PACKTEST]` report lines).
+- NeoForge 26 disables game tests on every production server; the test mod's Mixin re-enables them only with
+  `-Dappliedenhancements.packtests=true` (set by the prep script, together with `-Dneoforge.enableGameTest=true`
+  and `-Dappeng.tests=true`).
+- Run (WSL, needs the installed FTB server in `~/dev/ae-port/server-1.9.0/server` and `./gradlew build packtestsJar`):
+  `scripts/packtest/packtest-suite.sh <logname> 'ae2:appliedenhancements/*'` — several selectors run one after
+  another (needed when tests change a server-wide setting). Live: `tail -f ~/dev/ae-port/out/<logname>.log`.
+  The script prints per-selector results, failures, `[AE-PACKTEST]` lines, AELIS decisions and errors, and exits 0
+  only if everything passed. `packtest-prep.sh` creates the server copy once (`server-1.9.0/packtest`), copies the
+  current jars, sets the JVM flags, a flat creative world and `pause-when-empty-seconds=0` (an empty MC 26 server
+  pauses after 60 s, which would freeze the tests).
