@@ -62,6 +62,26 @@ public final class AdvancedAeTopUp {
         }
     }
 
+    /** TEMPORARY diagnostics: "waitingFor + final + remaining" of the job, or null without a job. */
+    public static String jobText(Object cpuLogic) {
+        try {
+            var a = AdvancedAeChanceOutputBonus.access();
+            Object job = a.logicJob().get(cpuLogic);
+            if (job == null) {
+                return null;
+            }
+            var waiting = (ListCraftingInventory) a.jobWaiting().get(job);
+            if (waiting.list.isEmpty()) {
+                return null;
+            }
+            return "final=" + a.jobFinal().get(job) + " remaining=" + a.jobRemaining().getLong(job)
+                    + " waitingFor=" + DiagLog.counterText(waiting.list)
+                    + " tasksLeft=" + ((Map<?, ?>) a.jobTasks().get(job)).size();
+        } catch (ReflectiveOperationException | RuntimeException e) {
+            return "<" + e + ">";
+        }
+    }
+
     private static void disable(Exception e) {
         failed = true;
         AppliedEnhancements.LOGGER.error("Chance top-up disabled for the AdvancedAE CPU: {}", e.toString());

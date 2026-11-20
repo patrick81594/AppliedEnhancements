@@ -151,6 +151,15 @@ public final class DiagLog {
         return collection instanceof java.util.Collection<?> c ? String.valueOf(c.size()) : String.valueOf(collection);
     }
 
+    /** "key xN, key xM" for a KeyCounter (diagnostics). */
+    public static String counterText(appeng.api.stacks.KeyCounter counter) {
+        var out = new StringBuilder("[");
+        for (var entry : counter) {
+            out.append(out.length() > 1 ? ", " : "").append(entry.getKey()).append(" x").append(entry.getLongValue());
+        }
+        return out.append(']').toString();
+    }
+
     public static boolean isMatrix(Object provider) {
         return provider != null && provider.getClass().getName().contains("AssemblerMatrix");
     }

@@ -56,6 +56,8 @@ public abstract class AdvancedAeCraftingCycleMixin {
     @Unique private final com.appliedenhancements.runtime.ChanceJobMarks appliedenhancements$chanceMarks =
             new com.appliedenhancements.runtime.ChanceJobMarks();
     @Unique private static final String APPLIEDENHANCEMENTS_CHANCE_MARKS_TAG = "appliedenhancementsChanceMarks";
+    /** TEMPORARY diagnostics: last push/insert game time (stall detection). */
+    @Unique private long appliedenhancements$diagActivity = -1;
     @Unique private final com.appliedenhancements.runtime.ChanceTopUpState<IPatternDetails> appliedenhancements$topUp =
             new com.appliedenhancements.runtime.ChanceTopUpState<>();
     @Unique private static final String APPLIEDENHANCEMENTS_CYCLE_TAG = "appliedenhancementsCycleRuntime";
@@ -150,6 +152,7 @@ public abstract class AdvancedAeCraftingCycleMixin {
             }
             if (accepted) {
                 dispatch.accepted();
+                appliedenhancements$diagActivity = com.appliedenhancements.runtime.AdvancedAeTopUp.now(this);
                 if (appliedenhancements$chanceMarks.recordIfMarked(pattern)) {
                     appliedenhancements$topUp.onPush(pattern, pattern.getPrimaryOutput().what(),
                             com.appliedenhancements.runtime.AdvancedAeTopUp.now(this));
@@ -163,6 +166,7 @@ public abstract class AdvancedAeCraftingCycleMixin {
     private long appliedenhancements$retainOutput(AEKey key, long amount, Actionable mode,
             Operation<Long> original) {
         var runtime = appliedenhancements$cycleRuntime;
+        long diagWait = key == null ? 0 : getWaitingFor(key);
         long before = runtime == null || key == null ? 0 : getWaitingFor(key);
         long accepted = appliedenhancements$insertRetainedOutput(key, amount, mode, original);
         if (runtime != null && mode == Actionable.MODULATE && key != null) {
@@ -173,8 +177,13 @@ public abstract class AdvancedAeCraftingCycleMixin {
         accepted += com.appliedenhancements.runtime.AdvancedAeChanceOutputBonus.insertBonus(
                 this, appliedenhancements$chanceMarks, getInventory(), key, amount, accepted, mode,
                 () -> finishJob(true));
+        if (key != null && mode == Actionable.MODULATE && accepted < Math.min(amount, diagWait)) {
+            com.appliedenhancements.runtime.DiagLog.log("quantum.refuse." + key,
+                    "quantum cpu insert {}: offered {} accepted {} while waiting for {}", key, amount, accepted, diagWait);
+        }
         if (accepted > 0 && mode == Actionable.MODULATE && key != null) {
             long now = com.appliedenhancements.runtime.AdvancedAeTopUp.now(this);
+            appliedenhancements$diagActivity = now;
             if (appliedenhancements$chanceMarks.contains(key)) {
                 appliedenhancements$topUp.onOutput(key, accepted, now);
             } else {
@@ -189,6 +198,21 @@ public abstract class AdvancedAeCraftingCycleMixin {
     private void appliedenhancements$chanceTopUp(IEnergyService energyService, CraftingService craftingService,
             Operation<Void> original) {
         original.call(energyService, craftingService);
+        if (hasJob()) {
+            long now = com.appliedenhancements.runtime.AdvancedAeTopUp.now(this);
+            if (now >= 0 && appliedenhancements$diagActivity < 0) {
+                appliedenhancements$diagActivity = now;
+            } else if (now >= 0 && now - appliedenhancements$diagActivity >= 1200
+                    && com.appliedenhancements.runtime.DiagLog.every("cpu.stall.quantum", 30000)) {
+                var text = com.appliedenhancements.runtime.AdvancedAeTopUp.jobText(this);
+                if (text != null) {
+                    com.appliedenhancements.runtime.DiagLog.log("cpu.stall.quantum.log",
+                            "quantum cpu job STALLED {}s: {} cpuInventory={}",
+                            (now - appliedenhancements$diagActivity) / 20, text,
+                            com.appliedenhancements.runtime.DiagLog.counterText(getInventory().list));
+                }
+            }
+        }
         com.appliedenhancements.runtime.AdvancedAeTopUp.tick(this, appliedenhancements$chanceMarks,
                 appliedenhancements$topUp, getInventory());
     }

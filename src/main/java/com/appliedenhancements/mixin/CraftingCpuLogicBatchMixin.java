@@ -103,6 +103,37 @@ public abstract class CraftingCpuLogicBatchMixin {
     private final com.appliedenhancements.runtime.ChanceTopUpState<IPatternDetails> appliedenhancements$topUp =
             new com.appliedenhancements.runtime.ChanceTopUpState<>();
 
+    /** TEMPORARY diagnostics: last push/insert game time (stall detection). */
+    @Unique
+    private long appliedenhancements$diagActivity = -1;
+
+    @Shadow
+    public abstract long getWaitingFor(AEKey what);
+
+    @Unique
+    private void appliedenhancements$diagStall() {
+        long now = appliedenhancements$now();
+        if (now < 0 || appliedenhancements$diagActivity < 0) {
+            appliedenhancements$diagActivity = now;
+            return;
+        }
+        if (now - appliedenhancements$diagActivity < 1200 || !com.appliedenhancements.runtime.DiagLog.every("cpu.stall.ae2", 30000)) {
+            return;
+        }
+        var access = (ExecutingCraftingJobCycleAccessor) job;
+        var waiting = access.appliedenhancements$getWaitingFor();
+        if (waiting.list.isEmpty()) {
+            return;
+        }
+        com.appliedenhancements.runtime.DiagLog.log("cpu.stall.ae2.log",
+                "cpu job STALLED {}s: final={} remaining={} waitingFor={} tasksLeft={} cpuInventory={}",
+                (now - appliedenhancements$diagActivity) / 20, access.appliedenhancements$getFinalOutput(),
+                access.appliedenhancements$getRemainingAmount(),
+                com.appliedenhancements.runtime.DiagLog.counterText(waiting.list),
+                access.appliedenhancements$getTasks().size(),
+                com.appliedenhancements.runtime.DiagLog.counterText(inventory.list));
+    }
+
     @Unique
     private long appliedenhancements$now() {
         var level = cluster.getLevel();
@@ -190,6 +221,7 @@ public abstract class CraftingCpuLogicBatchMixin {
             }
             if (pushed) {
                 dispatch.accepted();
+                appliedenhancements$diagActivity = appliedenhancements$now();
                 if (appliedenhancements$chanceMarks.recordIfMarked(details)) {
                     appliedenhancements$topUp.onPush(details, details.getPrimaryOutput().what(),
                             appliedenhancements$now());
@@ -425,8 +457,18 @@ public abstract class CraftingCpuLogicBatchMixin {
             long amount,
             Actionable mode,
             Operation<Long> original) {
+        long waitBefore = what == null ? 0 : getWaitingFor(what);
         long accepted = original.call(what, amount, mode);
         long total = accepted + appliedenhancements$chanceBonusFor(what, amount, accepted, mode);
+        if (what != null && mode == Actionable.MODULATE) {
+            if (total > 0) {
+                appliedenhancements$diagActivity = appliedenhancements$now();
+            }
+            if (total < Math.min(amount, waitBefore)) {
+                com.appliedenhancements.runtime.DiagLog.log("cpu.refuse." + what,
+                        "cpu insert {}: offered {} accepted {} while waiting for {}", what, amount, total, waitBefore);
+            }
+        }
         if (total > 0 && mode == Actionable.MODULATE && what != null) {
             long now = appliedenhancements$now();
             if (appliedenhancements$chanceMarks.contains(what)) {
@@ -476,6 +518,9 @@ public abstract class CraftingCpuLogicBatchMixin {
             CraftingService craftingService,
             Operation<Void> original) {
         original.call(energyService, craftingService);
+        if (job != null) {
+            appliedenhancements$diagStall();
+        }
         if (job == null || appliedenhancements$chanceMarks.isEmpty()) {
             return;
         }

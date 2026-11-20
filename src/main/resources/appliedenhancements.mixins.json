@@ -17,6 +17,7 @@
     "AssemblerMatrixClusterDiagMixin",
     "AssemblerMatrixPatternDiagMixin",
     "AssemblerMatrixThreadDiagMixin",
+    "AssemblerMatrixDoneDiagMixin",
     "CraftAmountMenuMixin",
     "CraftConfirmMenuMixin",
     "CraftingCPUClusterCycleAwareMixin",
