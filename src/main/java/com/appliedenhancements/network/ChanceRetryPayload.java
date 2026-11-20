@@ -37,6 +37,7 @@ public record ChanceRetryPayload(AEKey key) implements CustomPacketPayload {
                 case STARTED -> "message.appliedenhancements.chance_retry.started";
                 case NO_JOB -> "message.appliedenhancements.chance_retry.no_job";
                 case ALREADY_RUNNING -> "message.appliedenhancements.chance_retry.already_running";
+                case NOT_WAITING -> "message.appliedenhancements.chance_retry.not_waiting";
                 case NOT_MARKED -> "message.appliedenhancements.chance_retry.not_marked";
             };
             FeedbackToastPayload.send(player, FeedbackToastPayload.Kind.CRAFTING_PLAN, message, 0);

@@ -531,8 +531,7 @@ public abstract class CraftingCpuLogicBatchMixin implements com.appliedenhanceme
         if (job == null) {
             return Result.NO_JOB;
         }
-        var output = ((ExecutingCraftingJobCycleAccessor) job).appliedenhancements$getFinalOutput();
-        if (output == null || !output.what().equals(key) || !appliedenhancements$chanceMarks.contains(key)) {
+        if (key == null || !appliedenhancements$chanceMarks.contains(key)) {
             return Result.NOT_MARKED;
         }
         if (appliedenhancements$retryPlan != null
@@ -540,10 +539,17 @@ public abstract class CraftingCpuLogicBatchMixin implements com.appliedenhanceme
                         && !appliedenhancements$retryLink.isCanceled())) {
             return Result.ALREADY_RUNNING;
         }
-        long outstanding = ((ExecutingCraftingJobCycleAccessor) job).appliedenhancements$getRemainingAmount();
+        var jobAccess = (ExecutingCraftingJobCycleAccessor) job;
+        var output = jobAccess.appliedenhancements$getFinalOutput();
+        long outstanding = output != null && key.matches(output)
+                ? jobAccess.appliedenhancements$getRemainingAmount()
+                : getWaitingFor(key);
         var grid = cluster.getGrid();
-        if (grid == null || outstanding <= 0) {
+        if (grid == null) {
             return Result.NO_JOB;
+        }
+        if (outstanding <= 0) {
+            return Result.NOT_WAITING;
         }
         var src = new appeng.me.helpers.MachineSource(grid::getPivot);
         appeng.api.networking.crafting.ICraftingSimulationRequester requester = () -> src;

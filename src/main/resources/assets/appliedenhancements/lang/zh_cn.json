@@ -246,7 +246,8 @@
   "gui.appliedenhancements.plan.tree.cyclic_amount": "循环 %s",
   "message.appliedenhancements.chance_retry.started": "已为未完成的数量请求重试任务。此任务结束时它会被取消。",
   "message.appliedenhancements.chance_retry.no_job": "此 CPU 上没有正在运行的任务。",
-  "message.appliedenhancements.chance_retry.not_marked": "只能重试已标记概率图样的请求物品。",
+  "message.appliedenhancements.chance_retry.not_marked": "只能重试已标记概率图样的物品。",
   "message.appliedenhancements.chance_retry.already_running": "此合成的重试任务已在运行。",
-  "message.appliedenhancements.chance_stalled": "合成已停滞：概率产物未达到所需数量。在合成状态界面中鼠标中键点击该物品即可重试。"
+  "message.appliedenhancements.chance_stalled": "合成已停滞：概率产物未达到所需数量。在合成状态界面中鼠标中键点击该物品即可重试。",
+  "message.appliedenhancements.chance_retry.not_waiting": "此任务没有在等待该物品。"
 }

@@ -246,7 +246,8 @@
   "gui.appliedenhancements.plan.tree.cyclic_amount": "Cyclic %s",
   "message.appliedenhancements.chance_retry.started": "Retry job requested for the outstanding amount. It is cancelled when this job ends.",
   "message.appliedenhancements.chance_retry.no_job": "No job is running on this CPU.",
-  "message.appliedenhancements.chance_retry.not_marked": "Only the requested item of a chance-marked pattern can be retried.",
+  "message.appliedenhancements.chance_retry.not_marked": "Only items of chance-marked patterns can be retried.",
   "message.appliedenhancements.chance_retry.already_running": "A retry job for this craft is already running.",
-  "message.appliedenhancements.chance_stalled": "Craft stalled: the chance outputs did not reach the required amount. Middle-click the item in the crafting status screen to retry."
+  "message.appliedenhancements.chance_stalled": "Craft stalled: the chance outputs did not reach the required amount. Middle-click the item in the crafting status screen to retry.",
+  "message.appliedenhancements.chance_retry.not_waiting": "This job is not waiting for that item."
 }
