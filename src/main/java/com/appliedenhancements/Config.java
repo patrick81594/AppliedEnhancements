@@ -26,6 +26,9 @@ public final class Config {
     public static final ModConfigSpec.IntValue CHANCE_TOP_UP_MAX_FACTOR;
     public static final ModConfigSpec.BooleanValue ENABLE_PROVIDER_OUTPUT_PULL;
     public static final ModConfigSpec.IntValue PROVIDER_OUTPUT_PULL_EXPIRY_SECONDS;
+
+    // Diagnostics (module: com.appliedenhancements.runtime.DiagLog + the AssemblerMatrix*DiagMixin classes)
+    public static final ModConfigSpec.BooleanValue DIAGNOSTICS_ENABLED;
     public static final ModConfigSpec.IntValue AELIS_MAX_NODES;
     public static final ModConfigSpec.IntValue AELIS_COMPILE_BUDGET_MS;
     public static final ModConfigSpec.BooleanValue AELIS_DIAGNOSTICS;
@@ -404,6 +407,24 @@ public final class Config {
                         "Default / 默认值: 300")
                 .translation("appliedenhancements.config.provider_output_pull_expiry_seconds")
                 .defineInRange("output_pull_expiry_seconds", 300, 10, 86_400);
+
+        builder.pop();
+
+        builder.comment(
+                "Debug diagnostics",
+                "调试诊断")
+                .translation("appliedenhancements.config.section.diagnostics")
+                .push("diagnostics");
+
+        DIAGNOSTICS_ENABLED = builder
+                .comment(
+                        "Write [AE-DIAG] debug lines to the log (crafting CPU stalls and refusals, ExtendedAE Assembler Matrix",
+                        "state, pattern pushes). Costs some performance and log space: only switch on while debugging.",
+                        "在日志中输出 [AE-DIAG] 调试信息（合成 CPU 停滞与拒收、扩展 AE 装配矩阵状态、样板推送）。",
+                        "会占用一定性能和日志空间：仅在调试时开启。",
+                        "Default / 默认值: false")
+                .translation("appliedenhancements.config.enable_diagnostics_log")
+                .define("enabled", false);
 
         builder.pop();
 

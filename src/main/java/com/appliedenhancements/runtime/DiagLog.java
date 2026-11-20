@@ -7,9 +7,10 @@ import org.slf4j.LoggerFactory;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * TEMPORARY diagnostics for the Assembler Matrix investigation (2026-11-18). Logs at INFO with the
- * prefix "[AE-DIAG]", at most once per second per key. Remove together with AssemblerMatrixDiagMixin
- * once the cause is fixed.
+ * Optional debug diagnostics module (written for the Assembler Matrix investigation, 2026-11-18). Logs at INFO
+ * with the prefix "[AE-DIAG]", at most once per second per key. Everything is behind the config switch
+ * {@code diagnostics.enabled} (default false, see {@link #enabled()}); the AssemblerMatrix*DiagMixin classes and
+ * the diag calls inside the CPU mixins all go through this class.
  */
 @ApiStatus.Internal
 public final class DiagLog {
@@ -20,7 +21,22 @@ public final class DiagLog {
     private DiagLog() {
     }
 
+    /**
+     * Master switch (config {@code diagnostics.enabled}, default false). Every diagnostic entry point checks this
+     * first, so with it off the diagnostics cost one config read and nothing else. Safe before the config loaded.
+     */
+    public static boolean enabled() {
+        try {
+            return com.appliedenhancements.Config.DIAGNOSTICS_ENABLED.get();
+        } catch (RuntimeException | LinkageError notLoadedYet) {
+            return false;
+        }
+    }
+
     public static void log(String key, String message, Object... args) {
+        if (!enabled()) {
+            return;
+        }
         long now = System.currentTimeMillis();
         Long previous = LAST.get(key);
         if (previous != null && now - previous < INTERVAL_MS) {
@@ -35,6 +51,9 @@ public final class DiagLog {
 
     /** True at most once per {@code intervalMs} for {@code key}. */
     public static boolean every(String key, long intervalMs) {
+        if (!enabled()) {
+            return false;
+        }
         long now = System.currentTimeMillis();
         Long previous = LAST.get("every." + key);
         if (previous != null && now - previous < intervalMs) {
@@ -49,6 +68,9 @@ public final class DiagLog {
      * progress, grid contents and pending output. Reflection only (ExtendedAE is not a compile dependency).
      */
     public static void dumpMatrixThreads(Object cluster) {
+        if (!enabled()) {
+            return;
+        }
         try {
             int crafterIndex = 0;
             int busyThreads = 0;
@@ -166,7 +188,7 @@ public final class DiagLog {
 
     /** Reads a no-arg method or field by name, for logging only; never throws. */
     public static Object probe(Object target, String name) {
-        if (target == null) {
+        if (target == null || !enabled()) {
             return null;
         }
         for (Class<?> type = target.getClass(); type != null; type = type.getSuperclass()) {

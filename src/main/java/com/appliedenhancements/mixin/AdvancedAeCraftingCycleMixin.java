@@ -114,6 +114,9 @@ public abstract class AdvancedAeCraftingCycleMixin implements com.appliedenhance
     private Iterable<ICraftingProvider> appliedenhancements$diagProviders(CraftingService service,
             IPatternDetails pattern, Operation<Iterable<ICraftingProvider>> original) {
         var providers = original.call(service, pattern);
+        if (!com.appliedenhancements.runtime.DiagLog.enabled()) {
+            return providers;
+        }
         var names = new java.util.ArrayList<String>();
         for (var provider : providers) {
             names.add(provider.getClass().getSimpleName()

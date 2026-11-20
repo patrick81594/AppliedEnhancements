@@ -244,6 +244,9 @@ public abstract class CraftingCpuLogicBatchMixin implements com.appliedenhanceme
     private Iterable<ICraftingProvider> appliedenhancements$diagProviders(CraftingService service,
             IPatternDetails details, Operation<Iterable<ICraftingProvider>> original) {
         var providers = original.call(service, details);
+        if (!com.appliedenhancements.runtime.DiagLog.enabled()) {
+            return providers;
+        }
         var names = new java.util.ArrayList<String>();
         for (var provider : providers) {
             names.add(provider.getClass().getSimpleName()
