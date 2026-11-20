@@ -1,8 +1,8 @@
-package com.appliedenhancements.client.provider;
+package com.appliedenhancements.outputpull.client;
 
 import appeng.client.gui.widgets.IconButton;
 import appeng.util.Icon;
-import com.appliedenhancements.provider.ProviderOutputPull;
+import com.appliedenhancements.outputpull.ProviderOutputPull;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BooleanSupplier;

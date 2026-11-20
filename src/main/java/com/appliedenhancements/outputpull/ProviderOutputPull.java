@@ -1,4 +1,4 @@
-package com.appliedenhancements.provider;
+package com.appliedenhancements.outputpull;
 
 import net.minecraft.core.Direction;
 import org.jetbrains.annotations.Nullable;

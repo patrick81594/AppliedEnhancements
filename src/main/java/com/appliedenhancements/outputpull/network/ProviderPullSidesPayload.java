@@ -1,4 +1,4 @@
-package com.appliedenhancements.network;
+package com.appliedenhancements.outputpull.network;
 
 import com.appliedenhancements.AppliedEnhancements;
 import io.netty.buffer.ByteBuf;

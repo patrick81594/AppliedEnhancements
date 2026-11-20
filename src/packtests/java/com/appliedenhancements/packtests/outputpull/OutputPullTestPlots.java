@@ -1,4 +1,4 @@
-package com.appliedenhancements.packtests;
+package com.appliedenhancements.packtests.outputpull;
 
 import appeng.api.config.Actionable;
 import appeng.api.crafting.PatternDetailsHelper;
@@ -18,8 +18,10 @@ import appeng.server.testworld.PlotBuilder;
 import appeng.server.testworld.PlotTestHelper;
 import appeng.server.testworld.TestCraftingJob;
 import com.appliedenhancements.Config;
-import com.appliedenhancements.provider.ProviderOutputPull;
-import com.appliedenhancements.provider.ProviderOutputPullHost;
+import com.appliedenhancements.packtests.PackTestsMod;
+import com.appliedenhancements.packtests.Rigs;
+import com.appliedenhancements.outputpull.ProviderOutputPull;
+import com.appliedenhancements.outputpull.ProviderOutputPullHost;
 import java.util.List;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;

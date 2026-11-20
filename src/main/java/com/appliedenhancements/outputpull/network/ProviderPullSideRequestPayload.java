@@ -1,4 +1,4 @@
-package com.appliedenhancements.network;
+package com.appliedenhancements.outputpull.network;
 
 import appeng.api.networking.IGridNode;
 import appeng.api.networking.crafting.ICraftingProvider;
@@ -6,8 +6,8 @@ import appeng.api.networking.security.IActionHost;
 import appeng.menu.AEBaseMenu;
 import com.appliedenhancements.AppliedEnhancements;
 import com.appliedenhancements.Config;
-import com.appliedenhancements.provider.ProviderOutputPull;
-import com.appliedenhancements.provider.ProviderOutputPullHost;
+import com.appliedenhancements.outputpull.ProviderOutputPull;
+import com.appliedenhancements.outputpull.ProviderOutputPullHost;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.core.Direction;
 import net.minecraft.network.codec.ByteBufCodecs;

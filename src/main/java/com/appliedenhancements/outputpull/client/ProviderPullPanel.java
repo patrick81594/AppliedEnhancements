@@ -1,6 +1,6 @@
-package com.appliedenhancements.client.provider;
+package com.appliedenhancements.outputpull.client;
 
-import com.appliedenhancements.provider.ProviderOutputPull;
+import com.appliedenhancements.outputpull.ProviderOutputPull;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.Rect2i;

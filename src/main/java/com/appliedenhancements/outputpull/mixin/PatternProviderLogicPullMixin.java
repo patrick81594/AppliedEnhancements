@@ -1,4 +1,4 @@
-package com.appliedenhancements.mixin;
+package com.appliedenhancements.outputpull.mixin;
 
 import appeng.api.config.Actionable;
 import appeng.api.crafting.IPatternDetails;
@@ -11,8 +11,8 @@ import appeng.api.stacks.KeyCounter;
 import appeng.helpers.patternprovider.PatternProviderLogic;
 import appeng.helpers.patternprovider.PatternProviderLogicHost;
 import appeng.helpers.patternprovider.PatternProviderReturnInventory;
-import com.appliedenhancements.provider.OutputPullState;
-import com.appliedenhancements.provider.ProviderOutputPullHost;
+import com.appliedenhancements.outputpull.OutputPullState;
+import com.appliedenhancements.outputpull.ProviderOutputPullHost;
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;

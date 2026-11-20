@@ -1,4 +1,4 @@
-package com.appliedenhancements.provider;
+package com.appliedenhancements.outputpull;
 
 import appeng.api.AECapabilities;
 import appeng.api.config.Actionable;

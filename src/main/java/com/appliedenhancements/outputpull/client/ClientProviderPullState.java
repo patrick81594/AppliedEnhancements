@@ -1,8 +1,8 @@
-package com.appliedenhancements.client.provider;
+package com.appliedenhancements.outputpull.client;
 
-import com.appliedenhancements.network.ProviderPullSideRequestPayload;
-import com.appliedenhancements.network.ProviderPullSidesPayload;
-import com.appliedenhancements.provider.ProviderOutputPull;
+import com.appliedenhancements.outputpull.network.ProviderPullSideRequestPayload;
+import com.appliedenhancements.outputpull.network.ProviderPullSidesPayload;
+import com.appliedenhancements.outputpull.ProviderOutputPull;
 import net.minecraft.core.Direction;
 import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 import org.jetbrains.annotations.Nullable;

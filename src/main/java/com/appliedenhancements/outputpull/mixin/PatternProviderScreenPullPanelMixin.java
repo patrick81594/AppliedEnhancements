@@ -1,12 +1,12 @@
-package com.appliedenhancements.mixin;
+package com.appliedenhancements.outputpull.mixin;
 
 import appeng.client.gui.AEBaseScreen;
 import appeng.client.gui.implementations.PatternProviderScreen;
 import appeng.menu.AEBaseMenu;
-import com.appliedenhancements.client.provider.ClientProviderPullState;
-import com.appliedenhancements.client.provider.ProviderPullFaceButton;
-import com.appliedenhancements.client.provider.ProviderPullPanel;
-import com.appliedenhancements.client.provider.ProviderPullPanelToggleButton;
+import com.appliedenhancements.outputpull.client.ClientProviderPullState;
+import com.appliedenhancements.outputpull.client.ProviderPullFaceButton;
+import com.appliedenhancements.outputpull.client.ProviderPullPanel;
+import com.appliedenhancements.outputpull.client.ProviderPullPanelToggleButton;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
