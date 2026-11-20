@@ -6,6 +6,7 @@ import appeng.api.stacks.AEKey;
 import appeng.api.stacks.AEKeyType;
 import appeng.api.stacks.GenericStack;
 import appeng.crafting.inv.ListCraftingInventory;
+import com.appliedenhancements.AppliedEnhancements;
 import com.appliedenhancements.Config;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -111,13 +112,17 @@ public final class AdvancedAeChanceOutputBonus {
     /** Middle-click retry for the AdvancedAE (Quantum) CPU; see {@link ChanceTopUpControl}. */
     public static ChanceTopUpControl.Result requestRetry(Object cpuLogic, ChanceJobMarks marks, ChanceRetryLink retry,
             AEKey key, long waitingFor) {
+        String who = cpuLogic.getClass().getName() + "#" + System.identityHashCode(cpuLogic);
         if (failed) {
+            AppliedEnhancements.LOGGER.info("Chance retry (AdvancedAE CPU logic {}): NO_JOB, the reflection access was disabled earlier", who);
             return ChanceTopUpControl.Result.NO_JOB;
         }
         try {
             var a = access();
             Object job = a.logicJob().get(cpuLogic);
             if (job == null) {
+                AppliedEnhancements.LOGGER.info("Chance retry (AdvancedAE CPU logic {}, cpu {}): NO_JOB, this logic's job is null",
+                        who, a.logicCpu().get(cpuLogic));
                 return ChanceTopUpControl.Result.NO_JOB;
             }
             if (key == null || !marks.contains(key)) {
@@ -132,6 +137,8 @@ public final class AdvancedAeChanceOutputBonus {
             Object cpu = a.logicCpu().get(cpuLogic);
             if (!(a.cpuGrid().invoke(cpu) instanceof appeng.api.networking.IGrid grid)
                     || !(a.cpuLevel().invoke(cpu) instanceof net.minecraft.world.level.Level level)) {
+                AppliedEnhancements.LOGGER.info("Chance retry (AdvancedAE CPU logic {}): NO_JOB, getGrid/getLevel of cpu {} returned no grid/level",
+                        who, cpu);
                 return ChanceTopUpControl.Result.NO_JOB;
             }
             if (outstanding <= 0) {
@@ -140,6 +147,7 @@ public final class AdvancedAeChanceOutputBonus {
             retry.start(grid, level, key, outstanding);
             return ChanceTopUpControl.Result.STARTED;
         } catch (ReflectiveOperationException | RuntimeException e) {
+            AppliedEnhancements.LOGGER.info("Chance retry (AdvancedAE CPU logic {}): NO_JOB because of an exception", who, e);
             return ChanceTopUpControl.Result.NO_JOB;
         }
     }

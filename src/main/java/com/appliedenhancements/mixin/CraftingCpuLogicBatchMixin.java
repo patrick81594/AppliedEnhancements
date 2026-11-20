@@ -530,6 +530,7 @@ public abstract class CraftingCpuLogicBatchMixin implements com.appliedenhanceme
     @Override
     public Result appliedenhancements$requestChanceRetry(AEKey key) {
         if (job == null) {
+            com.appliedenhancements.AppliedEnhancements.LOGGER.info("Chance retry (AE2 CPU {}): NO_JOB, this CPU's job is null", cluster);
             return Result.NO_JOB;
         }
         if (key == null || !appliedenhancements$chanceMarks.contains(key)) {
@@ -545,6 +546,7 @@ public abstract class CraftingCpuLogicBatchMixin implements com.appliedenhanceme
                 : getWaitingFor(key);
         var grid = cluster.getGrid();
         if (grid == null) {
+            com.appliedenhancements.AppliedEnhancements.LOGGER.info("Chance retry (AE2 CPU {}): NO_JOB, the cluster has no grid", cluster);
             return Result.NO_JOB;
         }
         if (outstanding <= 0) {

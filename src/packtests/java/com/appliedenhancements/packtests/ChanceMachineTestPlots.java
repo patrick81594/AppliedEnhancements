@@ -43,6 +43,9 @@ public final class ChanceMachineTestPlots {
     private static final BlockPos SIEVE = new BlockPos(2, 0, -3);
     /** The sieve is EAST of the provider. */
     private static final Direction SIEVE_FACE = Direction.EAST;
+    /** Stage-2 provider WEST of the cable column and its chest (the two-stage rig). */
+    private static final BlockPos PROVIDER2 = new BlockPos(-1, 0, -3);
+    private static final BlockPos CHEST2 = new BlockPos(-2, 0, -3);
 
     /** The hydrosieve without upgrades is slow; the rigs shorten its craft time (see {@link #accelerate}). */
     private static final int FAST_CRAFT_TICKS = 60;
@@ -74,6 +77,89 @@ public final class ChanceMachineTestPlots {
         plot.test(helper -> run(helper, "chance_olivine_hcl_pull", AEItemKey.of(olivine), 2, true, 8));
     }
 
+    /**
+     * TWO-STAGE chain where the INTERMEDIATE is the chance output: peridotite dust + HCl -> 25% raw olivine
+     * (marked, real hydrosieve) -> stage 2 "1 raw olivine -> 1 stone" in a chest that a rig tick turns into stone
+     * (stand-in machine; the provider's pull mode brings the stone back). Requesting 4 stone stalls the job on the
+     * intermediate: the final output's pattern is never "all pushed" while olivine is missing.
+     */
+    @TestPlot(value = PackTestsMod.RIG_PREFIX + "chance_intermediate_olivine_stone", maxTicks = 20 * 420)
+    public static void intermediateOlivine(PlotBuilder plot) {
+        var olivine = item("ltxi:raw_olivine");
+        var dust = item("ltxi:peridotite_dust");
+        var hcl = fluid("ltxi:hydrochloric_acid");
+        build(plot, chancePattern(dust, hcl, 500, olivine), AEItemKey.of(dust), dust, hcl, false);
+        var stage2 = PatternDetailsHelper.encodeProcessingPattern(
+                List.of(new GenericStack(AEItemKey.of(olivine), 1)),
+                List.of(new GenericStack(AEItemKey.of(Items.STONE), 1)));
+        plot.blockEntity("-1 0 -3", AEBlocks.PATTERN_PROVIDER,
+                provider -> provider.getLogic().getPatternInv().addItems(stage2.copy()));
+        plot.block(CHEST2, net.minecraft.world.level.block.Blocks.CHEST);
+        plot.test(helper -> runTwoStage(helper, "chance_intermediate_olivine_stone", AEItemKey.of(olivine),
+                AEItemKey.of(Items.STONE), 4, 8));
+    }
+
+    private static void runTwoStage(PlotTestHelper helper, String rig, AEItemKey intermediate, AEItemKey out,
+            long amount, int idleSeconds) {
+        var job = new TestCraftingJob(helper, BlockPos.ZERO, out, amount);
+        helper.onEachTick(() -> {
+            accelerate(helper);
+            standInMachine(helper, intermediate);
+            if (helper.getTick() % 100 == 0) {
+                Rigs.report(rig, "tick=" + helper.getTick() + " stone=" + Rigs.stored(helper, out)
+                        + " olivineNet=" + Rigs.stored(helper, intermediate)
+                        + " sieve=" + Rigs.contents(helper, SIEVE) + " chest=" + Rigs.contents(helper, CHEST2));
+            }
+        });
+        helper.startSequence()
+                .thenExecute(() -> {
+                    Config.ENABLE_CHANCE_OUTPUT_BONUS.set(true);
+                    Config.ENABLE_CHANCE_TOP_UP.set(true);
+                    Config.CHANCE_TOP_UP_IDLE_SECONDS.set(idleSeconds);
+                    Config.ENABLE_PROVIDER_OUTPUT_PULL.set(true);
+                    openItemSides(helper.getLevel().getBlockEntity(helper.absolutePos(SIEVE)));
+                    host(helper, PROVIDER).appliedenhancements$setPullMode(SIEVE_FACE, ProviderOutputPull.SAME_FACE);
+                    host(helper, PROVIDER2).appliedenhancements$setPullMode(Direction.WEST, ProviderOutputPull.SAME_FACE);
+                })
+                .thenWaitUntil(job::tickUntilStarted)
+                .thenWaitUntil(() -> {
+                    long have = Rigs.stored(helper, out);
+                    helper.check(have >= amount, "expected " + amount + " " + out + ", have " + have);
+                })
+                .thenExecute(() -> Rigs.report(rig, "done tick=" + helper.getTick() + " stone="
+                        + Rigs.stored(helper, out)))
+                .thenSucceed();
+    }
+
+    /** Stand-in for the stage-2 machine: turns one pushed raw olivine in the chest into one stone every 10 ticks. */
+    private static void standInMachine(PlotTestHelper helper, AEItemKey intermediate) {
+        if (helper.getTick() % 10 != 0
+                || !(helper.getLevel().getBlockEntity(helper.absolutePos(CHEST2)) instanceof net.minecraft.world.Container chest)) {
+            return;
+        }
+        for (int i = 0; i < chest.getContainerSize(); i++) {
+            var stack = chest.getItem(i);
+            if (intermediate.matches(stack)) {
+                stack.shrink(1);
+                if (stack.isEmpty()) {
+                    chest.setItem(i, ItemStack.EMPTY);
+                }
+                for (int j = 0; j < chest.getContainerSize(); j++) {
+                    var target = chest.getItem(j);
+                    if (target.isEmpty()) {
+                        chest.setItem(j, new ItemStack(Items.STONE));
+                        return;
+                    }
+                    if (target.is(Items.STONE) && target.getCount() < target.getMaxStackSize()) {
+                        target.grow(1);
+                        return;
+                    }
+                }
+                return;
+            }
+        }
+    }
+
     private static void run(PlotTestHelper helper, String rig, AEItemKey out, long amount, boolean pull,
             int idleSeconds) {
         var job = new TestCraftingJob(helper, BlockPos.ZERO, out, amount);
@@ -92,7 +178,7 @@ public final class ChanceMachineTestPlots {
                     Config.ENABLE_PROVIDER_OUTPUT_PULL.set(pull);
                     openItemSides(helper.getLevel().getBlockEntity(helper.absolutePos(SIEVE)));
                     if (pull) {
-                        host(helper).appliedenhancements$setPullMode(SIEVE_FACE, ProviderOutputPull.SAME_FACE);
+                        host(helper, PROVIDER).appliedenhancements$setPullMode(SIEVE_FACE, ProviderOutputPull.SAME_FACE);
                     }
                 })
                 .thenWaitUntil(job::tickUntilStarted)
@@ -219,13 +305,13 @@ public final class ChanceMachineTestPlots {
     }
 
     /** The pull host of the provider (same lookup as the pull rigs). */
-    private static ProviderOutputPullHost host(PlotTestHelper helper) {
-        var be = helper.getLevel().getBlockEntity(helper.absolutePos(PROVIDER));
+    private static ProviderOutputPullHost host(PlotTestHelper helper, BlockPos providerPos) {
+        var be = helper.getLevel().getBlockEntity(helper.absolutePos(providerPos));
         if (be instanceof IActionHost actionHost && actionHost.getActionableNode() != null
                 && actionHost.getActionableNode().getService(ICraftingProvider.class)
                         instanceof ProviderOutputPullHost host) {
             return host;
         }
-        throw helper.assertionException("no pull-capable pattern provider at " + PROVIDER + ": " + be, PROVIDER);
+        throw helper.assertionException("no pull-capable pattern provider at " + providerPos + ": " + be, providerPos);
     }
 }

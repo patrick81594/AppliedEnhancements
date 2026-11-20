@@ -139,3 +139,9 @@ start a crafting job and check the result. They run headless on a COPY of the FT
   only if everything passed. `packtest-prep.sh` creates the server copy once (`server-1.9.0/packtest`), copies the
   current jars, sets the JVM flags, a flat creative world and `pause-when-empty-seconds=0` (an empty MC 26 server
   pauses after 60 s, which would freeze the tests).
+
+### Pack tests: switch-sensitive rigs run sequentially
+A wildcard selector (e.g. `ae2:appliedenhancements/pull_*`) starts the matching rigs in PARALLEL on one server. Rigs that set a
+server-wide config switch (`pattern_provider.enable_output_pull`, `crafting.aelis.chunk_returned_item_feedback`) then race each other
+(`pull_global_switch_off` failed once for that reason). Give such rigs one selector each, because `packtest-suite.sh` runs its
+selectors one after another: `packtest-suite.sh <log> 'ae2:appliedenhancements/pull_a' 'ae2:appliedenhancements/pull_b' ...`.

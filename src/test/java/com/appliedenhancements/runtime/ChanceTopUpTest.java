@@ -124,4 +124,31 @@ class ChanceTopUpTest {
         state.clear();
         assertEquals(-1, state.lastActivity());
     }
+
+    @Test
+    void intermediateIsStalledOnlyWhenWaitedForAndAllCraftsPushed() {
+        assertTrue(ChanceTopUp.intermediateStalled(137, false));
+        assertFalse(ChanceTopUp.intermediateStalled(137, true));
+        assertFalse(ChanceTopUp.intermediateStalled(0, false));
+    }
+
+    @Test
+    void intermediateWaveUsesItsOwnPlannedBaseAndLimit() {
+        var state = new ChanceTopUpState<String>();
+        var raw = new TestAEKey("raw_olivine");
+        var other = new TestAEKey("pyroxene");
+        for (int i = 0; i < 4; i++) {
+            state.onPush("raw", raw, 0);
+        }
+        state.onPush("pyroxene", other, 0);
+        long[] seen = state.endWave("raw", raw);
+        assertEquals(4, seen[1]);
+        assertEquals(0, seen[0]);
+        // the other marked pattern keeps its own wave and limit
+        assertEquals(0, state.allowedExtra("pyroxene", 10));
+        assertEquals(40, state.allowedExtra("raw", 10));
+        state.addExtra("raw", 40);
+        assertEquals(0, state.allowedExtra("raw", 10));
+        assertEquals("raw", state.producerOf(raw));
+    }
 }

@@ -15,6 +15,15 @@ public interface TopUpJob {
     /** True when every craft of the plan has been pushed. */
     boolean tasksEmpty();
 
+    /** True while the job still has crafts of {@code pattern} to push. */
+    boolean hasTask(IPatternDetails pattern);
+
+    /** Snapshot of the keys the job currently waits for. */
+    java.util.Set<AEKey> waitingKeys();
+
+    /** How much of {@code key} the job currently waits for. */
+    long waitingFor(AEKey key);
+
     /** The CPU's own item store; top-up inputs go here so the normal push path can use them. */
     ListCraftingInventory inventory();
 

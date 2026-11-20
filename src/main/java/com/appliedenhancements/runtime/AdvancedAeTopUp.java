@@ -118,6 +118,33 @@ public final class AdvancedAeTopUp {
         }
 
         @Override
+        public boolean hasTask(IPatternDetails pattern) {
+            try {
+                return ((Map<?, ?>) a.jobTasks().get(job)).containsKey(pattern);
+            } catch (ReflectiveOperationException e) {
+                throw new IllegalStateException(e);
+            }
+        }
+
+        @Override
+        public java.util.Set<AEKey> waitingKeys() {
+            try {
+                return new java.util.HashSet<>(((ListCraftingInventory) a.jobWaiting().get(job)).list.keySet());
+            } catch (ReflectiveOperationException e) {
+                throw new IllegalStateException(e);
+            }
+        }
+
+        @Override
+        public long waitingFor(AEKey key) {
+            try {
+                return ((ListCraftingInventory) a.jobWaiting().get(job)).list.get(key);
+            } catch (ReflectiveOperationException e) {
+                throw new IllegalStateException(e);
+            }
+        }
+
+        @Override
         public long dropWaitingFor(AEKey key) {
             try {
                 var waiting = (ListCraftingInventory) a.jobWaiting().get(job);

@@ -44,6 +44,14 @@ public final class ChanceTopUp {
         return missing;
     }
 
+    /**
+     * A marked INTERMEDIATE output is stalled when the job still waits for it and its producing pattern has no
+     * crafts left to push (AE2 drops a pattern from the task list with its last push), so nothing more can come.
+     */
+    public static boolean intermediateStalled(long waiting, boolean producerStillHasCrafts) {
+        return waiting > 0 && !producerStillHasCrafts;
+    }
+
     /** True once {@code idleTicks} have passed since the last activity (never before activity was recorded). */
     public static boolean isIdle(long now, long lastActivity, long idleTicks) {
         return lastActivity >= 0 && now - lastActivity >= idleTicks;
