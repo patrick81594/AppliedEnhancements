@@ -26,6 +26,7 @@ public final class ChanceTopUpState<P> {
     private long pendingAmount;
     private long lastFollowUp = -1;
     private int emptyWaves;
+    private boolean retryNow;
 
     /** Most doublings of the idle time: 2^5 = 32 times the configured value. */
     private static final int MAX_BACKOFF_STEPS = 5;
@@ -67,6 +68,27 @@ public final class ChanceTopUpState<P> {
     /** True when no follow-up craft was requested within the last {@code minTicks}. */
     public boolean followUpAllowed(long now, long minTicks) {
         return pendingPlan == null && (lastFollowUp < 0 || now - lastFollowUp >= minTicks);
+    }
+
+    /**
+     * The player asked to try again (middle click in the CPU screen): forget the "limit reached" bookkeeping
+     * (top-up crafts already added, empty-wave back-off, follow-up pause) and start a wave on the next tick,
+     * without waiting for the idle time.
+     */
+    public void requestRetry() {
+        for (var wave : waves.values()) {
+            wave.extra = 0;
+        }
+        emptyWaves = 0;
+        lastFollowUp = -1;
+        retryNow = true;
+    }
+
+    /** True once after {@link #requestRetry()}: the idle gate is skipped for exactly one wave. */
+    public boolean consumeRetryNow() {
+        boolean was = retryNow;
+        retryNow = false;
+        return was;
     }
 
     public long lastActivity() {
@@ -139,6 +161,7 @@ public final class ChanceTopUpState<P> {
         outputs.clear();
         lastActivity = -1;
         emptyWaves = 0;
+        retryNow = false;
         pendingPlan = null;
         pendingKey = null;
         pendingAmount = 0;

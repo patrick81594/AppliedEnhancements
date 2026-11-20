@@ -6,6 +6,7 @@
   "mixins": [
     "CraftingStatusEntryExactMixin",
     "CraftingStatusExactMixin",
+    "CraftingCPUMenuAccessor",
     "Ae2CraftingTreeHelperMixin",
     "AdvancedAeCycleAwareCpuMixin",
     "AdvancedAeCraftingCycleMixin",

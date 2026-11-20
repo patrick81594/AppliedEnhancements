@@ -243,5 +243,9 @@
   "gui.appliedenhancements.plan.tree.hint": "Drag nodes to move · Drag background to pan · Scroll to zoom · Cycle headers fold · Dashed links are alternatives",
   "gui.appliedenhancements.plan.tree.demand": "Need %s",
   "gui.appliedenhancements.plan.tree.craft": "To craft %s",
-  "gui.appliedenhancements.plan.tree.cyclic_amount": "Cyclic %s"
+  "gui.appliedenhancements.plan.tree.cyclic_amount": "Cyclic %s",
+  "message.appliedenhancements.chance_retry.started": "Retry job requested for the outstanding amount. It is cancelled when this job ends.",
+  "message.appliedenhancements.chance_retry.no_job": "No job is running on this CPU.",
+  "message.appliedenhancements.chance_retry.not_marked": "Only the requested item of a chance-marked pattern can be retried.",
+  "message.appliedenhancements.chance_retry.already_running": "A retry job for this craft is already running."
 }

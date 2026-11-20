@@ -104,7 +104,7 @@ public final class ChanceTopUpRunner {
             return;
         }
         long idleTicks = Config.CHANCE_TOP_UP_IDLE_SECONDS.get() * 20L * state.idleMultiplier();
-        if (!ChanceTopUp.isIdle(now, state.lastActivity(), idleTicks)) {
+        if (!state.consumeRetryNow() && !ChanceTopUp.isIdle(now, state.lastActivity(), idleTicks)) {
             return;
         }
         IPatternDetails pattern = state.producerOf(key);

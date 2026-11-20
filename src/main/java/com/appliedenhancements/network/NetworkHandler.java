@@ -35,5 +35,6 @@ public final class NetworkHandler {
         registrar.playToServer(ProviderPullSideRequestPayload.TYPE, ProviderPullSideRequestPayload.STREAM_CODEC,
                 ProviderPullSideRequestPayload::handle);
         registrar.playToClient(ProviderPullSidesPayload.TYPE, ProviderPullSidesPayload.STREAM_CODEC);
+        registrar.playToServer(ChanceRetryPayload.TYPE, ChanceRetryPayload.STREAM_CODEC, ChanceRetryPayload::handle);
     }
 }

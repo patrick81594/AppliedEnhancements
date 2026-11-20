@@ -42,6 +42,23 @@ class ChanceTopUpTest {
     }
 
     @Test
+    void retryResetsLimitAndBackoffAndSkipsOneIdleGate() {
+        var state = new ChanceTopUpState<String>();
+        var key = new TestAEKey("olivine");
+        state.onPush("p", key, 0);
+        state.endWave("p", key);
+        state.addExtra("p", 40);
+        state.endWave("p", key);
+        assertEquals(4, state.idleMultiplier());
+        long before = state.allowedExtra("p", 10);
+        state.requestRetry();
+        assertEquals(1, state.idleMultiplier());
+        assertTrue(state.allowedExtra("p", 10) > before);
+        assertTrue(state.consumeRetryNow());
+        assertFalse(state.consumeRetryNow());
+    }
+
+    @Test
     void idleNeedsRecordedActivity() {
         assertFalse(ChanceTopUp.isIdle(1000, -1, 10));
         assertFalse(ChanceTopUp.isIdle(1005, 1000, 10));

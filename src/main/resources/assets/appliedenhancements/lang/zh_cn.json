@@ -243,5 +243,9 @@
   "gui.appliedenhancements.plan.tree.hint": "拖动节点调整位置 · 拖动空白平移 · 滚轮缩放 · 循环组标题可折叠 · 虚线表示可选输入",
   "gui.appliedenhancements.plan.tree.demand": "需求 %s",
   "gui.appliedenhancements.plan.tree.craft": "合成 %s",
-  "gui.appliedenhancements.plan.tree.cyclic_amount": "循环 %s"
+  "gui.appliedenhancements.plan.tree.cyclic_amount": "循环 %s",
+  "message.appliedenhancements.chance_retry.started": "已为未完成的数量请求重试任务。此任务结束时它会被取消。",
+  "message.appliedenhancements.chance_retry.no_job": "此 CPU 上没有正在运行的任务。",
+  "message.appliedenhancements.chance_retry.not_marked": "只能重试已标记概率图样的请求物品。",
+  "message.appliedenhancements.chance_retry.already_running": "此合成的重试任务已在运行。"
 }
