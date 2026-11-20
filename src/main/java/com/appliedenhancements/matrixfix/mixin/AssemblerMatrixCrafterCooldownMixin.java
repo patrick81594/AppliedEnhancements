@@ -1,7 +1,8 @@
-package com.appliedenhancements.mixin;
+package com.appliedenhancements.matrixfix.mixin;
 
 import appeng.api.networking.IGridNode;
 import appeng.api.networking.ticking.TickRateModulation;
+import com.appliedenhancements.Config;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Pseudo;
 import org.spongepowered.asm.mixin.Shadow;
@@ -32,7 +33,7 @@ public abstract class AssemblerMatrixCrafterCooldownMixin {
     @Inject(method = "tickingRequest", at = @At("HEAD"), require = 0)
     private void appliedenhancements$countDownFlushCooldown(IGridNode node, int ticksSinceLastCall,
             CallbackInfoReturnable<TickRateModulation> callback) {
-        if (this.blockCoolDown > 0) {
+        if (this.blockCoolDown > 0 && Config.FIX_MATRIX_CRAFTER_COOLDOWN.get()) {
             this.blockCoolDown = Math.max(0, this.blockCoolDown - Math.max(1, ticksSinceLastCall));
         }
     }

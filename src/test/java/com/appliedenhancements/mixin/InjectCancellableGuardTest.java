@@ -3,6 +3,7 @@ package com.appliedenhancements.mixin;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.appliedenhancements.test.MixinConfigs;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -28,7 +29,6 @@ import org.objectweb.asm.Opcodes;
  * directly) and covers both the common and the client list, so client Mixins are checked too.
  */
 class InjectCancellableGuardTest {
-    private static final String CONFIG = "appliedenhancements.mixins.json";
     private static final String INJECT = "Lorg/spongepowered/asm/mixin/injection/Inject;";
     private static final String CI = "org/spongepowered/asm/mixin/injection/callback/CallbackInfo";
     private static final String CIR = "org/spongepowered/asm/mixin/injection/callback/CallbackInfoReturnable";
@@ -36,17 +36,20 @@ class InjectCancellableGuardTest {
     @Test
     void everyCancellingInjectIsCancellable() throws IOException {
         ClassLoader loader = getClass().getClassLoader();
-        JsonObject config;
-        try (InputStream in = loader.getResourceAsStream(CONFIG)) {
-            assertNotNull(in, CONFIG + " not on the test classpath");
-            config = JsonParser.parseReader(new InputStreamReader(in, StandardCharsets.UTF_8)).getAsJsonObject();
-        }
-        String pkg = config.get("package").getAsString().replace('.', '/');
-        List<String> mixins = new ArrayList<>();
-        for (String list : new String[] {"mixins", "client", "server"}) {
-            if (config.has(list)) {
-                for (JsonElement e : config.getAsJsonArray(list)) {
-                    mixins.add(e.getAsString());
+        // Every feature module has its own Mixin config (listed in mods.toml): check all of them.
+        List<String> mixins = new ArrayList<>(); // "<package path>/<Mixin name>"
+        for (String configName : MixinConfigs.fromClasspath(loader)) {
+            JsonObject config;
+            try (InputStream in = loader.getResourceAsStream(configName)) {
+                assertNotNull(in, configName + " not on the test classpath");
+                config = JsonParser.parseReader(new InputStreamReader(in, StandardCharsets.UTF_8)).getAsJsonObject();
+            }
+            String pkg = config.get("package").getAsString().replace('.', '/');
+            for (String list : new String[] {"mixins", "client", "server"}) {
+                if (config.has(list)) {
+                    for (JsonElement e : config.getAsJsonArray(list)) {
+                        mixins.add(pkg + "/" + e.getAsString().replace('.', '/'));
+                    }
                 }
             }
         }
@@ -54,7 +57,7 @@ class InjectCancellableGuardTest {
 
         List<String> offenders = new ArrayList<>();
         for (String mixin : mixins) {
-            String resource = pkg + "/" + mixin.replace('.', '/') + ".class";
+            String resource = mixin + ".class";
             try (InputStream in = loader.getResourceAsStream(resource)) {
                 assertNotNull(in, "missing class " + resource);
                 new ClassReader(in).accept(new ClassVisitor(Opcodes.ASM9) {

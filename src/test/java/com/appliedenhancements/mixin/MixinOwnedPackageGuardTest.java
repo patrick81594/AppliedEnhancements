@@ -11,6 +11,7 @@ import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
+import com.appliedenhancements.test.MixinConfigs;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -36,14 +37,18 @@ class MixinOwnedPackageGuardTest {
     void ownedMixinPackageContainsOnlyConfiguredMixinTypes() throws IOException {
         Path projectRoot = Path.of(System.getProperty("user.dir"));
         Path sourceRoot = projectRoot.resolve("src/main/java");
-        Path config = projectRoot.resolve("src/main/resources/appliedenhancements.mixins.json");
+        Path resources = projectRoot.resolve("src/main/resources");
 
-        Set<String> undeclared = findUndeclaredOwnedTypes(sourceRoot, config);
+        // Every feature module has its own Mixin config (listed in mods.toml): check each one's owned package.
+        Set<String> undeclared = new TreeSet<>();
+        for (String name : MixinConfigs.fromModsToml(Files.readString(resources.resolve("META-INF/neoforge.mods.toml")))) {
+            undeclared.addAll(findUndeclaredOwnedTypes(sourceRoot, resources.resolve(name)));
+        }
 
         assertEquals(Set.of(), undeclared, () -> "Mixin owned package contains ordinary runtime types: "
                 + undeclared
                 + ". Move helpers outside the configured Mixin package, or declare actual Mixins/Accessors "
-                + "in appliedenhancements.mixins.json.");
+                + "in the matching *.mixins.json.");
     }
 
     @Test

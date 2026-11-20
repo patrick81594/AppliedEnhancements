@@ -45,7 +45,6 @@ import org.objectweb.asm.Type;
 @Tag("fml")
 @BootstrapMinecraft
 class MixinApplyAuditTest {
-    private static final String CONFIG = "appliedenhancements.mixins.json";
     private static final String MIXIN_DESC = "Lorg/spongepowered/asm/mixin/Mixin;";
     private static final String PSEUDO_DESC = "Lorg/spongepowered/asm/mixin/Pseudo;";
 
@@ -58,18 +57,25 @@ class MixinApplyAuditTest {
     @Test
     void everyMixinTargetLoadsWithItsMixinsApplied() throws IOException {
         ClassLoader loader = MixinApplyAuditTest.class.getClassLoader();
-        JsonObject config = readConfig(loader);
-        String mixinPackage = config.get("package").getAsString();
         Dist dist = FMLEnvironment.getDist();
 
-        // Same selection Mixin makes: "mixins" always, plus the list for the side we run on.
-        List<String> mixinNames = new ArrayList<>(names(config, "mixins"));
-        mixinNames.addAll(names(config, dist == Dist.CLIENT ? "client" : "server"));
-        assertFalse(mixinNames.isEmpty(), "no Mixins listed in " + CONFIG);
+        // Every feature module has its own Mixin config (listed in mods.toml). Same selection Mixin makes per
+        // config: "mixins" always, plus the list for the side we run on.
+        List<String[]> mixinNames = new ArrayList<>(); // {full class name, short name}
+        for (String configName : MixinConfigs.fromClasspath(loader)) {
+            JsonObject config = readConfig(loader, configName);
+            String mixinPackage = config.get("package").getAsString();
+            List<String> names = new ArrayList<>(names(config, "mixins"));
+            names.addAll(names(config, dist == Dist.CLIENT ? "client" : "server"));
+            for (String name : names) {
+                mixinNames.add(new String[] {mixinPackage + "." + name, name});
+            }
+        }
+        assertFalse(mixinNames.isEmpty(), "no Mixins listed in any Mixin config");
 
         Map<String, Target> targets = new TreeMap<>();
-        for (String name : mixinNames) {
-            readMixin(loader, mixinPackage + "." + name, name, targets);
+        for (String[] name : mixinNames) {
+            readMixin(loader, name[0], name[1], targets);
         }
 
         List<String> applied = new ArrayList<>();
@@ -107,9 +113,9 @@ class MixinApplyAuditTest {
                         + String.join("\n", failed));
     }
 
-    private static JsonObject readConfig(ClassLoader loader) throws IOException {
-        try (InputStream in = loader.getResourceAsStream(CONFIG)) {
-            assertNotNull(in, CONFIG + " not found on the test classpath");
+    private static JsonObject readConfig(ClassLoader loader, String configName) throws IOException {
+        try (InputStream in = loader.getResourceAsStream(configName)) {
+            assertNotNull(in, configName + " not found on the test classpath");
             return JsonParser.parseReader(new InputStreamReader(in, StandardCharsets.UTF_8)).getAsJsonObject();
         }
     }
@@ -129,7 +135,7 @@ class MixinApplyAuditTest {
         List<String> declared = new ArrayList<>();
         boolean[] pseudo = {false};
         try (InputStream in = loader.getResourceAsStream(resource)) {
-            assertNotNull(in, "Mixin listed in " + CONFIG + " has no class file: " + resource);
+            assertNotNull(in, "Mixin listed in a Mixin config has no class file: " + resource);
             new ClassReader(in).accept(new ClassVisitor(Opcodes.ASM9) {
                 @Override
                 public AnnotationVisitor visitAnnotation(String descriptor, boolean visible) {

@@ -53,6 +53,11 @@ Applied Enhancements - 通用 AE2 系统增强模组。
 [[mixins]]
 config="appliedenhancements.mixins.json"
 
+# Feature modules: each has its own Mixin config (package com.appliedenhancements.<module>.mixin) and a master
+# switch in the config file. The Mixin tests discover every config listed here.
+[[mixins]]
+config="appliedenhancements.matrixfix.mixins.json"
+
 # The [[accessTransformers]] block allows you to declare where your AT file is.
 # If this block is omitted, a fallback attempt will be made to load an AT from META-INF/accesstransformer.cfg
 #[[accessTransformers]]

@@ -16,7 +16,6 @@
     "UselessSmartDoublingPlanMixin",
     "AE2WTLibCraftingTerminalHandlerMixin",
     "AECraftingPatternInputMixin",
-    "AssemblerMatrixCrafterCooldownMixin",
     "AssemblerMatrixClusterDiagMixin",
     "AssemblerMatrixPatternDiagMixin",
     "AssemblerMatrixThreadDiagMixin",

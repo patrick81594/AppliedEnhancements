@@ -27,6 +27,9 @@ public final class Config {
     public static final ModConfigSpec.BooleanValue ENABLE_PROVIDER_OUTPUT_PULL;
     public static final ModConfigSpec.IntValue PROVIDER_OUTPUT_PULL_EXPIRY_SECONDS;
 
+    // Compatibility fixes for other mods (module: com.appliedenhancements.matrixfix)
+    public static final ModConfigSpec.BooleanValue FIX_MATRIX_CRAFTER_COOLDOWN;
+
     // Diagnostics (module: com.appliedenhancements.runtime.DiagLog + the AssemblerMatrix*DiagMixin classes)
     public static final ModConfigSpec.BooleanValue DIAGNOSTICS_ENABLED;
     public static final ModConfigSpec.IntValue AELIS_MAX_NODES;
@@ -407,6 +410,25 @@ public final class Config {
                         "Default / 默认值: 300")
                 .translation("appliedenhancements.config.provider_output_pull_expiry_seconds")
                 .defineInRange("output_pull_expiry_seconds", 300, 10, 86_400);
+
+        builder.pop();
+
+        builder.comment(
+                "Fixes for bugs in other mods",
+                "修复其他模组的问题")
+                .translation("appliedenhancements.config.section.compat_fixes")
+                .push("compat_fixes");
+
+        FIX_MATRIX_CRAFTER_COOLDOWN = builder
+                .comment(
+                        "ExtendedAE Assembler Matrix: count down the crafters' output hand-over cooldown. Without this, one",
+                        "partial hand-over (for example full storage) stops that crafter from ever delivering outputs again",
+                        "until the world is reloaded, so crafting jobs hang.",
+                        "扩展 AE 装配矩阵：让合成器的产物交付冷却正常倒计时。关闭后，一次部分交付（例如存储已满）",
+                        "会使该合成器在重新加载世界前再也无法交付产物，导致合成任务卡住。",
+                        "Default / 默认值: true")
+                .translation("appliedenhancements.config.fix_matrix_crafter_cooldown")
+                .define("fix_extendedae_matrix_crafter_cooldown", true);
 
         builder.pop();
 
