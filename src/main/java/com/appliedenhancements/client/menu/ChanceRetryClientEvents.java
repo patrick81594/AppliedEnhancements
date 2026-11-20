@@ -17,13 +17,18 @@ public final class ChanceRetryClientEvents {
 
     @SubscribeEvent
     public static void onMousePressed(ScreenEvent.MouseButtonPressed.Pre event) {
-        if (event.getButton() != 2 || !(event.getScreen() instanceof CraftingCPUScreen screen)) {
+        if (event.getButton() != 2) {
+            return;
+        }
+        AppliedEnhancements.LOGGER.info("Chance retry: middle click on screen {}", event.getScreen().getClass().getName());
+        if (!(event.getScreen() instanceof CraftingCPUScreen screen)) {
             return;
         }
         var hovered = screen.getStackUnderMouse(event.getMouseX(), event.getMouseY());
         if (hovered == null || hovered.stack() == null) {
             return;
         }
+        AppliedEnhancements.LOGGER.info("Chance retry: requesting a retry of {}", hovered.stack().what());
         ClientPacketDistributor.sendToServer(new ChanceRetryPayload(hovered.stack().what()));
         event.setCanceled(true);
     }

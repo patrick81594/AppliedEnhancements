@@ -29,16 +29,18 @@ public record ChanceRetryPayload(AEKey key) implements CustomPacketPayload {
             if (!(context.player() instanceof ServerPlayer player)
                     || !(player.containerMenu instanceof CraftingCPUMenu menu)
                     || !menu.stillValid(player)) {
+                AppliedEnhancements.LOGGER.info("Chance retry request for {} ignored: no valid crafting status menu open ({})",
+                        payload.key(), context.player() instanceof ServerPlayer p ? p.containerMenu.getClass().getName() : "no player");
                 return;
             }
-            // The status screen keeps its choice in selectedCpu (any CPU type); the plain CPU menu only knows clusters.
-            Object cpu = menu instanceof CraftingStatusMenu status
-                    ? ((CraftingStatusMenuAccessor) status).appliedenhancements$getSelectedCpu()
-                    : ((CraftingCPUMenuAccessor) menu).appliedenhancements$getCpu();
+            Object cpu = selectedCpu(menu);
             if (!(logicOf(cpu) instanceof ChanceTopUpControl control)) {
+                AppliedEnhancements.LOGGER.info("Chance retry request for {} ignored: selected CPU {} has no retry support",
+                        payload.key(), cpu == null ? "none" : cpu.getClass().getName());
                 return;
             }
             var result = control.appliedenhancements$requestChanceRetry(payload.key());
+            AppliedEnhancements.LOGGER.info("Chance retry request for {}: {}", payload.key(), result);
             String message = switch (result) {
                 case STARTED -> "message.appliedenhancements.chance_retry.started";
                 case NO_JOB -> "message.appliedenhancements.chance_retry.no_job";
@@ -48,6 +50,23 @@ public record ChanceRetryPayload(AEKey key) implements CustomPacketPayload {
             };
             FeedbackToastPayload.send(player, FeedbackToastPayload.Kind.CRAFTING_PLAN, message, 0);
         });
+    }
+
+    /**
+     * The CPU the menu shows: AE2's cluster CPUs are kept in the menu's {@code cpu} field; other CPU types (the
+     * Quantum CPU) are only known by the status menu's serial number for the selected entry.
+     */
+    private static Object selectedCpu(CraftingCPUMenu menu) {
+        Object cpu = ((CraftingCPUMenuAccessor) menu).appliedenhancements$getCpu();
+        if (cpu == null && menu instanceof CraftingStatusMenu status) {
+            int serial = status.getSelectedCpuSerial();
+            for (var entry : ((CraftingStatusMenuAccessor) status).appliedenhancements$getCpuSerialMap().entrySet()) {
+                if (entry.getValue() == serial) {
+                    return entry.getKey();
+                }
+            }
+        }
+        return cpu;
     }
 
     /** The crafting logic of an AE2 cluster CPU or of AdvancedAE's CPU (public {@code craftingLogic} field). */
