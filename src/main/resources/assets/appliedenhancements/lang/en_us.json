@@ -27,6 +27,8 @@
   "gui.appliedenhancements.chance_output.enabled": "On: extra (chance) outputs count toward the requested amount",
   "gui.appliedenhancements.chance_output.disabled": "Off: only the encoded outputs are expected",
   "gui.appliedenhancements.chance_output.note": "Takes effect only when enabled in the config.",
+  "tooltip.appliedenhancements.chance_output": "Chance outputs: on",
+  "tooltip.appliedenhancements.chance_output.inactive": "Chance outputs: on (switched off in the config)",
   "gui.appliedenhancements.duplicate_patterns.group": "%s patterns share this primary output",
   "gui.appliedenhancements.duplicate_patterns.sources": "Source machines:",
   "gui.appliedenhancements.duplicate_patterns.sources.entry": "• %s: %s patterns",
