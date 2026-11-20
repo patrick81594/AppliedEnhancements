@@ -114,14 +114,42 @@ public final class ChanceTopUpRunner {
             return;
         }
         collectFollowUp(state, grid);
-        AEKey key = job.finalKey();
-        if (key == null || !marks.contains(key) || !job.tasksEmpty() || job.remaining() <= 0) {
+        AEKey finalKey = job.finalKey();
+        var candidates = new java.util.ArrayList<Candidate>(2);
+        if (finalKey != null && marks.contains(finalKey) && job.tasksEmpty() && job.remaining() > 0) {
+            candidates.add(new Candidate(finalKey, job.remaining(), false));
+        }
+        // Marked INTERMEDIATE outputs the job waits for: downstream crafts need them, so the job's tasks are never
+        // empty and the final-output rule above cannot fire. Whether all crafts of the producer were pushed is
+        // checked per candidate in runWave.
+        for (AEKey waiting : job.waitingKeys()) {
+            if (!waiting.equals(finalKey) && marks.contains(waiting)) {
+                long amount = job.waitingFor(waiting);
+                if (amount > 0) {
+                    candidates.add(new Candidate(waiting, amount, true));
+                }
+            }
+        }
+        if (candidates.isEmpty()) {
             return;
         }
         long idleTicks = Config.CHANCE_TOP_UP_IDLE_SECONDS.get() * 20L * state.idleMultiplier();
         if (!state.consumeRetryNow() && !ChanceTopUp.isIdle(now, state.lastActivity(), idleTicks)) {
             return;
         }
+        for (var candidate : candidates) {
+            runWave(job, state, grid, now, idleTicks, candidate);
+        }
+    }
+
+    /** A marked key the job waits for and the amount a top-up wave should cover. */
+    private record Candidate(AEKey key, long shortfall, boolean intermediate) {
+    }
+
+    private static void runWave(TopUpJob job, ChanceTopUpState<IPatternDetails> state, IGrid grid, long now,
+            long idleTicks, Candidate candidate) {
+        AEKey key = candidate.key();
+        long shortfall = candidate.shortfall();
         IPatternDetails pattern = state.producerOf(key);
         if (pattern == null) {
             // After a reload the bookkeeping is gone: take the marked pattern that produces the output.
@@ -129,6 +157,10 @@ public final class ChanceTopUpRunner {
         }
         var server = ServerLifecycleHooks.getCurrentServer();
         if (pattern == null || server == null) {
+            return;
+        }
+        if (candidate.intermediate() && !ChanceTopUp.intermediateStalled(shortfall, job.hasTask(pattern))) {
+            // The producer still has crafts to push: the job is not stalled on it yet.
             return;
         }
 
@@ -140,14 +172,14 @@ public final class ChanceTopUpRunner {
         yieldData.record(patternKey, seen[0], seen[1]);
         double yield = yieldData.estimate(patternKey);
 
-        state.seedPlannedIfUnknown(pattern, job.remaining());
+        state.seedPlannedIfUnknown(pattern, shortfall);
         long allowed = state.allowedExtra(pattern, Config.CHANCE_TOP_UP_MAX_FACTOR.get());
-        long wanted = ChanceTopUp.craftsNeeded(job.remaining(), yield, allowed);
+        long wanted = ChanceTopUp.craftsNeeded(shortfall, yield, allowed);
         AppliedEnhancements.LOGGER.info("Chance top-up wave for {}: remaining {}, wave {} outputs / {} crafts, yield {}, allowed extra {}, wanted {}",
-                key, job.remaining(), seen[0], seen[1], String.format("%.3f", yield), allowed, wanted);
+                key, shortfall, seen[0], seen[1], String.format("%.3f", yield), allowed, wanted);
         if (wanted <= 0) {
             AppliedEnhancements.LOGGER.info("Chance top-up limit reached for {} (remaining {}, yield {}, allowed extra {}); the job keeps waiting",
-                    key, job.remaining(), String.format("%.3f", yield), allowed);
+                    key, shortfall, String.format("%.3f", yield), allowed);
             // The job stays queued (nothing is cancelled); tell the network owner once how to continue it.
             if (state.markStalledNotified()) {
                 notifyStalled(grid, server);

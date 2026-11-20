@@ -36,6 +36,21 @@ public final class Ae2TopUpJob implements TopUpJob {
     }
 
     @Override
+    public boolean hasTask(IPatternDetails pattern) {
+        return job.appliedenhancements$getTasks().containsKey(pattern);
+    }
+
+    @Override
+    public java.util.Set<AEKey> waitingKeys() {
+        return new java.util.HashSet<>(job.appliedenhancements$getWaitingFor().list.keySet());
+    }
+
+    @Override
+    public long waitingFor(AEKey key) {
+        return job.appliedenhancements$getWaitingFor().list.get(key);
+    }
+
+    @Override
     public ListCraftingInventory inventory() {
         return inventory;
     }

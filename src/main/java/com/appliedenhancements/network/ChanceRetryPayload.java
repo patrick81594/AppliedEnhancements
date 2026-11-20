@@ -35,12 +35,34 @@ public record ChanceRetryPayload(AEKey key) implements CustomPacketPayload {
             }
             Object cpu = selectedCpu(menu);
             if (!(logicOf(cpu) instanceof ChanceTopUpControl control)) {
-                AppliedEnhancements.LOGGER.info("Chance retry request for {} ignored: selected CPU {} has no retry support",
-                        payload.key(), cpu == null ? "none" : cpu.getClass().getName());
+                AppliedEnhancements.LOGGER.info("Chance retry request for {} ignored: selected CPU {}@{} (serial {}) has no retry support (logic {})",
+                        payload.key(), cpu == null ? "none" : cpu.getClass().getName(), System.identityHashCode(cpu),
+                        menu instanceof CraftingStatusMenu s ? s.getSelectedCpuSerial() : "n/a", logicOf(cpu));
                 return;
             }
             var result = control.appliedenhancements$requestChanceRetry(payload.key());
-            AppliedEnhancements.LOGGER.info("Chance retry request for {}: {}", payload.key(), result);
+            AppliedEnhancements.LOGGER.info("Chance retry request for {}: {} (selected serial {}, cpu {}@{}, menu {})",
+                    payload.key(), result, menu instanceof CraftingStatusMenu s ? s.getSelectedCpuSerial() : "n/a",
+                    cpu.getClass().getName(), System.identityHashCode(cpu), menu.getClass().getSimpleName());
+            if ((result == ChanceTopUpControl.Result.NO_JOB || result == ChanceTopUpControl.Result.NOT_MARKED)
+                    && menu instanceof CraftingStatusMenu status) {
+                // The selected entry is not the CPU that runs the job (a Quantum computer keeps one CPU object per
+                // job plus a remaining-capacity one): try the other CPUs this menu has seen on the same grid.
+                for (var other : new java.util.ArrayList<>(
+                        ((CraftingStatusMenuAccessor) status).appliedenhancements$getCpuSerialMap().keySet())) {
+                    if (other == cpu || !(logicOf(other) instanceof ChanceTopUpControl otherControl)) {
+                        continue;
+                    }
+                    var otherResult = otherControl.appliedenhancements$requestChanceRetry(payload.key());
+                    AppliedEnhancements.LOGGER.info("Chance retry request for {}: fallback cpu {}@{} -> {}",
+                            payload.key(), other.getClass().getName(), System.identityHashCode(other), otherResult);
+                    if (otherResult == ChanceTopUpControl.Result.STARTED
+                            || otherResult == ChanceTopUpControl.Result.ALREADY_RUNNING) {
+                        result = otherResult;
+                        break;
+                    }
+                }
+            }
             String message = switch (result) {
                 case STARTED -> "message.appliedenhancements.chance_retry.started";
                 case NO_JOB -> "message.appliedenhancements.chance_retry.no_job";
