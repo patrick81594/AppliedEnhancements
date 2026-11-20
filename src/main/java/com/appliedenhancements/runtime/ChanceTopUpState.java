@@ -21,6 +21,10 @@ public final class ChanceTopUpState<P> {
     private final Map<AEKey, P> producers = new HashMap<>();
     private final Map<AEKey, Long> outputs = new HashMap<>();
     private long lastActivity = -1;
+    private java.util.concurrent.Future<?> pendingPlan;
+    private AEKey pendingKey;
+    private long pendingAmount;
+    private long lastFollowUp = -1;
     private int emptyWaves;
 
     /** Most doublings of the idle time: 2^5 = 32 times the configured value. */
@@ -32,6 +36,37 @@ public final class ChanceTopUpState<P> {
      */
     public long idleMultiplier() {
         return 1L << Math.min(emptyWaves, MAX_BACKOFF_STEPS);
+    }
+
+    /** A crafting calculation for a missing input that is still running (null when none). */
+    public java.util.concurrent.Future<?> pendingPlan() {
+        return pendingPlan;
+    }
+
+    public AEKey pendingKey() {
+        return pendingKey;
+    }
+
+    public long pendingAmount() {
+        return pendingAmount;
+    }
+
+    public void setPending(java.util.concurrent.Future<?> plan, AEKey key, long amount, long now) {
+        pendingPlan = plan;
+        pendingKey = key;
+        pendingAmount = amount;
+        lastFollowUp = now;
+    }
+
+    public void clearPending() {
+        pendingPlan = null;
+        pendingKey = null;
+        pendingAmount = 0;
+    }
+
+    /** True when no follow-up craft was requested within the last {@code minTicks}. */
+    public boolean followUpAllowed(long now, long minTicks) {
+        return pendingPlan == null && (lastFollowUp < 0 || now - lastFollowUp >= minTicks);
     }
 
     public long lastActivity() {
@@ -104,5 +139,9 @@ public final class ChanceTopUpState<P> {
         outputs.clear();
         lastActivity = -1;
         emptyWaves = 0;
+        pendingPlan = null;
+        pendingKey = null;
+        pendingAmount = 0;
+        lastFollowUp = -1;
     }
 }

@@ -129,6 +129,8 @@
   "appliedenhancements.config.enable_chance_output_bonus.tooltip": "Count extra (chance) outputs of marked processing patterns toward the requested total. Only patterns marked as chance-output patterns are affected. Requires the marker toggle on the processing encoding panel.\nDefault: false",
   "appliedenhancements.config.enable_chance_top_up": "Chance Top-Up",
   "appliedenhancements.config.enable_chance_top_up.tooltip": "When all crafts of a marked processing pattern are pushed and no output arrives for the idle time, push more crafts (sized by the pattern's learned yield, inputs taken from network storage) until the requested amount is reached. Requires the chance output bonus to be enabled.\nDefault: false",
+  "appliedenhancements.config.chance_top_up_craft_inputs": "Craft Missing Top-Up Inputs",
+  "appliedenhancements.config.chance_top_up_craft_inputs.tooltip": "When a top-up wave lacks inputs that the network can craft (for example a dust ground from stock), start a normal crafting job for the missing amount; the next wave then finds the items in storage.\nDefault: true",
   "appliedenhancements.config.chance_top_up_idle_seconds": "Top-Up Idle Time (s)",
   "appliedenhancements.config.chance_top_up_idle_seconds.tooltip": "Seconds without any output (after every craft was pushed) before a top-up wave starts.\nRange: 1 ~ 3600\nDefault: 30",
   "appliedenhancements.config.chance_top_up_max_factor": "Top-Up Craft Limit (x)",

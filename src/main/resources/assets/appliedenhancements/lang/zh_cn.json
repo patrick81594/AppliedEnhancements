@@ -129,6 +129,8 @@
   "appliedenhancements.config.enable_chance_output_bonus.tooltip": "为已标记的处理样板计算额外（概率）产物，并计入请求的总数。仅影响已标记为概率产物的处理样板。需要在处理编码面板上启用标记开关。\n默认：关闭",
   "appliedenhancements.config.enable_chance_top_up": "概率产物追加合成",
   "appliedenhancements.config.enable_chance_top_up.tooltip": "当已标记处理样板的所有合成均已推送且在空闲时间内没有产物到达时，按该样板学习到的产出率追加合成（输入取自网络存储），直到达到请求数量。需要同时启用概率产物计数。\n默认：false",
+  "appliedenhancements.config.chance_top_up_craft_inputs": "追加合成时合成缺少的输入",
+  "appliedenhancements.config.chance_top_up_craft_inputs.tooltip": "当追加合成缺少网络可以合成的输入（例如由库存研磨的粉末）时，为缺少的数量发起一个普通合成任务，下一轮即可在存储中找到这些物品。\n默认：true",
   "appliedenhancements.config.chance_top_up_idle_seconds": "追加合成空闲时间（秒）",
   "appliedenhancements.config.chance_top_up_idle_seconds.tooltip": "在所有合成均已推送后，多少秒没有产物到达才开始追加一轮合成。\n取值范围：1 ~ 3600\n默认：30",
   "appliedenhancements.config.chance_top_up_max_factor": "追加合成上限（倍）",

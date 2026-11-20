@@ -35,6 +35,15 @@ public final class ChanceTopUp {
         return result;
     }
 
+    /** For each input: how much is missing to pay for {@code wanted} crafts (0 when stock covers it). */
+    public static long[] missingForCrafts(long wanted, long[] perCraft, long[] available) {
+        var missing = new long[perCraft.length];
+        for (int i = 0; i < perCraft.length; i++) {
+            missing[i] = Math.max(0, perCraft[i] * Math.max(wanted, 0) - Math.max(available[i], 0));
+        }
+        return missing;
+    }
+
     /** True once {@code idleTicks} have passed since the last activity (never before activity was recorded). */
     public static boolean isIdle(long now, long lastActivity, long idleTicks) {
         return lastActivity >= 0 && now - lastActivity >= idleTicks;

@@ -35,6 +35,13 @@ class ChanceTopUpTest {
     }
 
     @Test
+    void missingForCraftsIsWhatStockCannotCover() {
+        assertArrayEquals(new long[] {0, 7}, ChanceTopUp.missingForCrafts(5, new long[] {1, 5}, new long[] {9, 18}));
+        assertArrayEquals(new long[] {5}, ChanceTopUp.missingForCrafts(5, new long[] {1}, new long[] {0}));
+        assertArrayEquals(new long[] {0}, ChanceTopUp.missingForCrafts(0, new long[] {3}, new long[] {0}));
+    }
+
+    @Test
     void idleNeedsRecordedActivity() {
         assertFalse(ChanceTopUp.isIdle(1000, -1, 10));
         assertFalse(ChanceTopUp.isIdle(1005, 1000, 10));

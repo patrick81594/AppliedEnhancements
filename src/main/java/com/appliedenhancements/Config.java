@@ -21,6 +21,7 @@ public final class Config {
     public static final ModConfigSpec.BooleanValue AELIS_CHUNK_RETURNED_ITEM_FEEDBACK;
     public static final ModConfigSpec.BooleanValue ENABLE_CHANCE_OUTPUT_BONUS;
     public static final ModConfigSpec.BooleanValue ENABLE_CHANCE_TOP_UP;
+    public static final ModConfigSpec.BooleanValue CHANCE_TOP_UP_CRAFT_INPUTS;
     public static final ModConfigSpec.IntValue CHANCE_TOP_UP_IDLE_SECONDS;
     public static final ModConfigSpec.IntValue CHANCE_TOP_UP_MAX_FACTOR;
     public static final ModConfigSpec.BooleanValue ENABLE_PROVIDER_OUTPUT_PULL;
@@ -245,6 +246,16 @@ public final class Config {
                         "Default / 默认值: false")
                 .translation("appliedenhancements.config.enable_chance_top_up")
                 .define("enable_chance_top_up", false);
+
+        CHANCE_TOP_UP_CRAFT_INPUTS = builder
+                .comment(
+                        "When a top-up wave lacks inputs that the network can craft (for example a dust ground from stock),",
+                        "start a normal crafting job for the missing amount; the next wave then finds the items in storage.",
+                        "当追加合成缺少网络可以合成的输入（例如由库存研磨的粉末）时，为缺少的数量发起一个普通合成任务，",
+                        "下一轮即可在存储中找到这些物品。",
+                        "Default / 默认值: true")
+                .translation("appliedenhancements.config.chance_top_up_craft_inputs")
+                .define("chance_top_up_craft_inputs", true);
 
         CHANCE_TOP_UP_IDLE_SECONDS = builder
                 .comment(
