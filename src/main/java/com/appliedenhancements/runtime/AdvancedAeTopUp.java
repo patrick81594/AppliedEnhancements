@@ -123,7 +123,13 @@ public final class AdvancedAeTopUp {
                 var waiting = (ListCraftingInventory) a.jobWaiting().get(job);
                 long dropped = waiting.extract(key, Long.MAX_VALUE, appeng.api.config.Actionable.MODULATE);
                 if (dropped > 0) {
-                    a.decrement().invoke(a.jobTracker().get(job), dropped, key.getType());
+                    // Take the dropped outputs off the job's total work (decrementItems would count them as done).
+                    Object tracker = a.jobTracker().get(job);
+                    var field = tracker.getClass().getDeclaredField("startedWorkByType");
+                    field.setAccessible(true);
+                    @SuppressWarnings("unchecked")
+                    var started = (it.unimi.dsi.fastutil.objects.Reference2LongMap<appeng.api.stacks.AEKeyType>) field.get(tracker);
+                    started.put(key.getType(), Math.max(0, started.getLong(key.getType()) - dropped));
                 }
                 return dropped;
             } catch (ReflectiveOperationException e) {

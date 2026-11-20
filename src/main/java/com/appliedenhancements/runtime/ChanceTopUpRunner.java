@@ -53,8 +53,8 @@ public final class ChanceTopUpRunner {
             return;
         }
 
-        // End of a wave: drop what will not come, learn from what did.
-        long dropped = job.dropWaitingFor(key);
+        // End of a wave: learn from what arrived. The outputs that did not come are only dropped below, once top-up
+        // crafts can really be pushed, so a job that waits for inputs keeps showing what it is waiting for.
         long[] seen = state.endWave(pattern, key);
         var yieldData = ChanceYieldData.get(server);
         var patternKey = pattern.getDefinition();
@@ -64,8 +64,8 @@ public final class ChanceTopUpRunner {
         state.seedPlannedIfUnknown(pattern, job.remaining());
         long allowed = state.allowedExtra(pattern, Config.CHANCE_TOP_UP_MAX_FACTOR.get());
         long wanted = ChanceTopUp.craftsNeeded(job.remaining(), yield, allowed);
-        AppliedEnhancements.LOGGER.info("Chance top-up wave for {}: remaining {}, wave {} outputs / {} crafts, yield {}, allowed extra {}, wanted {}, dropped {} stale",
-                key, job.remaining(), seen[0], seen[1], String.format("%.3f", yield), allowed, wanted, dropped);
+        AppliedEnhancements.LOGGER.info("Chance top-up wave for {}: remaining {}, wave {} outputs / {} crafts, yield {}, allowed extra {}, wanted {}",
+                key, job.remaining(), seen[0], seen[1], String.format("%.3f", yield), allowed, wanted);
         if (wanted <= 0) {
             AppliedEnhancements.LOGGER.info("Chance top-up limit reached for {} (remaining {}, yield {}, allowed extra {}); the job keeps waiting",
                     key, job.remaining(), String.format("%.3f", yield), allowed);
@@ -95,6 +95,7 @@ public final class ChanceTopUpRunner {
             state.touch(now);
             return;
         }
+        long dropped = job.dropWaitingFor(key);
         for (int i = 0; i < inputs.length; i++) {
             long got = storage.extract(keys[i], perCraft[i] * crafts, Actionable.MODULATE, IActionSource.empty());
             if (got > 0) {

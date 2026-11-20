@@ -44,8 +44,11 @@ public final class Ae2TopUpJob implements TopUpJob {
     public long dropWaitingFor(AEKey key) {
         long dropped = job.appliedenhancements$getWaitingFor().extract(key, Long.MAX_VALUE, Actionable.MODULATE);
         if (dropped > 0) {
-            ((ElapsedTimeTrackerAccessor) job.appliedenhancements$getTimeTracker())
-                    .appliedenhancements$decrementItems(dropped, key.getType());
+            // The dropped outputs were never made: take them off the job's total work. (decrementItems would count
+            // them as COMPLETED work, and the CPU would show "Crafted 100%" while the job still needs items.)
+            var started = ((ElapsedTimeTrackerAccessor) job.appliedenhancements$getTimeTracker())
+                    .appliedenhancements$getStartedWorkByType();
+            started.put(key.getType(), Math.max(0, started.getLong(key.getType()) - dropped));
         }
         return dropped;
     }
