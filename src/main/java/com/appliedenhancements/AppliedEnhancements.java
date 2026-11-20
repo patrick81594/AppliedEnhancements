@@ -40,7 +40,7 @@ public class AppliedEnhancements {
         modEventBus.addListener(this::commonSetup);
         modEventBus.addListener(this::registerPayloads);
         ServerConfigSyncEvents.register(modEventBus);
-        com.appliedenhancements.runtime.ChanceOutputMarker.register(modEventBus);
+        com.appliedenhancements.chance.ChanceOutputMarker.register(modEventBus);
 
         ConfigFileMigration.migrate(FMLPaths.CONFIGDIR.get());
         modContainer.registerConfig(ModConfig.Type.COMMON, Config.SPEC, "appliedenhancements-common.toml");

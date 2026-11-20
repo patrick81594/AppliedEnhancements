@@ -17,7 +17,7 @@ import appeng.server.testworld.TestCraftingJob;
 import com.appliedenhancements.Config;
 import com.appliedenhancements.outputpull.ProviderOutputPull;
 import com.appliedenhancements.outputpull.ProviderOutputPullHost;
-import com.appliedenhancements.runtime.ChanceOutputMarker;
+import com.appliedenhancements.chance.ChanceOutputMarker;
 import java.util.List;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;

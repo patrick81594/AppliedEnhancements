@@ -25,8 +25,6 @@ import com.appliedenhancements.runtime.AelisCycleDispatchScope;
 import com.appliedenhancements.runtime.AelisCycleRuntimePreparation;
 import com.appliedenhancements.runtime.DataEnergisticsOrderCompletion;
 import com.appliedenhancements.runtime.CraftingAmountProjection;
-import com.appliedenhancements.runtime.ChanceOutputBonus;
-import com.appliedenhancements.Config;
 
 import appeng.api.config.Actionable;
 import appeng.api.crafting.IPatternDetails;
@@ -59,7 +57,7 @@ import net.minecraft.world.level.storage.ValueOutput;
 // they run first, their wrapper replaces the INVOKE that WrapOperation needs
 // to find and Mixin aborts during startup.
 @Mixin(value = CraftingCpuLogic.class, remap = false, priority = 1100)
-public abstract class CraftingCpuLogicBatchMixin implements com.appliedenhancements.runtime.ChanceTopUpControl {
+public abstract class CraftingCpuLogicBatchMixin {
     @Shadow
     private ExecutingCraftingJob job;
 
@@ -89,60 +87,6 @@ public abstract class CraftingCpuLogicBatchMixin implements com.appliedenhanceme
     private AelisCycleRuntimeController appliedenhancements$cycleRuntime;
 
     @Unique private int appliedenhancements$dispatchDepth;
-
-    /** Middle-click retry: the separate job that helps this (source) job. Not saved. */
-    @Unique private final com.appliedenhancements.runtime.ChanceRetryLink appliedenhancements$retry =
-            new com.appliedenhancements.runtime.ChanceRetryLink();
-
-    /** Marked (chance-output) patterns pushed in this job; see ChanceJobMarks. */
-    @Unique
-    private final com.appliedenhancements.runtime.ChanceJobMarks appliedenhancements$chanceMarks =
-            new com.appliedenhancements.runtime.ChanceJobMarks();
-
-    @Unique
-    private static final String APPLIEDENHANCEMENTS_CHANCE_MARKS_TAG = "appliedenhancementsChanceMarks";
-
-    /** Top-up wave bookkeeping of this job (not saved). */
-    @Unique
-    private final com.appliedenhancements.runtime.ChanceTopUpState<IPatternDetails> appliedenhancements$topUp =
-            new com.appliedenhancements.runtime.ChanceTopUpState<>();
-
-    /** TEMPORARY diagnostics: last push/insert game time (stall detection). */
-    @Unique
-    private long appliedenhancements$diagActivity = -1;
-
-    @Shadow
-    public abstract long getWaitingFor(AEKey what);
-
-    @Unique
-    private void appliedenhancements$diagStall() {
-        long now = appliedenhancements$now();
-        if (now < 0 || appliedenhancements$diagActivity < 0) {
-            appliedenhancements$diagActivity = now;
-            return;
-        }
-        if (now - appliedenhancements$diagActivity < 1200 || !com.appliedenhancements.runtime.DiagLog.every("cpu.stall.ae2", 30000)) {
-            return;
-        }
-        var access = (ExecutingCraftingJobCycleAccessor) job;
-        var waiting = access.appliedenhancements$getWaitingFor();
-        if (waiting.list.isEmpty()) {
-            return;
-        }
-        com.appliedenhancements.runtime.DiagLog.log("cpu.stall.ae2.log",
-                "cpu job STALLED {}s: final={} remaining={} waitingFor={} tasksLeft={} cpuInventory={}",
-                (now - appliedenhancements$diagActivity) / 20, access.appliedenhancements$getFinalOutput(),
-                access.appliedenhancements$getRemainingAmount(),
-                com.appliedenhancements.runtime.DiagLog.counterText(waiting.list),
-                access.appliedenhancements$getTasks().size(),
-                com.appliedenhancements.runtime.DiagLog.counterText(inventory.list));
-    }
-
-    @Unique
-    private long appliedenhancements$now() {
-        var level = cluster.getLevel();
-        return level == null ? -1 : level.getGameTime();
-    }
 
     @ModifyVariable(method = "trySubmitJob", at = @At("HEAD"), argsOnly = true)
     private ICraftingPlan appliedenhancements$prepareCyclePlan(ICraftingPlan plan) {
@@ -217,45 +161,14 @@ public abstract class CraftingCpuLogicBatchMixin implements com.appliedenhanceme
         }
         try (dispatch) {
             boolean pushed = original.call(provider, details, inputHolder);
-            if (com.appliedenhancements.runtime.DiagLog.isMatrix(provider) || !pushed) {
-                com.appliedenhancements.runtime.DiagLog.log(
-                        "cpu.push." + pushed + "." + provider.getClass().getName() + "." + details.getPrimaryOutput().what(),
-                        "cpu pushPattern {} to {} -> {}", details.getPrimaryOutput().what(),
-                        provider.getClass().getName(), pushed);
-            }
             if (pushed) {
                 dispatch.accepted();
-                appliedenhancements$diagActivity = appliedenhancements$now();
-                if (appliedenhancements$chanceMarks.recordIfMarked(details)) {
-                    appliedenhancements$topUp.onPush(details, details.getPrimaryOutput().what(),
-                            appliedenhancements$now());
-                }
                 if (job == completionJob && virtualCompletion != null) {
                     virtualCompletion.reconcileAcceptedPush();
                 }
             }
             return pushed;
         }
-    }
-
-    /** TEMPORARY diagnostics (2026-11-18, Assembler Matrix): which providers does the CPU see per pattern? */
-    @WrapOperation(method = "executeCrafting", require = 0, at = @At(value = "INVOKE",
-            target = "Lappeng/me/service/CraftingService;getProviders(Lappeng/api/crafting/IPatternDetails;)Ljava/lang/Iterable;"))
-    private Iterable<ICraftingProvider> appliedenhancements$diagProviders(CraftingService service,
-            IPatternDetails details, Operation<Iterable<ICraftingProvider>> original) {
-        var providers = original.call(service, details);
-        if (!com.appliedenhancements.runtime.DiagLog.enabled()) {
-            return providers;
-        }
-        var names = new java.util.ArrayList<String>();
-        for (var provider : providers) {
-            names.add(provider.getClass().getSimpleName()
-                    + (com.appliedenhancements.runtime.DiagLog.isMatrix(provider) ? "(busy=" + provider.isBusy() + ")" : ""));
-        }
-        com.appliedenhancements.runtime.DiagLog.log("cpu.providers." + details.getPrimaryOutput().what() + "." + names.size(),
-                "cpu getProviders {} -> {} provider(s) {} patternClass={}", details.getPrimaryOutput().what(),
-                names.size(), names, details.getClass().getName());
-        return providers;
     }
 
     @WrapOperation(method = "executeCrafting", require = 0, at = @At(value = "INVOKE",
@@ -270,17 +183,10 @@ public abstract class CraftingCpuLogicBatchMixin implements com.appliedenhanceme
         var guarded = AelisCycleExecutionApi.guardInputs(
                 appliedenhancements$cycleRuntime, details.getDefinition(), sourceInventory);
         if (guarded == null) {
-            com.appliedenhancements.runtime.DiagLog.log("cpu.guard.null." + details.getPrimaryOutput().what(),
-                    "cpu inputs {}: cycle guard returned no inventory", details.getPrimaryOutput().what());
             return null;
         }
         KeyCounter[] extracted = original.call(
                 details, guarded, level, expectedOutputs, expectedContainerItems);
-        if (extracted == null) {
-            com.appliedenhancements.runtime.DiagLog.log("cpu.extract.null." + details.getPrimaryOutput().what(),
-                    "cpu inputs {}: AE2 extractPatternInputs returned null (inputs not in CPU) patternClass={}",
-                    details.getPrimaryOutput().what(), details.getClass().getName());
-        }
         if (extracted != null
                 && job != null
                 && !appliedenhancements$canTrackExpectedOutputs(
@@ -288,9 +194,6 @@ public abstract class CraftingCpuLogicBatchMixin implements com.appliedenhanceme
                                 .appliedenhancements$getWaitingFor().list,
                         expectedOutputs,
                         expectedContainerItems)) {
-            com.appliedenhancements.runtime.DiagLog.log("cpu.track." + details.getPrimaryOutput().what(),
-                    "cpu inputs {}: expected outputs not trackable, inputs reinjected",
-                    details.getPrimaryOutput().what());
             CraftingCpuHelper.reinjectPatternInputs(guarded, extracted);
             return null;
         }
@@ -452,145 +355,10 @@ public abstract class CraftingCpuLogicBatchMixin implements com.appliedenhanceme
         return retained + forwarded;
     }
 
-    /**
-     * Chance-output bonus (step 2 of chance support). AE2 accepts only the items the job
-     * expects, so an extra item of the final output is refused. When the config is on and a
-     * marked pattern produces that output, the refused extra counts toward the requested total,
-     * capped at what the job still needs. The job finishes when the total is reached.
-     */
-    @WrapMethod(method = "insert")
-    private long appliedenhancements$chanceOutputBonus(
-            AEKey what,
-            long amount,
-            Actionable mode,
-            Operation<Long> original) {
-        long waitBefore = what == null ? 0 : getWaitingFor(what);
-        long accepted = original.call(what, amount, mode);
-        // The bonus counts toward the job but is NOT claimed: the caller stores the surplus in network storage,
-        // exactly as AE2 does with a job's final output (it used to sit in the CPU until the job ended).
-        // What AE2 itself counted for this insert. NOT the return value: for the job's final output AE2 returns what
-        // the requester took (0 for a player's job) although it has already counted the item against the job, so
-        // using the return value would count the same item a second time as a "bonus" and end the job short.
-        long consumed = what == null ? 0
-                : mode == Actionable.MODULATE ? Math.max(0, waitBefore - getWaitingFor(what))
-                        : Math.min(amount, waitBefore);
-        long total = consumed + appliedenhancements$chanceBonusFor(what, amount, consumed, mode);
-        if (what != null && mode == Actionable.MODULATE) {
-            if (total > 0) {
-                appliedenhancements$diagActivity = appliedenhancements$now();
-            }
-            var diagFinal = job == null ? null
-                    : ((ExecutingCraftingJobCycleAccessor) job).appliedenhancements$getFinalOutput();
-            if (total < Math.min(amount, waitBefore) && (diagFinal == null || !what.matches(diagFinal))) {
-                com.appliedenhancements.runtime.DiagLog.log("cpu.refuse." + what,
-                        "cpu insert {}: offered {} accepted {} while waiting for {}", what, amount, total, waitBefore);
-            }
-        }
-        if (total > 0 && mode == Actionable.MODULATE && what != null) {
-            long now = appliedenhancements$now();
-            if (appliedenhancements$chanceMarks.contains(what)) {
-                appliedenhancements$topUp.onOutput(what, total, now);
-            } else {
-                appliedenhancements$topUp.touch(now);
-            }
-        }
-        return accepted;
-    }
-
-    /** The bonus part of {@link #appliedenhancements$chanceOutputBonus}: 0 when nothing applies. */
-    @Unique
-    private long appliedenhancements$chanceBonusFor(AEKey what, long amount, long accepted, Actionable mode) {
-        if (what == null || job == null || amount <= accepted || !Config.ENABLE_CHANCE_OUTPUT_BONUS.get()) {
-            return 0;
-        }
-        var jobAccess = (ExecutingCraftingJobCycleAccessor) job;
-        var finalOutput = jobAccess.appliedenhancements$getFinalOutput();
-        if (finalOutput == null || !what.matches(finalOutput)) {
-            return 0;
-        }
-        if (!appliedenhancements$chanceMarks.contains(what)
-                && !ChanceOutputBonus.hasMarkedProducer(jobAccess.appliedenhancements$getTasks().keySet(), what)) {
-            return 0;
-        }
-        long remaining = jobAccess.appliedenhancements$getRemainingAmount();
-        long bonus = ChanceOutputBonus.bonusToAccept(amount - accepted, remaining);
-        if (bonus <= 0 || mode == Actionable.SIMULATE) {
-            return Math.max(bonus, 0);
-        }
-        ((ElapsedTimeTrackerAccessor) jobAccess.appliedenhancements$getTimeTracker())
-                .appliedenhancements$decrementItems(bonus, what.getType());
-        jobAccess.appliedenhancements$setRemainingAmount(remaining - bonus);
-        cluster.markDirty();
-        if (remaining - bonus <= 0) {
-            finishJob(true);
-        }
-        return bonus;
-    }
-
-    @Override
-    public Result appliedenhancements$requestChanceRetry(AEKey key) {
-        if (job == null) {
-            com.appliedenhancements.AppliedEnhancements.LOGGER.info("Chance retry (AE2 CPU {}): NO_JOB, this CPU's job is null", cluster);
-            return Result.NO_JOB;
-        }
-        if (key == null || !appliedenhancements$chanceMarks.contains(key)) {
-            return Result.NOT_MARKED;
-        }
-        if (appliedenhancements$retry.active()) {
-            return Result.ALREADY_RUNNING;
-        }
-        var jobAccess = (ExecutingCraftingJobCycleAccessor) job;
-        var output = jobAccess.appliedenhancements$getFinalOutput();
-        long outstanding = output != null && key.matches(output)
-                ? jobAccess.appliedenhancements$getRemainingAmount()
-                : getWaitingFor(key);
-        var grid = cluster.getGrid();
-        if (grid == null) {
-            com.appliedenhancements.AppliedEnhancements.LOGGER.info("Chance retry (AE2 CPU {}): NO_JOB, the cluster has no grid", cluster);
-            return Result.NO_JOB;
-        }
-        if (outstanding <= 0) {
-            return Result.NOT_WAITING;
-        }
-        appliedenhancements$retry.start(grid, cluster.getLevel(), key, outstanding);
-        return Result.STARTED;
-    }
-
-    /** After the normal tick: start a chance top-up wave when a marked pattern's outputs are overdue. */
-    @WrapMethod(method = "tickCraftingLogic")
-    private void appliedenhancements$chanceTopUp(
-            appeng.api.networking.energy.IEnergyService energyService,
-            CraftingService craftingService,
-            Operation<Void> original) {
-        original.call(energyService, craftingService);
-        appliedenhancements$retry.collect(cluster.getGrid());
-        if (job != null) {
-            appliedenhancements$diagStall();
-        }
-        if (job == null || appliedenhancements$chanceMarks.isEmpty()) {
-            return;
-        }
-        var grid = cluster.getGrid();
-        long now = appliedenhancements$now();
-        if (grid == null || now < 0) {
-            return;
-        }
-        if (appliedenhancements$topUp.lastActivity() < 0) {
-            appliedenhancements$topUp.touch(now);
-        }
-        com.appliedenhancements.runtime.ChanceTopUpRunner.tick(
-                new com.appliedenhancements.runtime.Ae2TopUpJob(job, inventory),
-                appliedenhancements$topUp, appliedenhancements$chanceMarks, grid, now);
-    }
-
     @Inject(method = "writeToNBT", at = @At("RETURN"))
     private void appliedenhancements$writeCycleRuntime(
             ValueOutput output,
             CallbackInfo callback) {
-        if (job != null && !appliedenhancements$chanceMarks.isEmpty()) {
-            output.store(APPLIEDENHANCEMENTS_CHANCE_MARKS_TAG, AEKey.CODEC.listOf(),
-                    appliedenhancements$chanceMarks.toList());
-        }
         if (appliedenhancements$cycleRuntime != null
                 && appliedenhancements$cycleRuntime.hasActiveSeedProtection()) {
             // MC 26: ValueOutput carries no registries (ValueInput does, via lookup()).
@@ -616,9 +384,6 @@ public abstract class CraftingCpuLogicBatchMixin implements com.appliedenhanceme
     private void appliedenhancements$readCycleRuntime(
             ValueInput input,
             CallbackInfo callback) {
-        appliedenhancements$chanceMarks.load(job == null ? java.util.List.of()
-                : input.read(APPLIEDENHANCEMENTS_CHANCE_MARKS_TAG, AEKey.CODEC.listOf())
-                        .orElse(java.util.List.of()));
         Optional<CompoundTag> stored = job != null
                 ? input.read(APPLIEDENHANCEMENTS_CYCLE_RUNTIME_TAG, CompoundTag.CODEC)
                 : Optional.empty();
@@ -658,9 +423,6 @@ public abstract class CraftingCpuLogicBatchMixin implements com.appliedenhanceme
     private void appliedenhancements$clearCycleRuntime(
             boolean success, CallbackInfo callback) {
         appliedenhancements$cycleRuntime = null;
-        appliedenhancements$chanceMarks.clear();
-        appliedenhancements$topUp.clear();
-        appliedenhancements$retry.cancel();
     }
 
 }
