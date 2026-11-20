@@ -2,6 +2,9 @@ package com.appliedenhancements.network;
 
 import appeng.api.stacks.AEKey;
 import appeng.menu.me.crafting.CraftingCPUMenu;
+import appeng.menu.me.crafting.CraftingStatusMenu;
+import appeng.me.cluster.implementations.CraftingCPUCluster;
+import com.appliedenhancements.mixin.CraftingStatusMenuAccessor;
 import com.appliedenhancements.AppliedEnhancements;
 import com.appliedenhancements.mixin.CraftingCPUMenuAccessor;
 import com.appliedenhancements.runtime.ChanceTopUpControl;
@@ -28,8 +31,11 @@ public record ChanceRetryPayload(AEKey key) implements CustomPacketPayload {
                     || !menu.stillValid(player)) {
                 return;
             }
-            var cpu = ((CraftingCPUMenuAccessor) menu).appliedenhancements$getCpu();
-            if (cpu == null || !(cpu.craftingLogic instanceof ChanceTopUpControl control)) {
+            // The status screen keeps its choice in selectedCpu (any CPU type); the plain CPU menu only knows clusters.
+            Object cpu = menu instanceof CraftingStatusMenu status
+                    ? ((CraftingStatusMenuAccessor) status).appliedenhancements$getSelectedCpu()
+                    : ((CraftingCPUMenuAccessor) menu).appliedenhancements$getCpu();
+            if (!(logicOf(cpu) instanceof ChanceTopUpControl control)) {
                 return;
             }
             var result = control.appliedenhancements$requestChanceRetry(payload.key());
@@ -42,6 +48,21 @@ public record ChanceRetryPayload(AEKey key) implements CustomPacketPayload {
             };
             FeedbackToastPayload.send(player, FeedbackToastPayload.Kind.CRAFTING_PLAN, message, 0);
         });
+    }
+
+    /** The crafting logic of an AE2 cluster CPU or of AdvancedAE's CPU (public {@code craftingLogic} field). */
+    private static Object logicOf(Object cpu) {
+        if (cpu instanceof CraftingCPUCluster cluster) {
+            return cluster.craftingLogic;
+        }
+        if (cpu == null) {
+            return null;
+        }
+        try {
+            return cpu.getClass().getField("craftingLogic").get(cpu);
+        } catch (ReflectiveOperationException | RuntimeException e) {
+            return null;
+        }
     }
 
     @Override

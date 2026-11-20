@@ -42,7 +42,18 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Pseudo
 // Apply after default-priority CPU observers, matching the Forge integration.
 @Mixin(targets = "net.pedroksl.advanced_ae.common.logic.AdvCraftingCPULogic", remap = false, priority = 900)
-public abstract class AdvancedAeCraftingCycleMixin {
+public abstract class AdvancedAeCraftingCycleMixin implements com.appliedenhancements.runtime.ChanceTopUpControl {
+    /** Middle-click retry: the separate job that helps this (source) job. Not saved. */
+    @Unique private final com.appliedenhancements.runtime.ChanceRetryLink appliedenhancements$retry =
+            new com.appliedenhancements.runtime.ChanceRetryLink();
+
+    @Override
+    public Result appliedenhancements$requestChanceRetry(AEKey key) {
+        return com.appliedenhancements.runtime.AdvancedAeChanceOutputBonus.requestRetry(
+                this, appliedenhancements$chanceMarks, appliedenhancements$retry, key,
+                key == null ? 0 : getWaitingFor(key));
+    }
+
     @Shadow public abstract ListCraftingInventory getInventory();
     @Shadow public abstract GenericStack getFinalJobOutput();
     @Shadow public abstract boolean hasJob();
@@ -205,6 +216,7 @@ public abstract class AdvancedAeCraftingCycleMixin {
     private void appliedenhancements$chanceTopUp(IEnergyService energyService, CraftingService craftingService,
             Operation<Void> original) {
         original.call(energyService, craftingService);
+        com.appliedenhancements.runtime.AdvancedAeChanceOutputBonus.collectRetry(this, appliedenhancements$retry);
         if (hasJob()) {
             long now = com.appliedenhancements.runtime.AdvancedAeTopUp.now(this);
             if (now >= 0 && appliedenhancements$diagActivity < 0) {
@@ -335,5 +347,6 @@ public abstract class AdvancedAeCraftingCycleMixin {
         appliedenhancements$cycleRuntime = null;
         appliedenhancements$chanceMarks.clear();
         appliedenhancements$topUp.clear();
+        appliedenhancements$retry.cancel();
     }
 }

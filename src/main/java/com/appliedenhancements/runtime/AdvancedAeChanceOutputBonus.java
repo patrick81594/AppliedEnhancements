@@ -107,4 +107,51 @@ public final class AdvancedAeChanceOutputBonus {
             return 0;
         }
     }
+
+    /** Middle-click retry for the AdvancedAE (Quantum) CPU; see {@link ChanceTopUpControl}. */
+    public static ChanceTopUpControl.Result requestRetry(Object cpuLogic, ChanceJobMarks marks, ChanceRetryLink retry,
+            AEKey key, long waitingFor) {
+        if (failed) {
+            return ChanceTopUpControl.Result.NO_JOB;
+        }
+        try {
+            var a = access();
+            Object job = a.logicJob().get(cpuLogic);
+            if (job == null) {
+                return ChanceTopUpControl.Result.NO_JOB;
+            }
+            if (key == null || !marks.contains(key)) {
+                return ChanceTopUpControl.Result.NOT_MARKED;
+            }
+            if (retry.active()) {
+                return ChanceTopUpControl.Result.ALREADY_RUNNING;
+            }
+            long outstanding = a.jobFinal().get(job) instanceof GenericStack output && key.matches(output)
+                    ? a.jobRemaining().getLong(job)
+                    : waitingFor;
+            Object cpu = a.logicCpu().get(cpuLogic);
+            if (!(a.cpuGrid().invoke(cpu) instanceof appeng.api.networking.IGrid grid)
+                    || !(a.cpuLevel().invoke(cpu) instanceof net.minecraft.world.level.Level level)) {
+                return ChanceTopUpControl.Result.NO_JOB;
+            }
+            if (outstanding <= 0) {
+                return ChanceTopUpControl.Result.NOT_WAITING;
+            }
+            retry.start(grid, level, key, outstanding);
+            return ChanceTopUpControl.Result.STARTED;
+        } catch (ReflectiveOperationException | RuntimeException e) {
+            return ChanceTopUpControl.Result.NO_JOB;
+        }
+    }
+
+    /** Submits a finished retry calculation; call every tick of the Quantum CPU. */
+    public static void collectRetry(Object cpuLogic, ChanceRetryLink retry) {
+        try {
+            var a = access();
+            Object cpu = a.logicCpu().get(cpuLogic);
+            retry.collect(a.cpuGrid().invoke(cpu) instanceof appeng.api.networking.IGrid grid ? grid : null);
+        } catch (ReflectiveOperationException | RuntimeException e) {
+            // diagnostics elsewhere already report a broken reflection setup
+        }
+    }
 }

@@ -90,11 +90,9 @@ public abstract class CraftingCpuLogicBatchMixin implements com.appliedenhanceme
 
     @Unique private int appliedenhancements$dispatchDepth;
 
-    /** Middle-click retry: calculation and link of the separate job that helps this (source) job. Not saved. */
-    @Unique private java.util.concurrent.Future<?> appliedenhancements$retryPlan;
-    @Unique private appeng.api.networking.crafting.ICraftingLink appliedenhancements$retryLink;
-    @Unique private AEKey appliedenhancements$retryKey;
-    @Unique private long appliedenhancements$retryAmount;
+    /** Middle-click retry: the separate job that helps this (source) job. Not saved. */
+    @Unique private final com.appliedenhancements.runtime.ChanceRetryLink appliedenhancements$retry =
+            new com.appliedenhancements.runtime.ChanceRetryLink();
 
     /** Marked (chance-output) patterns pushed in this job; see ChanceJobMarks. */
     @Unique
@@ -534,9 +532,7 @@ public abstract class CraftingCpuLogicBatchMixin implements com.appliedenhanceme
         if (key == null || !appliedenhancements$chanceMarks.contains(key)) {
             return Result.NOT_MARKED;
         }
-        if (appliedenhancements$retryPlan != null
-                || (appliedenhancements$retryLink != null && !appliedenhancements$retryLink.isDone()
-                        && !appliedenhancements$retryLink.isCanceled())) {
+        if (appliedenhancements$retry.active()) {
             return Result.ALREADY_RUNNING;
         }
         var jobAccess = (ExecutingCraftingJobCycleAccessor) job;
@@ -551,63 +547,8 @@ public abstract class CraftingCpuLogicBatchMixin implements com.appliedenhanceme
         if (outstanding <= 0) {
             return Result.NOT_WAITING;
         }
-        var src = new appeng.me.helpers.MachineSource(grid::getPivot);
-        appeng.api.networking.crafting.ICraftingSimulationRequester requester = () -> src;
-        appliedenhancements$retryPlan = grid.getCraftingService().beginCraftingCalculation(
-                cluster.getLevel(), requester, key, outstanding,
-                appeng.api.networking.crafting.CalculationStrategy.REPORT_MISSING_ITEMS);
-        appliedenhancements$retryKey = key;
-        appliedenhancements$retryAmount = outstanding;
+        appliedenhancements$retry.start(grid, cluster.getLevel(), key, outstanding);
         return Result.STARTED;
-    }
-
-    /** Submits the retry job once its calculation is done. */
-    @Unique
-    private void appliedenhancements$collectRetry() {
-        var future = appliedenhancements$retryPlan;
-        if (future == null || !future.isDone()) {
-            return;
-        }
-        appliedenhancements$retryPlan = null;
-        var grid = cluster.getGrid();
-        if (grid == null) {
-            return;
-        }
-        try {
-            var plan = (appeng.api.networking.crafting.ICraftingPlan) future.get();
-            if (plan.simulation()) {
-                com.appliedenhancements.AppliedEnhancements.LOGGER.info("Chance retry of {} x{}: not possible (items missing)",
-                        appliedenhancements$retryKey, appliedenhancements$retryAmount);
-                return;
-            }
-            var result = grid.getCraftingService().submitJob(plan, null, null, false,
-                    new appeng.me.helpers.MachineSource(grid::getPivot));
-            if (result.successful()) {
-                appliedenhancements$retryLink = result.link();
-            }
-            com.appliedenhancements.AppliedEnhancements.LOGGER.info("Chance retry job for {} x{} {}", appliedenhancements$retryKey,
-                    appliedenhancements$retryAmount,
-                    result.successful() ? "started" : "not started: " + result.errorCode());
-        } catch (Exception e) {
-            com.appliedenhancements.AppliedEnhancements.LOGGER.info("Chance retry job for {} failed: {}", appliedenhancements$retryKey, e.toString());
-        }
-    }
-
-    /** The source job ended (done or cancelled): the retry job that was helping it is cancelled too. */
-    @Unique
-    private void appliedenhancements$cancelRetry() {
-        var future = appliedenhancements$retryPlan;
-        appliedenhancements$retryPlan = null;
-        if (future != null) {
-            future.cancel(true);
-        }
-        var link = appliedenhancements$retryLink;
-        appliedenhancements$retryLink = null;
-        if (link != null && !link.isDone() && !link.isCanceled()) {
-            link.cancel();
-            com.appliedenhancements.AppliedEnhancements.LOGGER.info("Chance retry job for {} cancelled: its source job ended",
-                    appliedenhancements$retryKey);
-        }
     }
 
     /** After the normal tick: start a chance top-up wave when a marked pattern's outputs are overdue. */
@@ -617,7 +558,7 @@ public abstract class CraftingCpuLogicBatchMixin implements com.appliedenhanceme
             CraftingService craftingService,
             Operation<Void> original) {
         original.call(energyService, craftingService);
-        appliedenhancements$collectRetry();
+        appliedenhancements$retry.collect(cluster.getGrid());
         if (job != null) {
             appliedenhancements$diagStall();
         }
@@ -714,7 +655,7 @@ public abstract class CraftingCpuLogicBatchMixin implements com.appliedenhanceme
         appliedenhancements$cycleRuntime = null;
         appliedenhancements$chanceMarks.clear();
         appliedenhancements$topUp.clear();
-        appliedenhancements$cancelRetry();
+        appliedenhancements$retry.cancel();
     }
 
 }
