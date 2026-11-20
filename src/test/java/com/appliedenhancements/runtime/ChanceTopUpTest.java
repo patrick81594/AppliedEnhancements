@@ -59,6 +59,17 @@ class ChanceTopUpTest {
     }
 
     @Test
+    void stalledMessageIsDueOncePerStall() {
+        var state = new ChanceTopUpState<String>();
+        assertTrue(state.markStalledNotified());
+        assertFalse(state.markStalledNotified());
+        state.onOutput(new TestAEKey("olivine"), 1, 0);
+        assertTrue(state.markStalledNotified());
+        state.requestRetry();
+        assertTrue(state.markStalledNotified());
+    }
+
+    @Test
     void idleNeedsRecordedActivity() {
         assertFalse(ChanceTopUp.isIdle(1000, -1, 10));
         assertFalse(ChanceTopUp.isIdle(1005, 1000, 10));

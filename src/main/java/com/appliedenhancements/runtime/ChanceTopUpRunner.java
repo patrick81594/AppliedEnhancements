@@ -73,6 +73,21 @@ public final class ChanceTopUpRunner {
         }
     }
 
+    /** Toast to the network owner: the craft stalled on chance outputs; middle click in the CPU screen retries. */
+    private static void notifyStalled(IGrid grid, net.minecraft.server.MinecraftServer server) {
+        try {
+            var node = grid.getPivot();
+            var player = appeng.api.features.IPlayerRegistry.getConnected(server, node.getOwningPlayerId());
+            if (player != null) {
+                com.appliedenhancements.network.FeedbackToastPayload.send(player,
+                        com.appliedenhancements.network.FeedbackToastPayload.Kind.CRAFTING_PLAN,
+                        "message.appliedenhancements.chance_stalled", 0);
+            }
+        } catch (RuntimeException e) {
+            AppliedEnhancements.LOGGER.info("Chance top-up: could not notify the owner of a stalled craft: {}", e.toString());
+        }
+    }
+
     private static IPatternDetails findMarkedProducer(IGrid grid, AEKey key) {
         for (var candidate : grid.getCraftingService().getCraftingFor(key)) {
             if (candidate.getDefinition() instanceof AEItemKey item && ChanceOutputMarker.isMarked(item.toStack())
@@ -133,6 +148,10 @@ public final class ChanceTopUpRunner {
         if (wanted <= 0) {
             AppliedEnhancements.LOGGER.info("Chance top-up limit reached for {} (remaining {}, yield {}, allowed extra {}); the job keeps waiting",
                     key, job.remaining(), String.format("%.3f", yield), allowed);
+            // The job stays queued (nothing is cancelled); tell the network owner once how to continue it.
+            if (state.markStalledNotified()) {
+                notifyStalled(grid, server);
+            }
             state.touch(now);
             return;
         }

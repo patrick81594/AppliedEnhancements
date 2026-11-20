@@ -467,7 +467,13 @@ public abstract class CraftingCpuLogicBatchMixin implements com.appliedenhanceme
         long accepted = original.call(what, amount, mode);
         // The bonus counts toward the job but is NOT claimed: the caller stores the surplus in network storage,
         // exactly as AE2 does with a job's final output (it used to sit in the CPU until the job ended).
-        long total = accepted + appliedenhancements$chanceBonusFor(what, amount, accepted, mode);
+        // What AE2 itself counted for this insert. NOT the return value: for the job's final output AE2 returns what
+        // the requester took (0 for a player's job) although it has already counted the item against the job, so
+        // using the return value would count the same item a second time as a "bonus" and end the job short.
+        long consumed = what == null ? 0
+                : mode == Actionable.MODULATE ? Math.max(0, waitBefore - getWaitingFor(what))
+                        : Math.min(amount, waitBefore);
+        long total = consumed + appliedenhancements$chanceBonusFor(what, amount, consumed, mode);
         if (what != null && mode == Actionable.MODULATE) {
             if (total > 0) {
                 appliedenhancements$diagActivity = appliedenhancements$now();

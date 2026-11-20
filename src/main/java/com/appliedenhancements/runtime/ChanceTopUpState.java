@@ -27,6 +27,7 @@ public final class ChanceTopUpState<P> {
     private long lastFollowUp = -1;
     private int emptyWaves;
     private boolean retryNow;
+    private boolean stalledNotified;
 
     /** Most doublings of the idle time: 2^5 = 32 times the configured value. */
     private static final int MAX_BACKOFF_STEPS = 5;
@@ -81,6 +82,7 @@ public final class ChanceTopUpState<P> {
         }
         emptyWaves = 0;
         lastFollowUp = -1;
+        stalledNotified = false;
         retryNow = true;
     }
 
@@ -105,8 +107,16 @@ public final class ChanceTopUpState<P> {
         lastActivity = now;
     }
 
+    /** True the first time it is called after output arrived or a retry was requested: the "stalled" message is due. */
+    public boolean markStalledNotified() {
+        boolean first = !stalledNotified;
+        stalledNotified = true;
+        return first;
+    }
+
     public void onOutput(AEKey key, long amount, long now) {
         emptyWaves = 0;
+        stalledNotified = false;
         outputs.merge(key, amount, Long::sum);
         lastActivity = now;
     }
@@ -162,6 +172,7 @@ public final class ChanceTopUpState<P> {
         lastActivity = -1;
         emptyWaves = 0;
         retryNow = false;
+        stalledNotified = false;
         pendingPlan = null;
         pendingKey = null;
         pendingAmount = 0;

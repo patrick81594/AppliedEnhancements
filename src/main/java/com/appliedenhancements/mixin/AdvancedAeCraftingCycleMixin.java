@@ -175,10 +175,15 @@ public abstract class AdvancedAeCraftingCycleMixin {
         }
         // Chance outputs of marked patterns: extra items count toward the requested total.
         // The bonus counts toward the job but is not claimed: the caller stores the surplus in network storage.
+        // What the CPU itself counted (see CraftingCpuLogicBatchMixin): the return value is 0 for a final output
+        // whose requester took nothing, although the item was already counted against the job.
+        long consumed = key == null ? 0
+                : mode == Actionable.MODULATE ? Math.max(0, diagWait - getWaitingFor(key))
+                        : Math.min(amount, diagWait);
         long bonus = com.appliedenhancements.runtime.AdvancedAeChanceOutputBonus.insertBonus(
-                this, appliedenhancements$chanceMarks, getInventory(), key, amount, accepted, mode,
+                this, appliedenhancements$chanceMarks, getInventory(), key, amount, Math.max(accepted, consumed), mode,
                 () -> finishJob(true));
-        long delivered = accepted + bonus;
+        long delivered = Math.max(accepted, consumed) + bonus;
         if (key != null && mode == Actionable.MODULATE && accepted < Math.min(amount, diagWait) && !(getFinalJobOutput() != null && key.matches(getFinalJobOutput()))) {
             com.appliedenhancements.runtime.DiagLog.log("quantum.refuse." + key,
                     "quantum cpu insert {}: offered {} accepted {} while waiting for {}", key, amount, accepted, diagWait);
