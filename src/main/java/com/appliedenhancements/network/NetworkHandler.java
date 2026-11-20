@@ -33,6 +33,7 @@ public final class NetworkHandler {
         );
         // Feature G (pattern provider pulls outputs back): request/answer for the provider side panel.
         com.appliedenhancements.outputpull.network.OutputPullNetwork.register(registrar);
-        registrar.playToServer(ChanceRetryPayload.TYPE, ChanceRetryPayload.STREAM_CODEC, ChanceRetryPayload::handle);
+        // Chance-output module: middle-click retry request.
+        com.appliedenhancements.chance.network.ChanceNetwork.register(registrar);
     }
 }

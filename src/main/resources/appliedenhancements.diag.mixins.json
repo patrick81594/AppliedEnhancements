@@ -1,0 +1,18 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.appliedenhancements.diag.mixin",
+  "compatibilityLevel": "JAVA_25",
+  "mixins": [
+    "AssemblerMatrixClusterDiagMixin",
+    "AssemblerMatrixPatternDiagMixin",
+    "AssemblerMatrixThreadDiagMixin",
+    "AssemblerMatrixDoneDiagMixin",
+    "AssemblerMatrixBufferDiagMixin",
+    "CraftingCpuLogicDiagMixin",
+    "AdvancedAeCpuDiagMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

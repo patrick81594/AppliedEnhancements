@@ -45,7 +45,7 @@ printf '%s\n' "stop" >> "$P/console.in"; sleep 25; snap; docker rm -f $C >/dev/n
 echo "--- failures"
 grep -nE 'failed at|\(optional\) .* failed' "$LOG" | cut -c1-300 | head -20
 echo "--- rig reports"
-grep -E '\[AE-PACKTEST\]|Chance top-up' "$LOG" | sed 's/.*\[AE-PACKTEST\]/[AE-PACKTEST]/; s/.*AppliedEnhancements\/\]: /[TOPUP] /' | head -80
+grep -E '\[AE-PACKTEST\]|ACE/chance' "$LOG" | sed 's/.*\[AE-PACKTEST\]/[AE-PACKTEST]/; s/.*\[ACE\/chance\] /[TOPUP] /' | head -80
 echo "--- AELIS decisions (debug.log)"
 grep -hE 'AELIS (plans .* in chunks|returned-item check|handed|skipped producer)' "$P/logs/debug.log" 2>/dev/null | sed 's/.*AppliedEnhancements\/\]: //' | cut -c1-260 | tail -15
 echo "--- errors naming us / AE2 / our test mod"

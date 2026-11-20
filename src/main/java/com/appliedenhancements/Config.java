@@ -30,7 +30,7 @@ public final class Config {
     // Compatibility fixes for other mods (module: com.appliedenhancements.matrixfix)
     public static final ModConfigSpec.BooleanValue FIX_MATRIX_CRAFTER_COOLDOWN;
 
-    // Diagnostics (module: com.appliedenhancements.runtime.DiagLog + the AssemblerMatrix*DiagMixin classes)
+    // Diagnostics (module: com.appliedenhancements.diag)
     public static final ModConfigSpec.BooleanValue DIAGNOSTICS_ENABLED;
     public static final ModConfigSpec.IntValue AELIS_MAX_NODES;
     public static final ModConfigSpec.IntValue AELIS_COMPILE_BUDGET_MS;
@@ -440,9 +440,9 @@ public final class Config {
 
         DIAGNOSTICS_ENABLED = builder
                 .comment(
-                        "Write [AE-DIAG] debug lines to the log (crafting CPU stalls and refusals, ExtendedAE Assembler Matrix",
+                        "Write [ACE/diag] debug lines to the log (crafting CPU stalls and refusals, ExtendedAE Assembler Matrix",
                         "state, pattern pushes). Costs some performance and log space: only switch on while debugging.",
-                        "在日志中输出 [AE-DIAG] 调试信息（合成 CPU 停滞与拒收、扩展 AE 装配矩阵状态、样板推送）。",
+                        "在日志中输出 [ACE/diag] 调试信息（合成 CPU 停滞与拒收、扩展 AE 装配矩阵状态、样板推送）。",
                         "会占用一定性能和日志空间：仅在调试时开启。",
                         "Default / 默认值: false")
                 .translation("appliedenhancements.config.enable_diagnostics_log")
