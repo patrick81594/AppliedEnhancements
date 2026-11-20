@@ -177,7 +177,7 @@ public abstract class AdvancedAeCraftingCycleMixin {
         accepted += com.appliedenhancements.runtime.AdvancedAeChanceOutputBonus.insertBonus(
                 this, appliedenhancements$chanceMarks, getInventory(), key, amount, accepted, mode,
                 () -> finishJob(true));
-        if (key != null && mode == Actionable.MODULATE && accepted < Math.min(amount, diagWait)) {
+        if (key != null && mode == Actionable.MODULATE && accepted < Math.min(amount, diagWait) && !(getFinalJobOutput() != null && key.matches(getFinalJobOutput()))) {
             com.appliedenhancements.runtime.DiagLog.log("quantum.refuse." + key,
                     "quantum cpu insert {}: offered {} accepted {} while waiting for {}", key, amount, accepted, diagWait);
         }

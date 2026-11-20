@@ -464,7 +464,9 @@ public abstract class CraftingCpuLogicBatchMixin {
             if (total > 0) {
                 appliedenhancements$diagActivity = appliedenhancements$now();
             }
-            if (total < Math.min(amount, waitBefore)) {
+            var diagFinal = job == null ? null
+                    : ((ExecutingCraftingJobCycleAccessor) job).appliedenhancements$getFinalOutput();
+            if (total < Math.min(amount, waitBefore) && (diagFinal == null || !what.matches(diagFinal))) {
                 com.appliedenhancements.runtime.DiagLog.log("cpu.refuse." + what,
                         "cpu insert {}: offered {} accepted {} while waiting for {}", what, amount, total, waitBefore);
             }
