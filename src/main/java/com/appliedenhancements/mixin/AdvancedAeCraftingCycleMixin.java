@@ -174,18 +174,20 @@ public abstract class AdvancedAeCraftingCycleMixin {
             appliedenhancements$finishReturnedCycle();
         }
         // Chance outputs of marked patterns: extra items count toward the requested total.
-        accepted += com.appliedenhancements.runtime.AdvancedAeChanceOutputBonus.insertBonus(
+        // The bonus counts toward the job but is not claimed: the caller stores the surplus in network storage.
+        long bonus = com.appliedenhancements.runtime.AdvancedAeChanceOutputBonus.insertBonus(
                 this, appliedenhancements$chanceMarks, getInventory(), key, amount, accepted, mode,
                 () -> finishJob(true));
+        long delivered = accepted + bonus;
         if (key != null && mode == Actionable.MODULATE && accepted < Math.min(amount, diagWait) && !(getFinalJobOutput() != null && key.matches(getFinalJobOutput()))) {
             com.appliedenhancements.runtime.DiagLog.log("quantum.refuse." + key,
                     "quantum cpu insert {}: offered {} accepted {} while waiting for {}", key, amount, accepted, diagWait);
         }
-        if (accepted > 0 && mode == Actionable.MODULATE && key != null) {
+        if (delivered > 0 && mode == Actionable.MODULATE && key != null) {
             long now = com.appliedenhancements.runtime.AdvancedAeTopUp.now(this);
             appliedenhancements$diagActivity = now;
             if (appliedenhancements$chanceMarks.contains(key)) {
-                appliedenhancements$topUp.onOutput(key, accepted, now);
+                appliedenhancements$topUp.onOutput(key, delivered, now);
             } else {
                 appliedenhancements$topUp.touch(now);
             }

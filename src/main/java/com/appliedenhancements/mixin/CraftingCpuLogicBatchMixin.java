@@ -459,6 +459,8 @@ public abstract class CraftingCpuLogicBatchMixin {
             Operation<Long> original) {
         long waitBefore = what == null ? 0 : getWaitingFor(what);
         long accepted = original.call(what, amount, mode);
+        // The bonus counts toward the job but is NOT claimed: the caller stores the surplus in network storage,
+        // exactly as AE2 does with a job's final output (it used to sit in the CPU until the job ended).
         long total = accepted + appliedenhancements$chanceBonusFor(what, amount, accepted, mode);
         if (what != null && mode == Actionable.MODULATE) {
             if (total > 0) {
@@ -479,7 +481,7 @@ public abstract class CraftingCpuLogicBatchMixin {
                 appliedenhancements$topUp.touch(now);
             }
         }
-        return total;
+        return accepted;
     }
 
     /** The bonus part of {@link #appliedenhancements$chanceOutputBonus}: 0 when nothing applies. */
@@ -502,7 +504,6 @@ public abstract class CraftingCpuLogicBatchMixin {
         if (bonus <= 0 || mode == Actionable.SIMULATE) {
             return Math.max(bonus, 0);
         }
-        inventory.insert(what, bonus, Actionable.MODULATE);
         ((ElapsedTimeTrackerAccessor) jobAccess.appliedenhancements$getTimeTracker())
                 .appliedenhancements$decrementItems(bonus, what.getType());
         jobAccess.appliedenhancements$setRemainingAmount(remaining - bonus);

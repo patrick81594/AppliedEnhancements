@@ -91,7 +91,6 @@ public final class AdvancedAeChanceOutputBonus {
             if (bonus <= 0 || mode == Actionable.SIMULATE) {
                 return Math.max(bonus, 0);
             }
-            inventory.insert(what, bonus, Actionable.MODULATE);
             a.decrement().invoke(a.jobTracker().get(job), bonus, what.getType());
             long left = remaining - bonus;
             a.jobRemaining().setLong(job, left);
